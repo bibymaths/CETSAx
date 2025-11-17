@@ -10,6 +10,7 @@ from .dataio import load_cetsa_csv, apply_basic_qc
 from .models import itdr_model
 from .fit import fit_all_proteins
 from .hits import call_hits, summarize_hits
+from .plotting import plot_protein_curve, plot_goodness_of_fit
 
 __all__ = [
     "DOSE_COLS",
@@ -22,4 +23,6 @@ __all__ = [
     "fit_all_proteins",
     "call_hits",
     "summarize_hits",
+    "plot_protein_curve",
+    "plot_goodness_of_fit",
 ]

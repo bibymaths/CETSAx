@@ -113,4 +113,3 @@ def fit_all_proteins(df: pd.DataFrame) -> pd.DataFrame:
     return res_df[
         [ID_COL, COND_COL, "E0", "Emax", "EC50", "log10_EC50", "Hill", "R2", "delta_max"]
     ]
-
