@@ -11,7 +11,11 @@ from cetsax import load_cetsa_csv, apply_basic_qc, fit_all_proteins
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Fit ITDR EC50 curves for CETSA data.")
-    p.add_argument("input_csv", help="Path to CETSA NADPH ITDR CSV file.", default="../data/nadph.csv")
+    p.add_argument(
+        "-i", "--input-csv",
+        default="../data/nadph.csv",
+        help="Path to CETSA NADPH ITDR CSV file."
+    )
     p.add_argument(
         "-o",
         "--output",
