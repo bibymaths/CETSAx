@@ -1,0 +1,24 @@
+[project]
+name = "cetsax"
+version = "0.1.0"
+description = "CETSA-MS modelling toolkit for binding curves (EC50/KD), hit calling, and dose-response analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Abhinav Mishra", email = "mishraabhinav36@gmail.com" }
+]
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib"
+]
+
+[project.scripts]
+fit-ec50 = "cetsax.scripts.fit_ec50:main"
+call-hits = "cetsax.scripts.call_hits:main"
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
