@@ -12,7 +12,9 @@ dependencies = [
     "numpy",
     "pandas",
     "scipy",
-    "matplotlib"
+    "matplotlib",
+    "tqdm",
+    "joblib"
 ]
 
 [project.scripts]
@@ -22,3 +24,6 @@ call-hits = "cetsax.scripts.call_hits:main"
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["cetsax"]
