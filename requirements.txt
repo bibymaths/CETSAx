@@ -7,7 +7,9 @@ cycler==0.12.1
 fonttools==4.60.1
     # via matplotlib
 joblib==1.5.2
-    # via cetsax (pyproject.toml)
+    # via
+    #   cetsax (pyproject.toml)
+    #   scikit-learn
 kiwisolver==1.4.9
     # via matplotlib
 matplotlib==3.10.7
@@ -18,6 +20,7 @@ numpy==2.3.5
     #   contourpy
     #   matplotlib
     #   pandas
+    #   scikit-learn
     #   scipy
 packaging==25.0
     # via matplotlib
@@ -33,10 +36,16 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
-scipy==1.16.3
+scikit-learn==1.7.2
     # via cetsax (pyproject.toml)
+scipy==1.16.3
+    # via
+    #   cetsax (pyproject.toml)
+    #   scikit-learn
 six==1.17.0
     # via python-dateutil
+threadpoolctl==3.6.0
+    # via scikit-learn
 tqdm==4.67.1
     # via cetsax (pyproject.toml)
 tzdata==2025.2

@@ -14,7 +14,8 @@ dependencies = [
     "scipy",
     "matplotlib",
     "tqdm",
-    "joblib"
+    "joblib",
+    "scikit-learn>=1.7.2",
 ]
 
 [project.scripts]

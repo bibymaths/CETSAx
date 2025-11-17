@@ -2,7 +2,7 @@
 Configuration and constants for CETSA EC50/KD modelling.
 """
 
-# Dose columns in the CSV (as strings, exactly as in your file)
+# Dose columns in the CSV
 DOSE_COLS = [
     "3.81e-06",
     "1.526e-05",
@@ -16,7 +16,7 @@ DOSE_COLS = [
     "1",
 ]
 
-# QC thresholds – tweak as you like
+# QC thresholds
 QC_MIN_UNIQUE_PEPTIDES = 2
 QC_MIN_PSMS = 10
 QC_MIN_COUNTNUM = 5
