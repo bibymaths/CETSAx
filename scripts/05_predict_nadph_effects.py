@@ -258,7 +258,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--device",
-        default=None,
+        default='cpu',
         help="Device to use: 'cuda', 'cpu', or leave empty for auto.",
     )
     parser.add_argument(
@@ -294,12 +294,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-# python predict_nadph_from_seq.py \
-#   --fasta proteins.fasta \
-#   --checkpoint nadph_seq_head.pt \
-#   --task classification \
-#   --saliency \
-#   --ig \
-#   --target-class 2 \
-#   --out predictions_with_saliency.csv

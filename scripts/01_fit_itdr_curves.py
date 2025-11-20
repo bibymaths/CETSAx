@@ -15,9 +15,6 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-
-import pandas as pd
-
 from cetsax import ID_COL, COND_COL, DOSE_COLS, load_cetsa_csv, apply_basic_qc
 from cetsax import fit_all_proteins
 

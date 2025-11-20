@@ -26,9 +26,9 @@ dependencies = [
     "seaborn>=0.13.2",
 ]
 
-[project.scripts]
-fit-ec50 = "cetsax.scripts.fit_ec50:main"
-call-hits = "cetsax.scripts.call_hits:main"
+#[project.scripts]
+#fit-ec50 = "cetsax.scripts.fit_ec50:main"
+#call-hits = "cetsax.scripts.call_hits:main"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]

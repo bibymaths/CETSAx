@@ -59,7 +59,7 @@ def main() -> None:
     p.add_argument(
         "--epochs",
         type=int,
-        default=5,
+        default=10,
         help="Number of training epochs.",
     )
     args = p.parse_args()
@@ -72,7 +72,7 @@ def main() -> None:
         fasta_path=args.fasta,
         out_csv=args.out_supervised,
         id_col="id",
-        use_nss=False,  # change to True if you later include NSS in the table
+        use_nss=True,  # change to True if you later include NSS in the table
     )
     print(f"Saved supervised table with sequences to {args.out_supervised} (n={len(sup_df)})")
 

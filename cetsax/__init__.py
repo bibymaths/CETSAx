@@ -3,6 +3,10 @@ CETSAx – CETSA-MS modelling toolkit.
 
 This package currently implements ITDR-based binding curve fitting
 (EC50, Hill, Emax) for proteome-wide NADPH CETSA data.
+It also includes modules for hit calling, pathway enrichment,
+latent factor analysis, mixture modelling, redox role analysis,
+and sequence-based deep learning models of NADPH responsiveness.
+
 """
 from .deeplearn import train_seq_model, NADPHSeqConfig, build_sequence_supervised_table
 from .config import DOSE_COLS, QC_MIN_UNIQUE_PEPTIDES, QC_MIN_PSMS, QC_MIN_COUNTNUM, ID_COL, COND_COL
