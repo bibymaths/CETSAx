@@ -1,10 +1,9 @@
 configfile: "config.yaml"
 
-# --- Target Rule (What we want to produce) ---
+# --- Target Rule ---
 rule all:
     input:
-        # We want the final plots and the predictions
-        expand("{res}/plots/{plot}", res=config["results_dir"], plot=[
+        expand("results/plots/{plot}",plot=[
             "plot_1_confusion_matrix.png",
             "plot_2_roc_curves.png",
             "plot_3_confidence.png",
@@ -19,9 +18,9 @@ rule all:
 # --- 1. Fit Curves ---
 rule fit_curves:
     input:
-        csv = config["input_csv"]
+        csv=config["input_csv"]
     output:
-        fits = f"{config['results_dir']}/ec50_fits.csv"
+        fits=f"{config['results_dir']}/ec50_fits.csv"
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/01_fit_itdr_curves.py \
@@ -32,12 +31,10 @@ rule fit_curves:
 # --- 2. Hit Calling ---
 rule hit_calling:
     input:
-        fits = rules.fit_curves.output.fits
+        fits=rules.fit_curves.output.fits
     output:
-        # We define the directory as output to capture all plots/tables generated
-        outdir = directory(f"{config['results_dir']}/hit_calling"),
-        # We explicitly track the main CSV for downstream rules
-        hits_csv = f"{config['results_dir']}/hit_calling/cetsa_hits_ranked.csv"
+        outdir=directory(f"{config['results_dir']}/hit_calling"),
+        hits_csv=f"{config['results_dir']}/hit_calling/cetsa_hits_ranked.csv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -49,13 +46,16 @@ rule hit_calling:
 # --- 3. Annotate & Fetch Sequences ---
 rule annotate:
     input:
-        fits = rules.fit_curves.output.fits
+        fits=rules.fit_curves.output.fits,
+        # SERIALIZATION HACK: We add this input just to force
+        # annotation to wait until hit_calling is done.
+        _wait_for_hits=rules.hit_calling.output.hits_csv
     output:
-        annot = f"{config['results_dir']}/protein_annotations.csv",
-        fasta = f"{config['results_dir']}/protein_sequences.fasta"
+        annot=f"{config['results_dir']}/protein_annotations.csv",
+        fasta=f"{config['results_dir']}/protein_sequences.fasta"
     shell:
         """
-        # Updated path: pointing to cetsax/annotate.py instead of scripts/
+        # Updated path: pointing to cetsax/annotate.py
         {config[python_bin]} cetsax/annotate.py \
             --fits-csv {input.fits} \
             --out-annot {output.annot} \
@@ -65,13 +65,12 @@ rule annotate:
 # --- 4. System Analysis ---
 rule system_analysis:
     input:
-        fits = rules.fit_curves.output.fits,
-        hits = rules.hit_calling.output.hits_csv,
-        annot = rules.annotate.output.annot
+        fits=rules.fit_curves.output.fits,
+        hits=rules.hit_calling.output.hits_csv,
+        annot=rules.annotate.output.annot
     output:
-        outdir = directory(f"{config['results_dir']}/system_analysis"),
-        # Tracking one file to verify completion
-        cluster_labels = f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv"
+        outdir=directory(f"{config['results_dir']}/system_analysis"),
+        cluster_labels=f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -85,15 +84,17 @@ rule system_analysis:
 # --- 5. Train ESM-2 Model ---
 rule train_model:
     input:
-        fits = rules.fit_curves.output.fits,
-        fasta = rules.annotate.output.fasta
+        fits=rules.fit_curves.output.fits,
+        fasta=rules.annotate.output.fasta,
+        # SERIALIZATION HACK: Force Training to wait for System Analysis
+        _wait_for_sys=rules.system_analysis.output.cluster_labels
     output:
-        supervised = f"{config['results_dir']}/nadph_seq_supervised.csv",
-        checkpoint = f"{config['results_dir']}/nadph_seq_head.pt"
+        supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
+        checkpoint=f"{config['results_dir']}/nadph_seq_head.pt"
     params:
-        epochs = config["epochs"],
-        task = config["task"],
-        device = config["device"]
+        epochs=config["epochs"],
+        task=config["task"],
+        device=config["device"]
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/04_seq_build_and_train.py \
@@ -109,13 +110,13 @@ rule train_model:
 # --- 6. Predict on Sequences ---
 rule predict:
     input:
-        fasta = rules.annotate.output.fasta,
-        checkpoint = rules.train_model.output.checkpoint
+        fasta=rules.annotate.output.fasta,
+        checkpoint=rules.train_model.output.checkpoint
     output:
-        preds = f"{config['results_dir']}/predictions_nadph_seq.csv"
+        preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
     params:
-        task = config["task"],
-        device = config["device"]
+        task=config["task"],
+        device=config["device"]
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/05_predict_nadph_effects.py \
@@ -131,10 +132,9 @@ rule predict:
 # --- 7. Visualization ---
 rule visualize:
     input:
-        preds = rules.predict.output.preds,
-        truth = rules.train_model.output.supervised
+        preds=rules.predict.output.preds,
+        truth=rules.train_model.output.supervised
     output:
-        # List all expected plots so Snakemake knows when it's done
         "results/plots/plot_1_confusion_matrix.png",
         "results/plots/plot_2_roc_curves.png",
         "results/plots/plot_3_confidence.png",
@@ -146,10 +146,8 @@ rule visualize:
     shell:
         """
         mkdir -p results/plots
-        # We change directory so the python script writes files directly into results/plots
         cd results/plots
-        
-        # We reference inputs using relative paths from the new directory
+
         {config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
             --pred-file ../../{input.preds} \
             --truth-file ../../{input.truth}
