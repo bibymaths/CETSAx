@@ -7,7 +7,7 @@ results_dir: "results"
 python_bin: ".venv/bin/python"
 
 # Training Hyperparameters
-epochs: 10
-batch_size: 8
+epochs: 100
+batch_size: 32
 task: "classification"
 device: "cuda"  # Set to 'cpu' if needed

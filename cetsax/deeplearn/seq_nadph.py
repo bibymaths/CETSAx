@@ -180,7 +180,7 @@ def build_sequence_supervised_table(
 
         if n_missing > 0:
             print(f"Missing Sequences: {n_missing}")
-            print("Attempting to rescue isoforms (stripping '-2', '-3' suffixes)...")
+            # print("Attempting to rescue isoforms (stripping '-2', '-3' suffixes)...")
 
             # Create a temporary 'clean_id' column (P04075-2 -> P04075)
             clean_ids = agg.loc[missing_mask, id_col].astype(str).apply(lambda x: x.split('-')[0])
@@ -193,12 +193,12 @@ def build_sequence_supervised_table(
 
             # Check how many we saved
             n_still_missing = agg["seq"].isna().sum()
-            print(f"Rescued: {n_missing - n_still_missing}")
+            # print(f"Rescued: {n_missing - n_still_missing}")
             print(f"Still Missing: {n_still_missing}")
 
-            if n_still_missing > 0:
-                print("Examples of IDs still missing (check FASTA):")
-                print(agg[agg["seq"].isna()][id_col].head(5).tolist())
+            # if n_still_missing > 0:
+                # print("Examples of IDs still missing (check FASTA):")
+                # print(agg[agg["seq"].isna()][id_col].head(5).tolist())
 
         # drop rows without sequence
         agg = agg.dropna(subset=["seq"])
@@ -233,7 +233,7 @@ class NADPHSeqConfig:
     num_classes: int = 3
     # training
     batch_size: int = 8
-    lr: float = 1e-4
+    lr: float = 1e-3
     epochs: int = 10
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -584,7 +584,7 @@ def train_seq_model(
     n_train = int(0.8 * n)
     n_val = n - n_train
     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-    NUM_WORKERS = 32
+    NUM_WORKERS = 8
     PIN_MEMORY = True if device.type == 'cuda' else False
     train_loader = DataLoader(
         train_ds,
@@ -632,8 +632,10 @@ def train_seq_model(
         class_counts[class_counts == 0] = 1.0
 
         # Inverse frequency: weight = 1 / count
+        # weights = 1.0 / class_counts
+        # weights = weights / weights.sum()  # Normalize
+
         weights = 1.0 / class_counts
-        weights = weights / weights.sum()  # Normalize
 
         print(f"Class weights: {weights}")
         criterion = nn.CrossEntropyLoss(weight=weights.to(device))

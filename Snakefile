@@ -148,7 +148,8 @@ rule visualize:
         mkdir -p results/plots
         cd results/plots
 
-        {config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
+        # FIX: Add '../../' before {config[python_bin]} so it finds the venv from inside the folder
+        ../../{config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
             --pred-file ../../{input.preds} \
             --truth-file ../../{input.truth}
         """
