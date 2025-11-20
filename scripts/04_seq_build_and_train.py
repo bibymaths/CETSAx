@@ -62,6 +62,12 @@ def main() -> None:
         default=10,
         help="Number of training epochs.",
     )
+    p.add_argument(
+        "--device",
+        default="cuda",
+        help="Device to use: 'cuda' or 'cpu'.",
+    )
+
     args = p.parse_args()
 
     fits = pd.read_csv(args.fits_csv)
@@ -81,6 +87,7 @@ def main() -> None:
         task=args.task,
         num_classes=3,
         epochs=args.epochs,
+        device=args.device,
     )
 
     model, metrics = train_seq_model(
