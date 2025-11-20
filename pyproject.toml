@@ -16,6 +16,9 @@ dependencies = [
     "tqdm",
     "joblib",
     "scikit-learn>=1.7.2",
+    "pymc>=5.25.1",
+    "arviz>=0.22.0",
+    "networkx>=3.4.2",
 ]
 
 [project.scripts]
