@@ -36,7 +36,7 @@ def load_cetsa_csv(path: str) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     # strip UniProt isoform suffixes: O00231-2 → O00231
-    df[ID_COL] = df[ID_COL].astype(str).str.replace(r"-\d+$", "", regex=True)
+    # df[ID_COL] = df[ID_COL].astype(str).str.replace(r"-\d+$", "", regex=True)
     return df
 
 

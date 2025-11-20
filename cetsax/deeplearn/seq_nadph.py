@@ -168,11 +168,6 @@ def build_sequence_supervised_table(
         print(f"Total IDs in Table: {len(csv_ids)}")
         print(f"Total IDs in FASTA: {len(fasta_ids)}")
 
-        sample_csv = list(csv_ids)[0]
-        sample_fasta = list(fasta_ids)[0]
-        print(f"Sample CSV ID format:   '{sample_csv}'")
-        print(f"Sample FASTA ID format: '{sample_fasta}'")
-
         common = csv_ids.intersection(fasta_ids)
         print(f"Direct Matches: {len(common)}")
 
@@ -621,7 +616,8 @@ def train_seq_model(
         collate_fn=collate_fn_esm,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
-        persistent_workers=True if NUM_WORKERS > 0 else False
+        persistent_workers=True if NUM_WORKERS > 0 else False,
+        drop_last = True
     )
     val_loader = DataLoader(
         val_ds,

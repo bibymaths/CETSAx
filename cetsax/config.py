@@ -18,8 +18,8 @@ DOSE_COLS = [
 
 # QC thresholds
 QC_MIN_UNIQUE_PEPTIDES = 2
-QC_MIN_PSMS = 10
-QC_MIN_COUNTNUM = 5
+QC_MIN_PSMS = 2
+QC_MIN_COUNTNUM = 3
 
 # Column names
 ID_COL = "id"

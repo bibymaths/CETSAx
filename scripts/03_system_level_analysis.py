@@ -122,12 +122,12 @@ def main() -> None:
     enr.to_csv(enr_path, index=False)
     print(f"[I] Saved pathway effects and enrichment to {path_eff_path}, {enr_path}")
 
-    # Plot pathway bar + volcano
-    fig, ax = plot_pathway_effects_bar(path_eff, metric="NSS_mean", top_n=20)
-    fig.savefig(out_dir / "pathway_nss_mean_top20.png", dpi=300, bbox_inches="tight")
-
-    fig, ax = plot_pathway_enrichment_volcano(enr, label_top_n=10)
-    fig.savefig(out_dir / "pathway_enrichment_volcano.png", dpi=300, bbox_inches="tight")
+    # # Plot pathway bar + volcano
+    # fig, ax = plot_pathway_effects_bar(path_eff, metric="NSS_mean", top_n=20)
+    # fig.savefig(out_dir / "pathway_nss_mean_top20.png", dpi=300, bbox_inches="tight")
+    #
+    # fig, ax = plot_pathway_enrichment_volcano(enr, label_top_n=10)
+    # fig.savefig(out_dir / "pathway_enrichment_volcano.png", dpi=300, bbox_inches="tight")
 
     # ------------------------------------------------------------
     # 3. Co-stabilization network + metrics  [C, F]
@@ -177,8 +177,8 @@ def main() -> None:
     )
     fig.savefig(out_dir / "redox_axes_direct_vs_indirect.png", dpi=300, bbox_inches="tight")
 
-    fig, ax = plot_redox_role_composition(path_redox, top_n=20)
-    fig.savefig(out_dir / "redox_role_composition_top20_pathways.png", dpi=300, bbox_inches="tight")
+    # fig, ax = plot_redox_role_composition(path_redox, top_n=20)
+    # fig.savefig(out_dir / "redox_role_composition_top20_pathways.png", dpi=300, bbox_inches="tight")
 
     # ------------------------------------------------------------
     # 5. Latent factor models (PCA / FA)  [K]
