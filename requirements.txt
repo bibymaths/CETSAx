@@ -32,6 +32,8 @@ etuples==0.3.10
     # via
     #   minikanren
     #   pytensor
+fair-esm==2.0.0
+    # via cetsax (pyproject.toml)
 filelock==3.20.0
     # via
     #   pytensor
@@ -76,6 +78,7 @@ matplotlib==3.10.7
     # via
     #   cetsax (pyproject.toml)
     #   arviz
+    #   seaborn
 mdurl==0.1.2
     # via markdown-it-py
 minikanren==1.0.5
@@ -105,6 +108,7 @@ numpy==2.3.5
     #   pytensor
     #   scikit-learn
     #   scipy
+    #   seaborn
     #   xarray
     #   xarray-einstats
 nvidia-cublas-cu12==12.8.4.1
@@ -157,6 +161,7 @@ pandas==2.3.3
     #   cetsax (pyproject.toml)
     #   arviz
     #   pymc
+    #   seaborn
     #   xarray
 pillow==12.0.0
     # via matplotlib
@@ -188,6 +193,8 @@ scipy==1.16.3
     #   pytensor
     #   scikit-learn
     #   xarray-einstats
+seaborn==0.13.2
+    # via cetsax (pyproject.toml)
 setuptools==80.9.0
     # via
     #   arviz
