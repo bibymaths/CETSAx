@@ -26,7 +26,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-
+import os
 import pandas as pd
 import requests
 from tqdm.auto import tqdm
@@ -320,7 +320,7 @@ def main() -> None:
     ap.add_argument(
         "--max-workers",
         type=int,
-        default=8,
+        default=os.cpu_count(),
         help="Maximum number of threads for parallel UniProt fetch.",
     )
     args = ap.parse_args()
