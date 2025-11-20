@@ -80,14 +80,12 @@ def build_hits_table(
     df["hit_class"] = df.apply(
         classify_hit,
         axis=1,
-        kwargs=dict(
-            ec50_strong=ec50_strong,
-            ec50_medium=ec50_medium,
-            delta_strong=delta_strong,
-            delta_medium=delta_medium,
-            r2_strong=r2_strong,
-            r2_medium=r2_medium,
-        ),
+        ec50_strong=ec50_strong,
+        ec50_medium=ec50_medium,
+        delta_strong=delta_strong,
+        delta_medium=delta_medium,
+        r2_strong=r2_strong,
+        r2_medium=r2_medium,
     )
 
     agg = (

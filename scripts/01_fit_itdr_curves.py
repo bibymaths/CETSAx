@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cetsax import ID_COL, COND_COL, DOSE_COLS
+from cetsax import ID_COL, COND_COL, DOSE_COLS, load_cetsa_csv
 from cetsax import fit_all_proteins
 
 
@@ -26,12 +26,13 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Fit ITDR EC50 curves for all proteins.")
     p.add_argument(
         "--input-csv",
-        required=True,
+        # required=True,
+        default="../data/nadph.csv",
         help="Path to CETSA NADPH ITDR CSV file.",
     )
     p.add_argument(
         "--out-fits",
-        default="ec50_fits.csv",
+        default="../results/ec50_fits.csv",
         help="Output CSV for fitted parameters.",
     )
     args = p.parse_args()
@@ -39,12 +40,13 @@ def main() -> None:
     in_path = Path(args.input_csv)
     out_path = Path(args.out_fits)
 
-    df = pd.read_csv(in_path)
+    df = load_cetsa_csv(str(in_path))
 
     # Optional: basic sanity check
     missing = [c for c in [ID_COL, COND_COL] + DOSE_COLS if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
+
 
     fits_df = fit_all_proteins(df)
     out_path.parent.mkdir(parents=True, exist_ok=True)

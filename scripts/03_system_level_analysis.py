@@ -58,8 +58,18 @@ from cetsax import ID_COL
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Run system-level CETSA NADPH analysis.")
-    p.add_argument("--fits-csv", required=True, help="Path to ec50_fits.csv")
-    p.add_argument("--hits-csv", required=True, help="Path to cetsa_hits_ranked.csv")
+    p.add_argument(
+        "--fits-csv",
+        # required=True,
+        default="../results/ec50_fits.csv",
+        help="Path to ec50_fits.csv"
+    )
+    p.add_argument(
+        "--hits-csv",
+        # required=True,
+        default="../results/hit_results/cetsa_hits_ranked.csv",
+        help="Path to cetsa_hits_ranked.csv"
+    )
     p.add_argument(
         "--annot-csv",
         # required=True,
