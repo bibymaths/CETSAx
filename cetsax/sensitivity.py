@@ -71,11 +71,11 @@ def _inv_scale(series: pd.Series) -> pd.Series:
 # ------------------------------------------------------------
 
 def compute_sensitivity_scores(
-    fits_df: pd.DataFrame,
-    id_col: str = "id",
-    cond_col: str = "condition",
-    agg: str = "median",
-    weights: Dict[str, float] = None,
+        fits_df: pd.DataFrame,
+        id_col: str = "id",
+        cond_col: str = "condition",
+        agg: str = "median",
+        weights: Dict[str, float] = None,
 ) -> pd.DataFrame:
     """
     Compute a unified NADPH Sensitivity Score (NSS) per protein.
@@ -132,10 +132,10 @@ def compute_sensitivity_scores(
 
     # Weighted score
     NSS = (
-        weights["EC50"] * ec50_scaled +
-        weights["delta_max"] * dm_scaled +
-        weights["Hill"] * h_scaled +
-        weights["R2"] * r2_scaled
+            weights["EC50"] * ec50_scaled +
+            weights["delta_max"] * dm_scaled +
+            weights["Hill"] * h_scaled +
+            weights["R2"] * r2_scaled
     )
 
     out = agg_df.copy()
@@ -154,10 +154,10 @@ def compute_sensitivity_scores(
 # ------------------------------------------------------------
 
 def summarize_sensitivity_by_pathway(
-    sens_df: pd.DataFrame,
-    annot_df: pd.DataFrame,
-    id_col: str = "id",
-    path_col: str = "pathway",
+        sens_df: pd.DataFrame,
+        annot_df: pd.DataFrame,
+        id_col: str = "id",
+        path_col: str = "pathway",
 ) -> pd.DataFrame:
     """
     Summarize NADPH sensitivity per pathway or complex.
@@ -188,8 +188,8 @@ def summarize_sensitivity_by_pathway(
 # ------------------------------------------------------------
 
 def compute_sensitivity_heterogeneity(
-    sens_df: pd.DataFrame,
-    bins: int = 50,
+        sens_df: pd.DataFrame,
+        bins: int = 50,
 ) -> Dict[str, Any]:
     """
     Quantify how spread-out sensitivity is across the proteome.
@@ -206,7 +206,7 @@ def compute_sensitivity_heterogeneity(
     # Gini coefficient for inequality of sensitivity
     idx = np.arange(1, NSS_sorted.size + 1)
     gini = (np.sum((2 * idx - NSS_sorted.size - 1) * NSS_sorted)) / (
-        NSS_sorted.size * np.sum(NSS_sorted)
+            NSS_sorted.size * np.sum(NSS_sorted)
     )
 
     hist_vals, hist_edges = np.histogram(NSS, bins=bins)

@@ -41,12 +41,12 @@ from sklearn.preprocessing import StandardScaler
 # ------------------------------------------------------------
 
 def build_mixture_features(
-    sens_df: pd.DataFrame,
-    redox_df: Optional[pd.DataFrame] = None,
-    id_col: str = "id",
-    feature_cols: Optional[List[str]] = None,
-    include_redox_axes: bool = True,
-    log_transform_ec50: bool = True,
+        sens_df: pd.DataFrame,
+        redox_df: Optional[pd.DataFrame] = None,
+        id_col: str = "id",
+        feature_cols: Optional[List[str]] = None,
+        include_redox_axes: bool = True,
+        log_transform_ec50: bool = True,
 ) -> pd.DataFrame:
     """
     Build feature matrix for mixture modelling.
@@ -117,10 +117,10 @@ def build_mixture_features(
 # ------------------------------------------------------------
 
 def fit_gmm_bic_grid(
-    feat_df: pd.DataFrame,
-    n_components_grid: List[int] = None,
-    covariance_type: str = "full",
-    random_state: int = 0,
+        feat_df: pd.DataFrame,
+        n_components_grid: List[int] = None,
+        covariance_type: str = "full",
+        random_state: int = 0,
 ) -> Dict[str, Any]:
     """
     Fit Gaussian Mixture Models for a grid of component numbers
@@ -180,9 +180,9 @@ def fit_gmm_bic_grid(
 # ------------------------------------------------------------
 
 def assign_mixture_clusters(
-    feat_df: pd.DataFrame,
-    gmm: GaussianMixture,
-    id_col: str = "id",
+        feat_df: pd.DataFrame,
+        gmm: GaussianMixture,
+        id_col: str = "id",
 ) -> pd.DataFrame:
     """
     Assign mixture clusters and posterior responsibilities for each protein.
@@ -223,10 +223,10 @@ def assign_mixture_clusters(
 # ------------------------------------------------------------
 
 def label_clusters_by_sensitivity(
-    sens_df: pd.DataFrame,
-    cluster_df: pd.DataFrame,
-    id_col: str = "id",
-    score_col: str = "NSS",
+        sens_df: pd.DataFrame,
+        cluster_df: pd.DataFrame,
+        id_col: str = "id",
+        score_col: str = "NSS",
 ) -> pd.DataFrame:
     """
     Assign human-readable labels ("high", "medium", "low") to mixture clusters

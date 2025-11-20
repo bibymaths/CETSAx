@@ -22,6 +22,7 @@ from typing import Dict, Any
 import pymc as pm
 import arviz as az
 
+
 def bayesian_fit_ec50(df: pd.DataFrame, protein_id: str) -> Dict[str, Any]:
     """
     Fit a hierarchical Bayesian EC50 model for a single protein
@@ -47,11 +48,11 @@ def bayesian_fit_ec50(df: pd.DataFrame, protein_id: str) -> Dict[str, Any]:
         E0 = pm.Normal("E0", mu=1, sigma=0.1)
         Emax = pm.Normal("Emax", mu=1, sigma=0.5)
 
-        EC50 = pm.Deterministic("EC50", 10**logEC50)
+        EC50 = pm.Deterministic("EC50", 10 ** logEC50)
 
         # Likelihood
         def itdr(c, E0, Emax, logEC50, Hill):
-            return E0 + (Emax - E0) / (1 + (10**logEC50 / c)**Hill)
+            return E0 + (Emax - E0) / (1 + (10 ** logEC50 / c) ** Hill)
 
         mu = itdr(doses.values, E0, Emax, logEC50, Hill)
         sigma = pm.HalfNormal("sigma", sigma=0.05)

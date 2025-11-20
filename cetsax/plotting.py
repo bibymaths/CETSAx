@@ -15,11 +15,11 @@ from .models import itdr_model
 
 
 def plot_protein_curve(
-    df: pd.DataFrame,
-    fit_df: pd.DataFrame,
-    protein_id: str,
-    condition: Optional[str] = None,
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        fit_df: pd.DataFrame,
+        protein_id: str,
+        condition: Optional[str] = None,
+        ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
     Plot raw ITDR data and fitted curve for a given protein (and condition).
@@ -61,10 +61,11 @@ def plot_protein_curve(
     ax.legend()
     return ax
 
+
 def plot_goodness_of_fit(
-    df: pd.DataFrame,
-    fit_df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        fit_df: pd.DataFrame,
+        ax: Optional[plt.Axes] = None,
 ):
     """
     Global goodness-of-fit plot: observed vs predicted values for all proteins,

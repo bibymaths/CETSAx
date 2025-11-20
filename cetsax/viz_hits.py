@@ -30,13 +30,13 @@ import matplotlib.pyplot as plt
 # ---------------------------------------------------------------------
 
 def classify_hit(
-    row: pd.Series,
-    ec50_strong: float = 0.01,
-    ec50_medium: float = 0.5,
-    delta_strong: float = 0.10,
-    delta_medium: float = 0.08,
-    r2_strong: float = 0.70,
-    r2_medium: float = 0.50,
+        row: pd.Series,
+        ec50_strong: float = 0.01,
+        ec50_medium: float = 0.5,
+        delta_strong: float = 0.10,
+        delta_medium: float = 0.08,
+        r2_strong: float = 0.70,
+        r2_medium: float = 0.50,
 ) -> str:
     """
     Classify a single (EC50, delta_max, R2) triplet into strong/medium/weak.
@@ -59,15 +59,15 @@ def classify_hit(
 
 
 def build_hits_table(
-    fits_df: pd.DataFrame,
-    ec50_strong: float = 0.01,
-    ec50_medium: float = 0.5,
-    delta_strong: float = 0.10,
-    delta_medium: float = 0.08,
-    r2_strong: float = 0.70,
-    r2_medium: float = 0.50,
-    id_col: str = "id",
-    cond_col: str = "condition",
+        fits_df: pd.DataFrame,
+        ec50_strong: float = 0.01,
+        ec50_medium: float = 0.5,
+        delta_strong: float = 0.10,
+        delta_medium: float = 0.08,
+        r2_strong: float = 0.70,
+        r2_medium: float = 0.50,
+        id_col: str = "id",
+        cond_col: str = "condition",
 ) -> pd.DataFrame:
     """
     Add hit_class per row and aggregate to a per-protein ranked table.
@@ -132,10 +132,10 @@ def build_hits_table(
 # ---------------------------------------------------------------------
 
 def plot_ec50_vs_delta(
-    df: pd.DataFrame,
-    ec50_cut: float = 0.01,
-    delta_cut: float = 0.10,
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        ec50_cut: float = 0.01,
+        delta_cut: float = 0.10,
+        ax: Optional[plt.Axes] = None,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     EC50 vs delta_max scatter with quadrant lines.
@@ -158,12 +158,12 @@ def plot_ec50_vs_delta(
 
 
 def plot_ec50_replicates(
-    df: pd.DataFrame,
-    id_col: str = "id",
-    cond_col: str = "condition",
-    cond_r1: str = "NADPH.r1",
-    cond_r2: str = "NADPH.r2",
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        id_col: str = "id",
+        cond_col: str = "condition",
+        cond_r1: str = "NADPH.r1",
+        cond_r2: str = "NADPH.r2",
+        ax: Optional[plt.Axes] = None,
 ) -> Optional[Tuple[plt.Figure, plt.Axes]]:
     """
     EC50 replicate consistency plot: EC50_r1 vs EC50_r2 (log-log).
@@ -197,8 +197,8 @@ def plot_ec50_replicates(
 
 
 def plot_r2_vs_delta(
-    df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        ax: Optional[plt.Axes] = None,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     R2 vs delta_max scatter.
@@ -217,8 +217,8 @@ def plot_r2_vs_delta(
 
 
 def plot_ec50_vs_r2(
-    df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
+        df: pd.DataFrame,
+        ax: Optional[plt.Axes] = None,
 ) -> Tuple[plt.Figure, plt.Axes]:
     """
     EC50 vs R2 scatter (log-scale EC50).
@@ -242,16 +242,16 @@ def plot_ec50_vs_r2(
 # ---------------------------------------------------------------------
 
 def run_hit_calling_and_plots(
-    fits_df: pd.DataFrame,
-    out_dir: Path | str,
-    id_col: str = "id",
-    cond_col: str = "condition",
-    ec50_strong: float = 0.01,
-    ec50_medium: float = 0.5,
-    delta_strong: float = 0.10,
-    delta_medium: float = 0.08,
-    r2_strong: float = 0.70,
-    r2_medium: float = 0.50,
+        fits_df: pd.DataFrame,
+        out_dir: Path | str,
+        id_col: str = "id",
+        cond_col: str = "condition",
+        ec50_strong: float = 0.01,
+        ec50_medium: float = 0.5,
+        delta_strong: float = 0.10,
+        delta_medium: float = 0.08,
+        r2_strong: float = 0.70,
+        r2_medium: float = 0.50,
 ) -> Dict[str, str | pd.DataFrame]:
     """
     Full hit-calling + plotting pipeline.

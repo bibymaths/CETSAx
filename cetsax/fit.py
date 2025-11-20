@@ -232,11 +232,11 @@ from .config import DOSE_COLS, ID_COL, COND_COL
 
 
 def _itdr_model_log(
-    logc: np.ndarray,
-    E0: float,
-    Emax: float,
-    logEC50: float,
-    h: float,
+        logc: np.ndarray,
+        E0: float,
+        Emax: float,
+        logEC50: float,
+        h: float,
 ) -> np.ndarray:
     """
     ITDR model parameterized in log10(concentration) space:

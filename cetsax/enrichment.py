@@ -71,11 +71,11 @@ def _benjamini_hochberg(pvals: pd.Series) -> pd.Series:
 # ------------------------------------------------------------
 
 def summarize_pathway_effects(
-    metric_df: pd.DataFrame,
-    annot_df: pd.DataFrame,
-    id_col: str = "id",
-    path_col: str = "pathway",
-    metrics: Iterable[str] = ("NSS", "EC50", "delta_max", "R2"),
+        metric_df: pd.DataFrame,
+        annot_df: pd.DataFrame,
+        id_col: str = "id",
+        path_col: str = "pathway",
+        metrics: Iterable[str] = ("NSS", "EC50", "delta_max", "R2"),
 ) -> pd.DataFrame:
     """
     Summarize NADPH responsiveness per pathway/module.
@@ -123,13 +123,13 @@ def summarize_pathway_effects(
 # ------------------------------------------------------------
 
 def enrich_overrepresentation(
-    hits_df: pd.DataFrame,
-    annot_df: pd.DataFrame,
-    id_col: str = "id",
-    path_col: str = "pathway",
-    hit_col: str = "hit_class",
-    strong_labels: Iterable[str] = ("strong",),
-    min_genes: int = 3,
+        hits_df: pd.DataFrame,
+        annot_df: pd.DataFrame,
+        id_col: str = "id",
+        path_col: str = "pathway",
+        hit_col: str = "hit_class",
+        strong_labels: Iterable[str] = ("strong",),
+        min_genes: int = 3,
 ) -> pd.DataFrame:
     """
     Perform over-representation analysis for pathways using a binary hit set.
@@ -224,12 +224,12 @@ def enrich_overrepresentation(
 # ------------------------------------------------------------
 
 def enrich_continuous_mannwhitney(
-    sens_df: pd.DataFrame,
-    annot_df: pd.DataFrame,
-    score_col: str = "NSS",
-    id_col: str = "id",
-    path_col: str = "pathway",
-    min_genes: int = 3,
+        sens_df: pd.DataFrame,
+        annot_df: pd.DataFrame,
+        score_col: str = "NSS",
+        id_col: str = "id",
+        path_col: str = "pathway",
+        min_genes: int = 3,
 ) -> pd.DataFrame:
     """
     Continuous enrichment per pathway using Mann–Whitney U tests.

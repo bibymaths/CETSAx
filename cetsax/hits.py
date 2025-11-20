@@ -11,9 +11,9 @@ from .config import ID_COL, COND_COL, DOSE_COLS
 
 
 def call_hits(
-    fit_df: pd.DataFrame,
-    r2_min: float = 0.8,
-    delta_min: float = 0.1,
+        fit_df: pd.DataFrame,
+        r2_min: float = 0.8,
+        delta_min: float = 0.1,
 ) -> pd.DataFrame:
     """
     Filter fitted curves to keep only high-confidence hits.

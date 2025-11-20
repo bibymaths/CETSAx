@@ -32,7 +32,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
 
@@ -76,13 +75,13 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
 # ---------------------------------------------------------------------
 
 def classify_hit_row(
-    row: pd.Series,
-    ec50_strong: float = 0.01,
-    ec50_medium: float = 0.5,
-    delta_strong: float = 0.10,
-    delta_medium: float = 0.08,
-    r2_strong: float = 0.70,
-    r2_medium: float = 0.50,
+        row: pd.Series,
+        ec50_strong: float = 0.01,
+        ec50_medium: float = 0.5,
+        delta_strong: float = 0.10,
+        delta_medium: float = 0.08,
+        r2_strong: float = 0.70,
+        r2_medium: float = 0.50,
 ) -> str:
     """
     Same classification logic as in hit calling: strong / medium / weak.
@@ -100,11 +99,11 @@ def classify_hit_row(
 
 
 def build_sequence_supervised_table(
-    fits_df: pd.DataFrame,
-    fasta_path: str | Path,
-    out_csv: str | Path,
-    id_col: str = "id",
-    use_nss: bool = False,
+        fits_df: pd.DataFrame,
+        fasta_path: str | Path,
+        out_csv: str | Path,
+        id_col: str = "id",
+        use_nss: bool = False,
 ) -> pd.DataFrame:
     """
     Merge per-protein CETSA features with sequences and labels.
@@ -187,11 +186,11 @@ class NADPHSeqDataset(Dataset):
     """
 
     def __init__(
-        self,
-        csv_path: str | Path,
-        alphabet,
-        task: str = "classification",
-        max_len: int = 1022,
+            self,
+            csv_path: str | Path,
+            alphabet,
+            task: str = "classification",
+            max_len: int = 1022,
     ):
         self.df = pd.read_csv(csv_path)
         self.alphabet = alphabet
@@ -254,12 +253,12 @@ class NADPHSeqModel(nn.Module):
     """
 
     def __init__(
-        self,
-        esm_model,
-        embed_dim: int,
-        task: str = "classification",
-        num_classes: int = 3,
-        dropout: float = 0.2,
+            self,
+            esm_model,
+            embed_dim: int,
+            task: str = "classification",
+            num_classes: int = 3,
+            dropout: float = 0.2,
     ):
         super().__init__()
         self.esm = esm_model
@@ -285,9 +284,9 @@ class NADPHSeqModel(nn.Module):
             )
 
     def forward(
-        self,
-        tokens: torch.Tensor,
-        return_reps: bool = False,
+            self,
+            tokens: torch.Tensor,
+            return_reps: bool = False,
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         tokens: (B, L)
@@ -306,9 +305,9 @@ class NADPHSeqModel(nn.Module):
 
         # mean-pool over sequence length (excluding padding = 0)
         mask = (tokens != 0)  # (B, L)
-        mask_exp = mask.unsqueeze(-1)      # (B, L, 1)
+        mask_exp = mask.unsqueeze(-1)  # (B, L, 1)
         reps_masked = reps * mask_exp
-        lengths = mask_exp.sum(dim=1)      # (B, 1)
+        lengths = mask_exp.sum(dim=1)  # (B, 1)
         pooled = reps_masked.sum(dim=1) / lengths.clamp(min=1)
 
         logits = self.head(pooled)
@@ -319,10 +318,11 @@ class NADPHSeqModel(nn.Module):
             return logits, reps, mask
         return logits
 
+
 def compute_residue_saliency(
-    model: NADPHSeqModel,
-    tokens: torch.Tensor,
-    target_class: int | None = None,
+        model: NADPHSeqModel,
+        tokens: torch.Tensor,
+        target_class: int | None = None,
 ) -> torch.Tensor:
     """
     Compute per-residue saliency (gradient norm) for a single batch of tokens.
@@ -385,11 +385,12 @@ def compute_residue_saliency(
     sal = sal * mask.float()
     return sal
 
+
 def compute_residue_integrated_gradients(
-    model: NADPHSeqModel,
-    tokens: torch.Tensor,
-    target_class: int | None = None,
-    steps: int = 50,
+        model: NADPHSeqModel,
+        tokens: torch.Tensor,
+        target_class: int | None = None,
+        steps: int = 50,
 ) -> torch.Tensor:
     """
     Approximate Integrated Gradients for per-residue importance.
@@ -467,6 +468,7 @@ def compute_residue_integrated_gradients(
     ig_scores = ig.norm(dim=-1) * mask.float()  # (B, L)
     return ig_scores
 
+
 # ---------------------------------------------------------------------
 # 5. Training utilities
 # ---------------------------------------------------------------------
@@ -491,8 +493,8 @@ def load_esm_model_and_alphabet(model_name: str = "esm2_t33_650M_UR50D"):
 
 
 def train_seq_model(
-    csv_path: str | Path,
-    cfg: NADPHSeqConfig,
+        csv_path: str | Path,
+        cfg: NADPHSeqConfig,
 ) -> Tuple[NADPHSeqModel, Dict[str, float]]:
     """
     Train a sequence-based NADPH responsiveness model.

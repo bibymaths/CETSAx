@@ -46,14 +46,14 @@ def extract_curve_features(df: pd.DataFrame, n_components: int = 3) -> pd.DataFr
     feat_df = pd.DataFrame(
         X_pca,
         index=dose_mat.index,
-        columns=[f"PC{i+1}" for i in range(n_components)]
+        columns=[f"PC{i + 1}" for i in range(n_components)]
     )
     return feat_df
 
 
 def classify_curves_kmeans(
-    features: pd.DataFrame,
-    k: int = 4
+        features: pd.DataFrame,
+        k: int = 4
 ) -> pd.DataFrame:
     """
     Apply KMeans to curve embeddings (e.g. PCA features).

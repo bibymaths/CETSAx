@@ -54,11 +54,11 @@ from sklearn.preprocessing import StandardScaler
 # ------------------------------------------------------------
 
 def build_feature_matrix(
-    sens_df: pd.DataFrame,
-    redox_df: Optional[pd.DataFrame] = None,
-    id_col: str = "id",
-    base_features: Optional[List[str]] = None,
-    include_redox_axes: bool = True,
+        sens_df: pd.DataFrame,
+        redox_df: Optional[pd.DataFrame] = None,
+        id_col: str = "id",
+        base_features: Optional[List[str]] = None,
+        include_redox_axes: bool = True,
 ) -> pd.DataFrame:
     """
     Build a standardized feature matrix per protein.
@@ -132,8 +132,8 @@ def build_feature_matrix(
 # ------------------------------------------------------------
 
 def fit_pca(
-    feat_df: pd.DataFrame,
-    n_components: int = 3,
+        feat_df: pd.DataFrame,
+        n_components: int = 3,
 ) -> Dict[str, Any]:
     """
     Fit PCA on the standardized feature matrix.
@@ -160,7 +160,7 @@ def fit_pca(
     pca = PCA(n_components=n_components)
     scores = pca.fit_transform(X)
 
-    score_cols = [f"PC{i+1}" for i in range(n_components)]
+    score_cols = [f"PC{i + 1}" for i in range(n_components)]
     scores_df = pd.DataFrame(scores, index=ids, columns=score_cols)
 
     loadings = pca.components_.T
@@ -180,8 +180,8 @@ def fit_pca(
 # ------------------------------------------------------------
 
 def fit_factor_analysis(
-    feat_df: pd.DataFrame,
-    n_components: int = 3,
+        feat_df: pd.DataFrame,
+        n_components: int = 3,
 ) -> Dict[str, Any]:
     """
     Fit Factor Analysis (FA) on the standardized feature matrix.
@@ -210,7 +210,7 @@ def fit_factor_analysis(
     fa = FactorAnalysis(n_components=n_components)
     scores = fa.fit_transform(X)
 
-    score_cols = [f"F{i+1}" for i in range(n_components)]
+    score_cols = [f"F{i + 1}" for i in range(n_components)]
     scores_df = pd.DataFrame(scores, index=ids, columns=score_cols)
 
     loadings = fa.components_.T
@@ -229,9 +229,9 @@ def fit_factor_analysis(
 # ------------------------------------------------------------
 
 def attach_latent_to_metadata(
-    meta_df: pd.DataFrame,
-    latent_df: pd.DataFrame,
-    id_col: str = "id",
+        meta_df: pd.DataFrame,
+        latent_df: pd.DataFrame,
+        id_col: str = "id",
 ) -> pd.DataFrame:
     """
     Merge latent coordinates back to a per-protein metadata table.
