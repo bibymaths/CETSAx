@@ -36,6 +36,8 @@ from cetsax.deeplearn.seq_nadph import (
     read_fasta_to_dict,
     load_esm_model_and_alphabet,
     NADPHSeqModel,
+    compute_residue_saliency,
+    compute_residue_integrated_gradients,
 )
 
 
@@ -53,7 +55,12 @@ def predict_nadph_from_fasta(
     batch_size: int = 8,
     max_len: int = 1022,
     device: str | None = None,
+    compute_saliency: bool = False,
+    compute_ig: bool = False,
+    target_class: int | None = None,
+    ig_steps: int = 50,
 ) -> pd.DataFrame:
+
     """
     Run inference on sequences in FASTA.
 
@@ -132,7 +139,10 @@ def predict_nadph_from_fasta(
     # Mapping from class index to label (you can adapt if you change your labels)
     int_to_class = {0: "weak", 1: "medium", 2: "strong"}
 
-    with torch.no_grad():
+    # If neither saliency nor IG is requested, we can safely disable grads
+    grad_context = torch.no_grad if not (compute_saliency or compute_ig) else lambda: torch.enable_grad()
+
+    with grad_context():
         for id_chunk in chunk_list(ids, batch_size):
             seq_chunk = [seq_dict[i] for i in id_chunk]
 
@@ -147,25 +157,69 @@ def predict_nadph_from_fasta(
             _, _, toks = batch_converter(seq_chunk_trunc)
             toks = toks.to(device_t)
 
-            outputs = model(toks)
+            # --- forward pass
+            outputs = model(toks)  # logits or regression outputs
 
+            # --- base predictions
             if task == "classification":
                 probs = F.softmax(outputs, dim=1)  # (B, num_classes)
                 preds = probs.argmax(dim=1)        # (B,)
 
-                probs_np = probs.cpu().numpy()
-                preds_np = preds.cpu().numpy()
+                probs_np = probs.detach().cpu().numpy()
+                preds_np = preds.detach().cpu().numpy()
+            else:
+                preds = outputs  # (B,)
+                preds_np = preds.detach().cpu().numpy()
 
-                for pid, pvec, pc in zip(id_chunk, probs_np, preds_np):
-                    row = {
-                        "id": pid,
-                        "pred_class_idx": int(pc),
-                        "pred_class": int_to_class.get(int(pc), f"class_{pc}"),
-                    }
-                    # add per-class probabilities
+            # --- interpretability (optional)
+            saliency_scores = None
+            ig_scores = None
+
+            if compute_saliency:
+                # saliency: per-residue gradient norm
+                saliency_scores = compute_residue_saliency(
+                    model,
+                    toks,
+                    target_class=target_class,
+                ).detach()  # (B, L)
+
+            if compute_ig:
+                ig_scores = compute_residue_integrated_gradients(
+                    model,
+                    toks,
+                    target_class=target_class,
+                    steps=ig_steps,
+                ).detach()  # (B, L)
+
+            # --- assemble per-protein rows
+            for i, pid in enumerate(id_chunk):
+                row = {"id": pid}
+
+                if task == "classification":
+                    pc = int(preds_np[i])
+                    row["pred_class_idx"] = pc
+                    row["pred_class"] = int_to_class.get(pc, f"class_{pc}")
+                    # per-class probabilities
                     for k in range(probs_np.shape[1]):
-                        row[f"p_class{k}"] = float(pvec[k])
-                    all_rows.append(row)
+                        row[f"p_class{k}"] = float(probs_np[i, k])
+                else:
+                    row["pred_value"] = float(preds_np[i])
+
+                # attach saliency / IG as semicolon-separated scores per residue
+                if compute_saliency and saliency_scores is not None:
+                    # truncate to actual length (exclude padding = token 0)
+                    token_row = toks[i]
+                    valid_mask = (token_row != 0)
+                    sal = saliency_scores[i][valid_mask].cpu().numpy()
+                    row["saliency"] = ";".join(f"{x:.6f}" for x in sal)
+
+                if compute_ig and ig_scores is not None:
+                    token_row = toks[i]
+                    valid_mask = (token_row != 0)
+                    ig = ig_scores[i][valid_mask].cpu().numpy()
+                    row["ig"] = ";".join(f"{x:.6f}" for x in ig)
+
+                all_rows.append(row)
 
             else:  # regression
                 preds = outputs  # (B,)
@@ -207,6 +261,30 @@ def main() -> None:
         help="Prediction task type.",
     )
     parser.add_argument(
+        "--saliency",
+        action="store_true",
+        help="If set, compute per-residue saliency scores.",
+    )
+    parser.add_argument(
+        "--ig",
+        action="store_true",
+        help="If set, compute per-residue integrated gradients.",
+    )
+    parser.add_argument(
+        "--target-class",
+        type=int,
+        default=None,
+        help="Target class index for saliency/IG (classification only). "
+             "If omitted, uses predicted class per sample.",
+    )
+    parser.add_argument(
+        "--ig-steps",
+        type=int,
+        default=50,
+        help="Number of interpolation steps for integrated gradients.",
+    )
+
+    parser.add_argument(
         "--num-classes",
         type=int,
         default=3,
@@ -246,7 +324,12 @@ def main() -> None:
         batch_size=args.batch_size,
         max_len=args.max_len,
         device=args.device,
+        compute_saliency=args.saliency,
+        compute_ig=args.ig,
+        target_class=args.target_class,
+        ig_steps=args.ig_steps,
     )
+
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -256,3 +339,12 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# python predict_nadph_from_seq.py \
+#   --fasta proteins.fasta \
+#   --checkpoint nadph_seq_head.pt \
+#   --task classification \
+#   --saliency \
+#   --ig \
+#   --target-class 2 \
+#   --out predictions_with_saliency.csv
