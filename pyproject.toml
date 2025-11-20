@@ -19,6 +19,7 @@ dependencies = [
     "pymc>=5.25.1",
     "arviz>=0.22.0",
     "networkx>=3.4.2",
+    "torch>=2.9.1",
 ]
 
 [project.scripts]
