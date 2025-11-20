@@ -37,7 +37,7 @@ def visualize_predictions(
     plt.ylabel('True Label', fontsize=12)
     plt.title('Confusion Matrix: Where is the model making mistakes?', fontsize=14)
     plt.tight_layout()
-    plt.savefig('../results/plot_1_confusion_matrix.png')
+    plt.savefig('plot_1_confusion_matrix.png')
     print("Saved plot_1_confusion_matrix.png")
     # plt.show()
 
@@ -64,7 +64,7 @@ def visualize_predictions(
     plt.title('ROC Curves: How well does it separate classes?', fontsize=14)
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig('../results/plot_2_roc_curves.png')
+    plt.savefig('plot_2_roc_curves.png')
     print("Saved plot_2_roc_curves.png")
     # plt.show()
 
@@ -90,7 +90,7 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability', fontsize=12)
     plt.legend(title="Probability For:")
     plt.tight_layout()
-    plt.savefig('../results/plot_3_confidence.png')
+    plt.savefig('plot_3_confidence.png')
     print("Saved plot_3_confidence.png")
     # plt.show()
 
@@ -128,7 +128,7 @@ def visualize_predictions(
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            plt.savefig('../results/plot_4_saliency_map.png')
+            plt.savefig('plot_4_saliency_map.png')
             print(f"Saved plot_4_saliency_map.png (Example Protein: {prot_id})")
             # plt.show()
         else:
@@ -164,7 +164,7 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability of "Strong" (p_class2)', fontsize=12)
     plt.legend(title="True Class")
     plt.tight_layout()
-    plt.savefig('../results/plot_5_ec50_correlation.png')
+    plt.savefig('plot_5_ec50_correlation.png')
     print("Saved plot_5_ec50_correlation.png")
     # plt.show()
 
@@ -189,7 +189,7 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability of "Strong" (p_class2)', fontsize=12)
     plt.legend(title="True Class")
     plt.tight_layout()
-    plt.savefig('../results/plot_6_deltamax_correlation.png')
+    plt.savefig('plot_6_deltamax_correlation.png')
     print("Saved plot_6_deltamax_correlation.png")
     # plt.show()
 
@@ -224,7 +224,7 @@ def visualize_predictions(
         plt.legend(title="Model Predicted:")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig('../results/plot_7_worst_misses.png')
+        plt.savefig('plot_7_worst_misses.png')
         print("Saved plot_7_worst_misses.png")
         # plt.show()
 
@@ -275,7 +275,7 @@ def visualize_predictions(
         plt.ylabel('Avg Integrated Gradients Score', fontsize=12)
         plt.legend()
         plt.tight_layout()
-        plt.savefig('../results/plot_8_residue_importance.png')
+        plt.savefig('plot_8_residue_importance.png')
         print("Saved plot_8_residue_importance.png")
         # plt.show()
     else:
