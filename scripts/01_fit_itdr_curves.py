@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from cetsax import ID_COL, COND_COL, DOSE_COLS, load_cetsa_csv
+from cetsax import ID_COL, COND_COL, DOSE_COLS, load_cetsa_csv, apply_basic_qc
 from cetsax import fit_all_proteins
 
 
@@ -41,6 +41,7 @@ def main() -> None:
     out_path = Path(args.out_fits)
 
     df = load_cetsa_csv(str(in_path))
+    qc_df = apply_basic_qc(df)
 
     # Optional: basic sanity check
     missing = [c for c in [ID_COL, COND_COL] + DOSE_COLS if c not in df.columns]
@@ -48,7 +49,7 @@ def main() -> None:
         raise ValueError(f"Missing required columns: {missing}")
 
 
-    fits_df = fit_all_proteins(df)
+    fits_df = fit_all_proteins(qc_df)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fits_df.to_csv(out_path, index=False)
 

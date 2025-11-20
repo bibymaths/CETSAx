@@ -26,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Tuple, List
-
+import copy
 import math
 import numpy as np
 import pandas as pd
@@ -35,6 +35,9 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
 import esm
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning, module='torch')
 
 # ---------------------------------------------------------------------
 # 1. Utility: read FASTA as id -> sequence
@@ -43,10 +46,7 @@ import esm
 def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
     """
     Read a FASTA file into a dict: {id: sequence}.
-
-    Assumes headers like:
-        >P12345 some description
-    and uses the first whitespace-separated token as the id.
+    Handles both simple headers (>P12345) and UniProt headers (>sp|P12345|...).
     """
     fasta_path = Path(fasta_path)
     seqs: Dict[str, List[str]] = {}
@@ -58,8 +58,17 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
             if not line:
                 continue
             if line.startswith(">"):
-                header = line[1:].split()[0]
-                current_id = header
+                # Grab the first whitespace-separated token
+                header_token = line[1:].split()[0]
+
+                # FIX: Check for pipes (|) common in UniProt headers
+                if "|" in header_token:
+                    # e.g. "sp|P04075|ALDOA_HUMAN" -> ["sp", "P04075", "ALDOA_HUMAN"] -> "P04075"
+                    current_id = header_token.split("|")[1]
+                else:
+                    # e.g. "P04075"
+                    current_id = header_token
+
                 if current_id not in seqs:
                     seqs[current_id] = []
             else:
@@ -68,7 +77,6 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
                 seqs[current_id].append(line)
 
     return {k: "".join(v) for k, v in seqs.items()}
-
 
 # ---------------------------------------------------------------------
 # 2. Build supervised table from ec50_fits + FASTA
@@ -147,16 +155,74 @@ def build_sequence_supervised_table(
         ec50 = agg["EC50"].replace(0, np.nan)
         agg["label_reg"] = -np.log10(ec50)
 
-    # attach sequences
-    seq_dict = read_fasta_to_dict(fasta_path)
-    agg["seq"] = agg[id_col].map(seq_dict)
+        # ---------------------------------------------------------
+        # DIAGNOSTICS & RESCUE SECTION
+        # ---------------------------------------------------------
+        seq_dict = read_fasta_to_dict(fasta_path)
 
-    # drop rows without sequence
-    agg = agg.dropna(subset=["seq"])
+        # 1. Diagnostic: Print sample IDs to check formats
+        csv_ids = set(agg[id_col])
+        fasta_ids = set(seq_dict.keys())
 
-    out_csv = Path(out_csv)
-    agg.to_csv(out_csv, index=False)
-    return agg
+        print("\n--- DEBUGGING ID MISMATCH ---")
+        print(f"Total IDs in Table: {len(csv_ids)}")
+        print(f"Total IDs in FASTA: {len(fasta_ids)}")
+
+        sample_csv = list(csv_ids)[0]
+        sample_fasta = list(fasta_ids)[0]
+        print(f"Sample CSV ID format:   '{sample_csv}'")
+        print(f"Sample FASTA ID format: '{sample_fasta}'")
+
+        common = csv_ids.intersection(fasta_ids)
+        print(f"Direct Matches: {len(common)}")
+
+        # 2. Attempt Mapping
+        agg["seq"] = agg[id_col].map(seq_dict)
+
+        # 3. Rescue Isoforms (e.g., Map 'P04075-2' -> 'P04075')
+        missing_mask = agg["seq"].isna()
+        n_missing = missing_mask.sum()
+
+        if n_missing > 0:
+            print(f"Missing Sequences: {n_missing}")
+            print("Attempting to rescue isoforms (stripping '-2', '-3' suffixes)...")
+
+            # Create a temporary 'clean_id' column (P04075-2 -> P04075)
+            clean_ids = agg.loc[missing_mask, id_col].astype(str).apply(lambda x: x.split('-')[0])
+
+            # Map again using the clean ID
+            rescued_seqs = clean_ids.map(seq_dict)
+
+            # Fill in the gaps
+            agg.loc[missing_mask, "seq"] = rescued_seqs
+
+            # Check how many we saved
+            n_still_missing = agg["seq"].isna().sum()
+            print(f"Rescued: {n_missing - n_still_missing}")
+            print(f"Still Missing: {n_still_missing}")
+
+            if n_still_missing > 0:
+                print("Examples of IDs still missing (check FASTA):")
+                print(agg[agg["seq"].isna()][id_col].head(5).tolist())
+
+        # drop rows without sequence
+        agg = agg.dropna(subset=["seq"])
+        # ---------------------------------------------------------
+
+        out_csv = Path(out_csv)
+        agg.to_csv(out_csv, index=False)
+        return agg
+
+    # # attach sequences
+    # seq_dict = read_fasta_to_dict(fasta_path)
+    # agg["seq"] = agg[id_col].map(seq_dict)
+    #
+    # # drop rows without sequence
+    # agg = agg.dropna(subset=["seq"])
+    #
+    # out_csv = Path(out_csv)
+    # agg.to_csv(out_csv, index=False)
+    # return agg
 
 
 # ---------------------------------------------------------------------
@@ -243,6 +309,28 @@ def collate_fn_esm(batch: List[Tuple[torch.Tensor, int | float]]) -> Tuple[torch
 # ---------------------------------------------------------------------
 # 4. Model: frozen ESM encoder + MLP head
 # ---------------------------------------------------------------------
+class AttentionPooling(nn.Module):
+    def __init__(self, embed_dim):
+        super().__init__()
+        self.attention_weights = nn.Linear(embed_dim, 1)
+
+    def forward(self, x, mask):
+        # x: (B, L, D)
+        # mask: (B, L)
+
+        # Calculate attention scores
+        scores = self.attention_weights(x).squeeze(-1)  # (B, L)
+
+        # Mask padding (set to very low number so softmax ignores them)
+        scores = scores.masked_fill(~mask, -1e9)
+
+        # Calculate weights
+        attn = torch.softmax(scores, dim=1)  # (B, L)
+
+        # Weighted sum
+        # (B, L, 1) * (B, L, D) -> (B, L, D) -> sum -> (B, D)
+        weighted = torch.sum(attn.unsqueeze(-1) * x, dim=1)
+        return weighted
 
 class NADPHSeqModel(nn.Module):
     """
@@ -267,21 +355,32 @@ class NADPHSeqModel(nn.Module):
         for p in self.esm.parameters():
             p.requires_grad = False  # freeze encoder
 
-        hidden = 512
-        if task == "classification":
-            self.head = nn.Sequential(
-                nn.Linear(embed_dim, hidden),
-                nn.ReLU(),
-                nn.Dropout(dropout),
-                nn.Linear(hidden, num_classes),
-            )
-        else:
-            self.head = nn.Sequential(
-                nn.Linear(embed_dim, hidden),
-                nn.ReLU(),
-                nn.Dropout(dropout),
-                nn.Linear(hidden, 1),
-            )
+        self.pooler = AttentionPooling(embed_dim)
+
+        hidden = 256
+
+        self.head = nn.Sequential(
+            nn.Linear(embed_dim, hidden),
+            nn.BatchNorm1d(hidden),  # NEW: Batch Norm helps stability
+            nn.ReLU(),
+            nn.Dropout(dropout),  # Increased dropout
+            nn.Linear(hidden, num_classes if task == "classification" else 1),
+        )
+
+        # if task == "classification":
+        #     self.head = nn.Sequential(
+        #         nn.Linear(embed_dim, hidden),
+        #         nn.ReLU(),
+        #         nn.Dropout(dropout),
+        #         nn.Linear(hidden, num_classes),
+        #     )
+        # else:
+        #     self.head = nn.Sequential(
+        #         nn.Linear(embed_dim, hidden),
+        #         nn.ReLU(),
+        #         nn.Dropout(dropout),
+        #         nn.Linear(hidden, 1),
+        #     )
 
     def forward(
             self,
@@ -305,10 +404,12 @@ class NADPHSeqModel(nn.Module):
 
         # mean-pool over sequence length (excluding padding = 0)
         mask = (tokens != 0)  # (B, L)
-        mask_exp = mask.unsqueeze(-1)  # (B, L, 1)
-        reps_masked = reps * mask_exp
-        lengths = mask_exp.sum(dim=1)  # (B, 1)
-        pooled = reps_masked.sum(dim=1) / lengths.clamp(min=1)
+        # mask_exp = mask.unsqueeze(-1)  # (B, L, 1)
+        # reps_masked = reps * mask_exp
+        # lengths = mask_exp.sum(dim=1)  # (B, 1)
+        # pooled = reps_masked.sum(dim=1) / lengths.clamp(min=1)
+
+        pooled = self.pooler(reps, mask)
 
         logits = self.head(pooled)
         if self.task == "regression":
@@ -492,46 +593,47 @@ def train_seq_model(
     """
     Train a sequence-based NADPH responsiveness model.
 
-    For classification:
-        - uses label_cls (0,1,2)
-        - CrossEntropyLoss
-
-    For regression:
-        - uses label_reg
-        - MSELoss
-
-    Returns:
-        model, metrics dict
+    Includes:
+    - Class weighting for imbalance
+    - Early stopping based on validation loss
+    - Best model restoration
     """
     device = torch.device(cfg.device)
 
-    # load esm stuff
+    # 1. Load ESM model
     esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
     esm_model.to(device)
 
-    # dataset & loader
+    # 2. Prepare Dataset
     ds = NADPHSeqDataset(csv_path, alphabet, task=cfg.task, max_len=cfg.max_len)
 
-    # simple train/val split
+    # Simple train/val split
     n = len(ds)
     n_train = int(0.8 * n)
     n_val = n - n_train
     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-
+    NUM_WORKERS = 32
+    PIN_MEMORY = True if device.type == 'cuda' else False
     train_loader = DataLoader(
         train_ds,
         batch_size=cfg.batch_size,
         shuffle=True,
         collate_fn=collate_fn_esm,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        persistent_workers=True if NUM_WORKERS > 0 else False
     )
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg.batch_size,
         shuffle=False,
         collate_fn=collate_fn_esm,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        persistent_workers=True if NUM_WORKERS > 0 else False
     )
 
-    # model head
+    # 3. Initialize Model
     embed_dim = esm_model.embed_dim
     model = NADPHSeqModel(
         esm_model,
@@ -540,17 +642,47 @@ def train_seq_model(
         num_classes=cfg.num_classes,
     ).to(device)
 
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        model = nn.DataParallel(model)
+
+    # 4. Calculate Class Weights (Fixes Imbalance)
     if cfg.task == "classification":
-        criterion = nn.CrossEntropyLoss()
+        print("Calculating class weights...")
+        # Iterate through the training subset to count labels
+        # (Extracting directly from dataset is faster than iterating loader)
+        train_labels = [label for _, label in train_ds]
+        class_counts = torch.bincount(torch.tensor(train_labels))
+
+        # Avoid division by zero if a class is missing in split
+        class_counts = class_counts.float()
+        class_counts[class_counts == 0] = 1.0
+
+        # Inverse frequency: weight = 1 / count
+        weights = 1.0 / class_counts
+        weights = weights / weights.sum()  # Normalize
+
+        print(f"Class weights: {weights}")
+        criterion = nn.CrossEntropyLoss(weight=weights.to(device))
     else:
         criterion = nn.MSELoss()
 
     optimizer = torch.optim.AdamW(model.head.parameters(), lr=cfg.lr)
 
-    best_val = math.inf if cfg.task == "regression" else -math.inf
+    # 5. Setup Early Stopping
+    best_val_acc = -math.inf
+    best_val_loss = math.inf  # For tracking regression best
+    best_val_loss_monitor = math.inf  # Specifically for early stopping
+
+    patience = 3
+    trigger_times = 0
+    best_model_state = None
+
     metrics = {}
 
+    # 6. Training Loop
     for epoch in range(1, cfg.epochs + 1):
+        # --- TRAIN ---
         model.train()
         train_loss = 0.0
         n_train_batches = 0
@@ -562,11 +694,7 @@ def train_seq_model(
             optimizer.zero_grad()
             outputs = model(toks)
 
-            if cfg.task == "classification":
-                loss = criterion(outputs, labels)
-            else:
-                loss = criterion(outputs, labels)
-
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
@@ -575,7 +703,7 @@ def train_seq_model(
 
         train_loss /= max(n_train_batches, 1)
 
-        # validation
+        # --- VALIDATION ---
         model.eval()
         val_loss = 0.0
         n_val_batches = 0
@@ -588,28 +716,191 @@ def train_seq_model(
                 labels = labels.to(device)
                 outputs = model(toks)
 
-                if cfg.task == "classification":
-                    loss = criterion(outputs, labels)
-                    preds = outputs.argmax(dim=1)
-                    correct += (preds == labels).sum().item()
-                    total += labels.size(0)
-                else:
-                    loss = criterion(outputs, labels)
-
+                loss = criterion(outputs, labels)
                 val_loss += loss.item()
                 n_val_batches += 1
 
+                if cfg.task == "classification":
+                    preds = outputs.argmax(dim=1)
+                    correct += (preds == labels).sum().item()
+                    total += labels.size(0)
+
         val_loss /= max(n_val_batches, 1)
+
+        # --- LOGGING & TRACKING ---
         if cfg.task == "classification":
             val_acc = correct / max(total, 1)
             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
-            # track best
-            if val_acc > best_val:
-                best_val = val_acc
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
         else:
             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
-            if val_loss < best_val:
-                best_val = val_loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
 
-    metrics["best_val"] = best_val
+        # --- EARLY STOPPING LOGIC ---
+        # We stop based on Loss (it's more sensitive than accuracy)
+        if val_loss < best_val_loss_monitor:
+            best_val_loss_monitor = val_loss
+            trigger_times = 0
+            # Save the BEST weights to memory
+            best_model_state = copy.deepcopy(model.head.state_dict())
+        else:
+            trigger_times += 1
+            print(f"  >> No improvement in val_loss. Patience: {trigger_times}/{patience}")
+            if trigger_times >= patience:
+                print("  >> Early stopping triggered!")
+                break
+
+    # 7. Restore Best Model
+    if best_model_state is not None:
+        model.head.load_state_dict(best_model_state)
+        print(f"Restored best model from memory (val_loss={best_val_loss_monitor:.4f})")
+
+    metrics["best_val"] = best_val_acc if cfg.task == "classification" else best_val_loss
     return model, metrics
+
+# def train_seq_model(
+#         csv_path: str | Path,
+#         cfg: NADPHSeqConfig,
+# ) -> Tuple[NADPHSeqModel, Dict[str, float]]:
+#     """
+#     Train a sequence-based NADPH responsiveness model.
+#
+#     For classification:
+#         - uses label_cls (0,1,2)
+#         - CrossEntropyLoss
+#
+#     For regression:
+#         - uses label_reg
+#         - MSELoss
+#
+#     Returns:
+#         model, metrics dict
+#     """
+#     device = torch.device(cfg.device)
+#
+#     # load esm stuff
+#     esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
+#     esm_model.to(device)
+#
+#     # dataset & loader
+#     ds = NADPHSeqDataset(csv_path, alphabet, task=cfg.task, max_len=cfg.max_len)
+#
+#     # simple train/val split
+#     n = len(ds)
+#     n_train = int(0.8 * n)
+#     n_val = n - n_train
+#     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
+#
+#     train_loader = DataLoader(
+#         train_ds,
+#         batch_size=cfg.batch_size,
+#         shuffle=True,
+#         collate_fn=collate_fn_esm,
+#     )
+#     val_loader = DataLoader(
+#         val_ds,
+#         batch_size=cfg.batch_size,
+#         shuffle=False,
+#         collate_fn=collate_fn_esm,
+#     )
+#
+#     # model head
+#     embed_dim = esm_model.embed_dim
+#     model = NADPHSeqModel(
+#         esm_model,
+#         embed_dim=embed_dim,
+#         task=cfg.task,
+#         num_classes=cfg.num_classes,
+#     ).to(device)
+#
+#     # if cfg.task == "classification":
+#     #     criterion = nn.CrossEntropyLoss()
+#     # else:
+#     #     criterion = nn.MSELoss()
+#
+#     # Calculate weights based on training data
+#     if cfg.task == "classification":
+#         # Get all labels from the training dataset
+#         all_labels = [label for _, label in train_ds]
+#         class_counts = torch.bincount(torch.tensor(all_labels))
+#
+#         # Inverse frequency weights: weight = 1 / count
+#         weights = 1. / class_counts.float()
+#         # Normalize weights
+#         weights = weights / weights.sum()
+#
+#         print(f"Class weights: {weights}")
+#         criterion = nn.CrossEntropyLoss(weight=weights.to(device))
+#     else:
+#         criterion = nn.MSELoss()
+#
+#     optimizer = torch.optim.AdamW(model.head.parameters(), lr=cfg.lr)
+#
+#     best_val = math.inf if cfg.task == "regression" else -math.inf
+#     metrics = {}
+#
+#     for epoch in range(1, cfg.epochs + 1):
+#         model.train()
+#         train_loss = 0.0
+#         n_train_batches = 0
+#
+#         for toks, labels in tqdm(train_loader, desc=f"Epoch {epoch} [train]"):
+#             toks = toks.to(device)
+#             labels = labels.to(device)
+#
+#             optimizer.zero_grad()
+#             outputs = model(toks)
+#
+#             if cfg.task == "classification":
+#                 loss = criterion(outputs, labels)
+#             else:
+#                 loss = criterion(outputs, labels)
+#
+#             loss.backward()
+#             optimizer.step()
+#
+#             train_loss += loss.item()
+#             n_train_batches += 1
+#
+#         train_loss /= max(n_train_batches, 1)
+#
+#         # validation
+#         model.eval()
+#         val_loss = 0.0
+#         n_val_batches = 0
+#         correct = 0
+#         total = 0
+#
+#         with torch.no_grad():
+#             for toks, labels in tqdm(val_loader, desc=f"Epoch {epoch} [val]"):
+#                 toks = toks.to(device)
+#                 labels = labels.to(device)
+#                 outputs = model(toks)
+#
+#                 if cfg.task == "classification":
+#                     loss = criterion(outputs, labels)
+#                     preds = outputs.argmax(dim=1)
+#                     correct += (preds == labels).sum().item()
+#                     total += labels.size(0)
+#                 else:
+#                     loss = criterion(outputs, labels)
+#
+#                 val_loss += loss.item()
+#                 n_val_batches += 1
+#
+#         val_loss /= max(n_val_batches, 1)
+#         if cfg.task == "classification":
+#             val_acc = correct / max(total, 1)
+#             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
+#             # track best
+#             if val_acc > best_val:
+#                 best_val = val_acc
+#         else:
+#             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
+#             if val_loss < best_val:
+#                 best_val = val_loss
+#
+#     metrics["best_val"] = best_val
+#     return model, metrics
