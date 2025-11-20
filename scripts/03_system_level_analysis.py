@@ -102,10 +102,10 @@ def main() -> None:
     # 2. Pathway-level summaries + enrichment  [I]
     # ------------------------------------------------------------
     path_eff = summarize_pathway_effects(
-        sens_df=sens,
+        metric_df=sens,
         annot_df=annot,
         id_col=ID_COL,
-        pathway_col="pathway",
+        path_col="pathway",
     )
     path_eff_path = out_dir / "pathway_effects.csv"
     path_eff.to_csv(path_eff_path, index=False)
@@ -114,9 +114,9 @@ def main() -> None:
         hits_df=hits,
         annot_df=annot,
         id_col=ID_COL,
-        pathway_col="pathway",
+        path_col="pathway",
         hit_col="dominant_class",
-        hit_classes=("strong", "medium"),
+        strong_labels=("strong", "medium"),
     )
     enr_path = out_dir / "pathway_enrichment_overrepresentation.csv"
     enr.to_csv(enr_path, index=False)
@@ -162,7 +162,7 @@ def main() -> None:
         redox_df=redox,
         annot_df=annot,
         id_col=ID_COL,
-        pathway_col="pathway",
+        path_col="pathway",
     )
     path_redox_path = out_dir / "redox_by_pathway.csv"
     path_redox.to_csv(path_redox_path, index=False)
@@ -189,7 +189,7 @@ def main() -> None:
         id_col=ID_COL,
     )
     pca_res = fit_pca(feat_latent, n_components=3)
-    fa_res = fit_factor_analysis(feat_latent, n_factors=3)
+    fa_res = fit_factor_analysis(feat_latent, n_components=3)
 
     # Save PCA scores/loadings
     pca_res["scores"].to_csv(out_dir / "pca_scores.csv", index=False)
@@ -202,7 +202,7 @@ def main() -> None:
     print("[K] Saved PCA/FA scores and loadings.")
 
     # Plot PCA scores colored by redox_role
-    pca_scores = pca_res["scores"].set_index(ID_COL)
+    pca_scores = pca_res["scores"]
     meta = redox[[ID_COL, "redox_role"]]
     fig, ax = plot_pca_scores(
         scores_df=pca_scores,

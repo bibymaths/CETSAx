@@ -34,7 +34,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
-
+import esm
 
 # ---------------------------------------------------------------------
 # 1. Utility: read FASTA as id -> sequence
@@ -480,13 +480,6 @@ def load_esm_model_and_alphabet(model_name: str = "esm2_t33_650M_UR50D"):
     Requires:
         pip install fair-esm
     """
-    try:
-        import esm  # type: ignore
-    except ImportError as e:
-        raise ImportError(
-            "You need to install 'fair-esm' (pip install fair-esm) to use this function."
-        ) from e
-
     model, alphabet = esm.pretrained.load_model_and_alphabet(model_name)
     model.eval()
     return model, alphabet
