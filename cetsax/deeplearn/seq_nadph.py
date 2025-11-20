@@ -286,14 +286,17 @@ class NADPHSeqDataset(Dataset):
 def collate_fn_esm(batch: List[Tuple[torch.Tensor, int | float]]) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Collate function to pad ESM token sequences.
+    FIX: Uses padding_idx=1 (Standard ESM) instead of 0 (<cls>).
     """
     toks, labels = zip(*batch)
     lengths = [len(t) for t in toks]
     max_len = max(lengths)
 
+    # FIX: Fill with 1 (<pad>), not 0 (<cls>)
     batch_toks = torch.full(
-        (len(toks), max_len), fill_value=0, dtype=torch.long
-    )  # 0 = padding token for ESM
+        (len(toks), max_len), fill_value=1, dtype=torch.long
+    )
+
     for i, t in enumerate(toks):
         batch_toks[i, : len(t)] = t
 
@@ -327,14 +330,8 @@ class AttentionPooling(nn.Module):
         weighted = torch.sum(attn.unsqueeze(-1) * x, dim=1)
         return weighted
 
-class NADPHSeqModel(nn.Module):
-    """
-    Simple wrapper:
-        - frozen ESM-2 encoder
-        - mean-pooled sequence embedding
-        - small MLP head for classification or regression
-    """
 
+class NADPHSeqModel(nn.Module):
     def __init__(
             self,
             esm_model,
@@ -347,73 +344,53 @@ class NADPHSeqModel(nn.Module):
         self.esm = esm_model
         self.task = task
 
+        # 1. Freeze most of the model
         for p in self.esm.parameters():
-            p.requires_grad = False  # freeze encoder
+            p.requires_grad = False
+
+        # 2. SURGICAL UNFREEZING: Allow the last transformer layer to learn
+        #    (ESM-2 t33 has 33 layers, indexed 0-32. We unfreeze layer 32)
+        for n, p in self.esm.named_parameters():
+            if "layers.32" in n:
+                p.requires_grad = True
 
         self.pooler = AttentionPooling(embed_dim)
 
-        hidden = 256
+        # 3. ARCHITECTURE UPGRADE: Add LayerNorm before the head
+        self.norm = nn.LayerNorm(embed_dim)
 
+        hidden = 256
         self.head = nn.Sequential(
             nn.Linear(embed_dim, hidden),
-            nn.BatchNorm1d(hidden),  # NEW: Batch Norm helps stability
+            nn.BatchNorm1d(hidden),
             nn.ReLU(),
-            nn.Dropout(dropout),  # Increased dropout
+            nn.Dropout(dropout),
             nn.Linear(hidden, num_classes if task == "classification" else 1),
         )
 
-        # if task == "classification":
-        #     self.head = nn.Sequential(
-        #         nn.Linear(embed_dim, hidden),
-        #         nn.ReLU(),
-        #         nn.Dropout(dropout),
-        #         nn.Linear(hidden, num_classes),
-        #     )
-        # else:
-        #     self.head = nn.Sequential(
-        #         nn.Linear(embed_dim, hidden),
-        #         nn.ReLU(),
-        #         nn.Dropout(dropout),
-        #         nn.Linear(hidden, 1),
-        #     )
+    def forward(self, tokens, return_reps=False):
+        # NOTE: We now mask against 1, because we padded with 1
+        mask = (tokens != 1)
 
-    def forward(
-            self,
-            tokens: torch.Tensor,
-            return_reps: bool = False,
-    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        tokens: (B, L)
-
-        If return_reps=False:
-            returns logits (classification) or scalar predictions (regression).
-        If return_reps=True:
-            returns (logits, reps, mask), where:
-                reps: (B, L, D) final-layer representations
-                mask: (B, L) bool, True for non-padding positions
-        """
-        # NOTE: ESM parameters are still frozen (requires_grad = False),
-        # but we allow gradients to flow through reps for saliency/IG.
+        # Forward pass through ESM
+        # (Gradients will flow only through layer 32)
         out = self.esm(tokens, repr_layers=[33], return_contacts=False)
         reps = out["representations"][33]  # (B, L, D)
 
-        # mean-pool over sequence length (excluding padding = 0)
-        mask = (tokens != 0)  # (B, L)
-        # mask_exp = mask.unsqueeze(-1)  # (B, L, 1)
-        # reps_masked = reps * mask_exp
-        # lengths = mask_exp.sum(dim=1)  # (B, 1)
-        # pooled = reps_masked.sum(dim=1) / lengths.clamp(min=1)
-
+        # Attention Pooling
         pooled = self.pooler(reps, mask)
 
+        # Normalize
+        pooled = self.norm(pooled)
+
         logits = self.head(pooled)
+
         if self.task == "regression":
             logits = logits.squeeze(-1)
 
         if return_reps:
             return logits, reps, mask
         return logits
-
 
 def compute_residue_saliency(
         model: NADPHSeqModel,
@@ -755,148 +732,3 @@ def train_seq_model(
 
     metrics["best_val"] = best_val_acc if cfg.task == "classification" else best_val_loss
     return model, metrics
-
-# def train_seq_model(
-#         csv_path: str | Path,
-#         cfg: NADPHSeqConfig,
-# ) -> Tuple[NADPHSeqModel, Dict[str, float]]:
-#     """
-#     Train a sequence-based NADPH responsiveness model.
-#
-#     For classification:
-#         - uses label_cls (0,1,2)
-#         - CrossEntropyLoss
-#
-#     For regression:
-#         - uses label_reg
-#         - MSELoss
-#
-#     Returns:
-#         model, metrics dict
-#     """
-#     device = torch.device(cfg.device)
-#
-#     # load esm stuff
-#     esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
-#     esm_model.to(device)
-#
-#     # dataset & loader
-#     ds = NADPHSeqDataset(csv_path, alphabet, task=cfg.task, max_len=cfg.max_len)
-#
-#     # simple train/val split
-#     n = len(ds)
-#     n_train = int(0.8 * n)
-#     n_val = n - n_train
-#     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-#
-#     train_loader = DataLoader(
-#         train_ds,
-#         batch_size=cfg.batch_size,
-#         shuffle=True,
-#         collate_fn=collate_fn_esm,
-#     )
-#     val_loader = DataLoader(
-#         val_ds,
-#         batch_size=cfg.batch_size,
-#         shuffle=False,
-#         collate_fn=collate_fn_esm,
-#     )
-#
-#     # model head
-#     embed_dim = esm_model.embed_dim
-#     model = NADPHSeqModel(
-#         esm_model,
-#         embed_dim=embed_dim,
-#         task=cfg.task,
-#         num_classes=cfg.num_classes,
-#     ).to(device)
-#
-#     # if cfg.task == "classification":
-#     #     criterion = nn.CrossEntropyLoss()
-#     # else:
-#     #     criterion = nn.MSELoss()
-#
-#     # Calculate weights based on training data
-#     if cfg.task == "classification":
-#         # Get all labels from the training dataset
-#         all_labels = [label for _, label in train_ds]
-#         class_counts = torch.bincount(torch.tensor(all_labels))
-#
-#         # Inverse frequency weights: weight = 1 / count
-#         weights = 1. / class_counts.float()
-#         # Normalize weights
-#         weights = weights / weights.sum()
-#
-#         print(f"Class weights: {weights}")
-#         criterion = nn.CrossEntropyLoss(weight=weights.to(device))
-#     else:
-#         criterion = nn.MSELoss()
-#
-#     optimizer = torch.optim.AdamW(model.head.parameters(), lr=cfg.lr)
-#
-#     best_val = math.inf if cfg.task == "regression" else -math.inf
-#     metrics = {}
-#
-#     for epoch in range(1, cfg.epochs + 1):
-#         model.train()
-#         train_loss = 0.0
-#         n_train_batches = 0
-#
-#         for toks, labels in tqdm(train_loader, desc=f"Epoch {epoch} [train]"):
-#             toks = toks.to(device)
-#             labels = labels.to(device)
-#
-#             optimizer.zero_grad()
-#             outputs = model(toks)
-#
-#             if cfg.task == "classification":
-#                 loss = criterion(outputs, labels)
-#             else:
-#                 loss = criterion(outputs, labels)
-#
-#             loss.backward()
-#             optimizer.step()
-#
-#             train_loss += loss.item()
-#             n_train_batches += 1
-#
-#         train_loss /= max(n_train_batches, 1)
-#
-#         # validation
-#         model.eval()
-#         val_loss = 0.0
-#         n_val_batches = 0
-#         correct = 0
-#         total = 0
-#
-#         with torch.no_grad():
-#             for toks, labels in tqdm(val_loader, desc=f"Epoch {epoch} [val]"):
-#                 toks = toks.to(device)
-#                 labels = labels.to(device)
-#                 outputs = model(toks)
-#
-#                 if cfg.task == "classification":
-#                     loss = criterion(outputs, labels)
-#                     preds = outputs.argmax(dim=1)
-#                     correct += (preds == labels).sum().item()
-#                     total += labels.size(0)
-#                 else:
-#                     loss = criterion(outputs, labels)
-#
-#                 val_loss += loss.item()
-#                 n_val_batches += 1
-#
-#         val_loss /= max(n_val_batches, 1)
-#         if cfg.task == "classification":
-#             val_acc = correct / max(total, 1)
-#             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}, val_acc={val_acc:.4f}")
-#             # track best
-#             if val_acc > best_val:
-#                 best_val = val_acc
-#         else:
-#             print(f"Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
-#             if val_loss < best_val:
-#                 best_val = val_loss
-#
-#     metrics["best_val"] = best_val
-#     return model, metrics

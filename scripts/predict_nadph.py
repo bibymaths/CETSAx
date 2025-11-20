@@ -47,64 +47,26 @@ def chunk_list(xs: List, size: int) -> List[List]:
 
 
 def predict_nadph_from_fasta(
-    fasta_path: str | Path,
-    checkpoint: str | Path,
-    model_name: str = "esm2_t33_650M_UR50D",
-    task: str = "classification",  # or "regression"
-    num_classes: int = 3,
-    batch_size: int = 8,
-    max_len: int = 1022,
-    device: str | None = None,
-    compute_saliency: bool = False,
-    compute_ig: bool = False,
-    target_class: int | None = None,
-    ig_steps: int = 50,
+        fasta_path: str | Path,
+        checkpoint: str | Path,
+        model_name: str = "esm2_t33_650M_UR50D",
+        task: str = "classification",
+        num_classes: int = 3,
+        batch_size: int = 8,
+        max_len: int = 1022,
+        device: str | None = None,
+        compute_saliency: bool = False,
+        compute_ig: bool = False,
+        target_class: int | None = None,
+        ig_steps: int = 50,
 ) -> pd.DataFrame:
-
-    """
-    Run inference on sequences in FASTA.
-
-    Parameters
-    ----------
-    fasta_path : str or Path
-        Input FASTA (headers must have protein IDs: >P12345 ...).
-
-    checkpoint : str or Path
-        Path to saved model.head state_dict (see docstring above).
-
-    model_name : str
-        ESM-2 model name, must match training (default: esm2_t33_650M_UR50D).
-
-    task : {'classification', 'regression'}
-        Prediction type:
-            - classification: strong/medium/weak
-            - regression: continuous target (e.g. -log10 EC50)
-
-    num_classes : int
-        Number of classes (for classification). Default: 3.
-
-    batch_size : int
-        Inference batch size.
-
-    max_len : int
-        Maximum sequence length to use (truncate longer sequences).
-
-    device : str or None
-        'cuda', 'cpu', or None to auto-select.
-
-    Returns
-    -------
-    DataFrame
-        For classification:
-            id, pred_class, p_class0, p_class1, p_class2
-        For regression:
-            id, pred_value
-    """
     fasta_path = Path(fasta_path)
     checkpoint = Path(checkpoint)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     device_t = torch.device(device)
+
+    print(f"Using device: {device}")  # <--- [MONITORING 1] Device check
 
     # 1) Load sequences
     seq_dict: Dict[str, str] = read_fasta_to_dict(fasta_path)
@@ -114,7 +76,11 @@ def predict_nadph_from_fasta(
     if len(ids) == 0:
         raise ValueError(f"No sequences found in FASTA: {fasta_path}")
 
+    # <--- [MONITORING 2] Data Stats
+    print(f"Loaded {len(ids)} sequences from {fasta_path.name}")
+
     # 2) Load ESM backbone + alphabet
+    print(f"Loading ESM model: {model_name}...")  # <--- [MONITORING 3] Model Status
     esm_model, alphabet = load_esm_model_and_alphabet(model_name)
     esm_model.to(device_t)
     batch_converter = alphabet.get_batch_converter()
@@ -129,21 +95,29 @@ def predict_nadph_from_fasta(
     ).to(device_t)
 
     # load head-only checkpoint
+    print(f"Loading checkpoint: {checkpoint.name}...")  # <--- [MONITORING]
     state = torch.load(checkpoint, map_location=device_t)
     model.head.load_state_dict(state)
     model.eval()
 
     # 4) Inference in batches
     all_rows = []
-
-    # Mapping from class index to label (you can adapt if you change your labels)
     int_to_class = {0: "weak", 1: "medium", 2: "strong"}
-
-    # If neither saliency nor IG is requested, we can safely disable grads
     grad_context = torch.no_grad if not (compute_saliency or compute_ig) else lambda: torch.enable_grad()
 
+    # <--- [MONITORING 4] Batch calculation
+    chunks = chunk_list(ids, batch_size)
+    total_batches = len(chunks)
+    print(f"Starting inference: {total_batches} batches to process.")
+
     with grad_context():
-        for id_chunk in chunk_list(ids, batch_size):
+        # <--- [MONITORING 5] Enumerate to track index
+        for batch_idx, id_chunk in enumerate(chunks):
+
+            # Print progress every 10 batches (or every batch if you prefer)
+            if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
+                print(f"  Processing batch {batch_idx + 1}/{total_batches} ({(batch_idx + 1) / total_batches:.1%})")
+
             seq_chunk = [seq_dict[i] for i in id_chunk]
 
             # Optionally truncate sequences
@@ -153,22 +127,21 @@ def predict_nadph_from_fasta(
                     seq = seq[:max_len]
                 seq_chunk_trunc.append((pid, seq))
 
-            # ESM batch conversion: returns (labels, strs, toks)
+            # ESM batch conversion
             _, _, toks = batch_converter(seq_chunk_trunc)
             toks = toks.to(device_t)
 
             # --- forward pass
-            outputs = model(toks)  # logits or regression outputs
+            outputs = model(toks)
 
             # --- base predictions
             if task == "classification":
-                probs = F.softmax(outputs, dim=1)  # (B, num_classes)
-                preds = probs.argmax(dim=1)        # (B,)
-
+                probs = F.softmax(outputs, dim=1)
+                preds = probs.argmax(dim=1)
                 probs_np = probs.detach().cpu().numpy()
                 preds_np = preds.detach().cpu().numpy()
             else:
-                preds = outputs  # (B,)
+                preds = outputs
                 preds_np = preds.detach().cpu().numpy()
 
             # --- interpretability (optional)
@@ -176,20 +149,14 @@ def predict_nadph_from_fasta(
             ig_scores = None
 
             if compute_saliency:
-                # saliency: per-residue gradient norm
                 saliency_scores = compute_residue_saliency(
-                    model,
-                    toks,
-                    target_class=target_class,
-                ).detach()  # (B, L)
+                    model, toks, target_class=target_class,
+                ).detach()
 
             if compute_ig:
                 ig_scores = compute_residue_integrated_gradients(
-                    model,
-                    toks,
-                    target_class=target_class,
-                    steps=ig_steps,
-                ).detach()  # (B, L)
+                    model, toks, target_class=target_class, steps=ig_steps,
+                ).detach()
 
             # --- assemble per-protein rows
             for i, pid in enumerate(id_chunk):
@@ -199,15 +166,12 @@ def predict_nadph_from_fasta(
                     pc = int(preds_np[i])
                     row["pred_class_idx"] = pc
                     row["pred_class"] = int_to_class.get(pc, f"class_{pc}")
-                    # per-class probabilities
                     for k in range(probs_np.shape[1]):
                         row[f"p_class{k}"] = float(probs_np[i, k])
                 else:
                     row["pred_value"] = float(preds_np[i])
 
-                # attach saliency / IG as semicolon-separated scores per residue
                 if compute_saliency and saliency_scores is not None:
-                    # truncate to actual length (exclude padding = token 0)
                     token_row = toks[i]
                     valid_mask = (token_row != 0)
                     sal = saliency_scores[i][valid_mask].cpu().numpy()
@@ -221,19 +185,7 @@ def predict_nadph_from_fasta(
 
                 all_rows.append(row)
 
-            else:  # regression
-                preds = outputs  # (B,)
-                preds_np = preds.cpu().numpy()
-                for pid, val in zip(id_chunk, preds_np):
-                    all_rows.append(
-                        {
-                            "id": pid,
-                            "pred_value": float(val),
-                        }
-                    )
-
     return pd.DataFrame(all_rows)
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -241,12 +193,14 @@ def main() -> None:
     )
     parser.add_argument(
         "--fasta",
-        required=True,
+        # required=True,
+        default="../results/protein_sequences.fasta",
         help="Path to FASTA file with protein sequences (headers must contain IDs).",
     )
     parser.add_argument(
         "--checkpoint",
-        required=True,
+        # required=True,
+        default="../results/nadph_seq_head.pt",
         help="Path to trained model.head state_dict (e.g., nadph_seq_head.pt).",
     )
     parser.add_argument(
@@ -309,7 +263,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--out",
-        required=True,
+        # required=True,
+        default="../results/predictions_nadph_seq.csv",
         help="Output CSV path for predictions.",
     )
 
