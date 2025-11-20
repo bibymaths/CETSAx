@@ -32,17 +32,18 @@ def main() -> None:
     p.add_argument("--fits-csv", required=True, help="Path to ec50_fits.csv")
     p.add_argument(
         "--fasta",
-        required=True,
+        # required=True,
+        default="../results/protein_sequences.fasta",
         help="Path to protein_sequences.fasta with IDs in headers (>P12345 ...).",
     )
     p.add_argument(
         "--out-supervised",
-        default="nadph_seq_supervised.csv",
+        default="../results/nadph_seq_supervised.csv",
         help="Output CSV with merged EC50 + sequences + labels.",
     )
     p.add_argument(
         "--out-head",
-        default="nadph_seq_head.pt",
+        default="../results/nadph_seq_head.pt",
         help="Output path for trained model.head state_dict.",
     )
     p.add_argument(

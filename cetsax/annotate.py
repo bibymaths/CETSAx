@@ -240,21 +240,48 @@ def fetch_fastas_parallel(
     return results
 
 
-def write_fastas(
-        acc_to_fasta: Dict[str, str],
-        out_fasta: str | Path,
+def write_fastas_with_ids(
+    annot_df: pd.DataFrame,
+    acc_to_fasta: Dict[str, str],
+    out_fasta: str | Path,
+    id_col: str = "id",
+    uniprot_col: str = "uniprot",
 ) -> None:
+    """
+    Write FASTA where header is your own id (from id_col),
+    not the UniProt header.
+
+    For each row in annot_df:
+        - take original id (e.g. O00231-2)
+        - take UniProt accession (e.g. O00231)
+        - get sequence from acc_to_fasta[accession]
+        - strip original '>' header
+        - write new header: >{id}
+    """
     out_fasta = Path(out_fasta)
     out_fasta.parent.mkdir(parents=True, exist_ok=True)
 
     with out_fasta.open("w") as fh:
-        for acc, fasta in acc_to_fasta.items():
-            # ensure header starts with accession
-            # UniProt already does this, but we keep as-is.
-            fh.write(fasta.strip() + "\n")
+        for _, row in annot_df.iterrows():
+            orig_id = str(row[id_col])
+            acc = row.get(uniprot_col)
+            if not isinstance(acc, str):
+                continue
+            fasta = acc_to_fasta.get(acc)
+            if not fasta:
+                continue
 
-    print(f"Wrote {len(acc_to_fasta)} FASTA entries to {out_fasta}")
+            lines = fasta.strip().splitlines()
+            # drop original header line(s)
+            seq_lines = [l for l in lines if not l.startswith(">")]
+            if not seq_lines:
+                continue
 
+            # NEW header with your ID
+            fh.write(f">{orig_id}\n")
+            fh.write("\n".join(seq_lines) + "\n")
+
+    print(f"Wrote FASTA with custom IDs to {out_fasta}")
 
 # ---------------------------------------------------------------------
 # 4. Main: glue everything together
@@ -282,12 +309,12 @@ def main() -> None:
     )
     ap.add_argument(
         "--out-annot",
-        default="protein_annotations.csv",
+        default="../results/protein_annotations.csv",
         help="Output CSV for protein annotations.",
     )
     ap.add_argument(
         "--out-fasta",
-        default="protein_sequences.fasta",
+        default="../results/protein_sequences.fasta",
         help="Output FASTA file for sequences.",
     )
     ap.add_argument(
@@ -331,9 +358,12 @@ def main() -> None:
         max_workers=args.max_workers,
     )
 
-    write_fastas(
+    write_fastas_with_ids(
+        annot_df=annot_df,
         acc_to_fasta=acc_to_fasta,
         out_fasta=args.out_fasta,
+        id_col="id",
+        uniprot_col="uniprot",
     )
 
     print("Done.")

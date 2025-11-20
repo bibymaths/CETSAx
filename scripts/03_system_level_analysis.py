@@ -53,7 +53,7 @@ from cetsax import (
     plot_mixture_clusters_in_pca,
     plot_cluster_size_bar,
 )
-from cetsax import DOSE_COLS, ID_COL, COND_COL
+from cetsax import ID_COL
 
 
 def main() -> None:
@@ -62,12 +62,13 @@ def main() -> None:
     p.add_argument("--hits-csv", required=True, help="Path to cetsa_hits_ranked.csv")
     p.add_argument(
         "--annot-csv",
-        required=True,
+        # required=True,
+        default="../results/protein_annotations.csv",
         help="Path to protein_annotations.csv (id,pathway,...)",
     )
     p.add_argument(
         "--out-dir",
-        default="system_results",
+        default="../results/system_results",
         help="Output directory for all results and plots.",
     )
     args = p.parse_args()
