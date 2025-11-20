@@ -4,6 +4,9 @@ Data loading and basic filtering for CETSA NADPH ITDR dataset.
 
 from __future__ import annotations
 
+from types import NoneType
+from typing import Any
+
 import pandas as pd
 
 from .config import (
@@ -13,9 +16,6 @@ from .config import (
     SUM_UNIPEPS_COL,
     SUM_PSMS_COL,
     COUNTNUM_COL,
-    QC_MIN_UNIQUE_PEPTIDES,
-    QC_MIN_PSMS,
-    QC_MIN_COUNTNUM,
 )
 
 
@@ -34,7 +34,7 @@ def load_cetsa_csv(path: str) -> pd.DataFrame:
     return df
 
 
-def apply_basic_qc(df: pd.DataFrame) -> pd.DataFrame:
+def apply_basic_qc(df: pd.DataFrame) -> type[NoneType[Any]]:
     """
     Apply simple QC criteria at the protein-replicate level.
     """
