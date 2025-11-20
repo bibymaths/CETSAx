@@ -280,12 +280,3 @@ def visualize_predictions(
         # plt.show()
     else:
         print("No IG scores found for Strong binders to generate Plot 8.")
-
-if __name__ == "__main__":
-
-    supervised_file = '../results/nadph_seq_supervised.csv'
-    prediction_file = '../results/predictions_nadph_seq.csv'
-    visualize_predictions(
-        pred_file=prediction_file,
-        truth_file=supervised_file
-    )
