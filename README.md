@@ -203,7 +203,7 @@ The ESM model used in this project (`esm2_t33_650M_UR50D`) comes from the follow
 Zeming Lin *et al.*
 *Evolutionary-scale prediction of atomic-level protein structure with a language model.*
 **Science**, 379, 1123–1130 (2023).
-DOI: 10.1126/science.ade2574
+[DOI](https://doi.org/10.1126/science.ade2574)
 
 **Model download:**
 [Link](https://huggingface.co/facebook/esm2_t33_650M_UR50D)
