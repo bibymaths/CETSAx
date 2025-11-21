@@ -6,6 +6,7 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
+
 def visualize_predictions(
         pred_file,
         truth_file
@@ -307,6 +308,7 @@ def visualize_predictions(
     else:
         print("No IG scores found for Strong binders to generate Plot 8.")
 
+
 def analyze_fitting_data(
         fits_file,
         pred_file
@@ -367,6 +369,7 @@ def analyze_fitting_data(
         plt.legend()
         plt.savefig('plot_10_curve_reconstruction.png', dpi=300)
         plt.close()
+
 
 def generate_bio_insight(
         pred_file,

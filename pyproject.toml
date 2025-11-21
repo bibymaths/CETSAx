@@ -1,11 +1,41 @@
 [project]
 name = "cetsax"
 version = "0.1.0"
-description = "CETSA-MS modelling toolkit for binding curves (EC50/KD), hit calling, and dose-response analysis."
+description = "CETSA analysis and deep learning toolkit for binding curves, hit calling, and proteome-wide ligand-responsiveness prediction."
 readme = "README.md"
 requires-python = ">=3.10"
+
 authors = [
     { name = "Abhinav Mishra", email = "mishraabhinav36@gmail.com" }
+]
+
+license = { file = "LICENSE" }
+
+keywords = [
+    "CETSA",
+    "proteomics",
+    "dose-response",
+    "EC50",
+    "KD",
+    "bioinformatics",
+    "deep-learning",
+    "protein-language-models",
+    "ESM-2",
+    "systems-biology"
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 
 dependencies = [
@@ -27,9 +57,23 @@ dependencies = [
     "snakemake>=7.32.4",
 ]
 
-#[project.scripts]
-#fit-ec50 = "cetsax.scripts.fit_ec50:main"
-#call-hits = "cetsax.scripts.call_hits:main"
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+]
+
+[project.urls]
+Homepage = "https://github.com/bibymaths/cetsax"
+Source = "https://github.com/bibymaths/cetsax"
+Issues = "https://github.com/bibymaths/cetsax-nadph/issues"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]

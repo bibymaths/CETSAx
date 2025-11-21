@@ -24,13 +24,13 @@ import arviz as az
 
 
 def bayesian_fit_ec50(
-    df: pd.DataFrame,
-    protein_id: str,
-    draws: int = 1000,
-    tune: int = 1000,
-    chains: int = 4,
-    cores: int = 1,
-    progressbar: bool = True
+        df: pd.DataFrame,
+        protein_id: str,
+        draws: int = 1000,
+        tune: int = 1000,
+        chains: int = 4,
+        cores: int = 1,
+        progressbar: bool = True
 ) -> Dict[str, Any]:
     """
     Fit a hierarchical Bayesian EC50 model for a single protein

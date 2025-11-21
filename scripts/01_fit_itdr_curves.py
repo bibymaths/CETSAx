@@ -45,7 +45,6 @@ def main() -> None:
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
 
-
     fits_df = fit_all_proteins(qc_df)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fits_df.to_csv(out_path, index=False)

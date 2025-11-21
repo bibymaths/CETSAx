@@ -43,7 +43,7 @@ from cetsax.deeplearn.seq_nadph import (
 
 def chunk_list(xs: List, size: int) -> List[List]:
     """Simple chunking utility."""
-    return [xs[i : i + size] for i in range(0, len(xs), size)]
+    return [xs[i: i + size] for i in range(0, len(xs), size)]
 
 
 def predict_nadph_from_fasta(
@@ -194,6 +194,7 @@ def predict_nadph_from_fasta(
 
     return pd.DataFrame(all_rows)
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Predict NADPH responsiveness from protein sequence using ESM + trained head."
@@ -291,7 +292,6 @@ def main() -> None:
         target_class=args.target_class,
         ig_steps=args.ig_steps,
     )
-
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)

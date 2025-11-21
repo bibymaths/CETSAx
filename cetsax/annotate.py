@@ -241,11 +241,11 @@ def fetch_fastas_parallel(
 
 
 def write_fastas_with_ids(
-    annot_df: pd.DataFrame,
-    acc_to_fasta: Dict[str, str],
-    out_fasta: str | Path,
-    id_col: str = "id",
-    uniprot_col: str = "uniprot",
+        annot_df: pd.DataFrame,
+        acc_to_fasta: Dict[str, str],
+        out_fasta: str | Path,
+        id_col: str = "id",
+        uniprot_col: str = "uniprot",
 ) -> None:
     """
     Write FASTA where header is your own id (from id_col),
@@ -282,6 +282,7 @@ def write_fastas_with_ids(
             fh.write("\n".join(seq_lines) + "\n")
 
     print(f"Wrote FASTA with custom IDs to {out_fasta}")
+
 
 # ---------------------------------------------------------------------
 # 4. Main: glue everything together

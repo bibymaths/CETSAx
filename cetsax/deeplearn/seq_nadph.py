@@ -39,6 +39,7 @@ import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning, module='torch')
 
+
 # ---------------------------------------------------------------------
 # 1. Utility: read FASTA as id -> sequence
 # ---------------------------------------------------------------------
@@ -77,6 +78,7 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
                 seqs[current_id].append(line)
 
     return {k: "".join(v) for k, v in seqs.items()}
+
 
 # ---------------------------------------------------------------------
 # 2. Build supervised table from ec50_fits + FASTA
@@ -197,8 +199,8 @@ def build_sequence_supervised_table(
             print(f"Still Missing: {n_still_missing}")
 
             # if n_still_missing > 0:
-                # print("Examples of IDs still missing (check FASTA):")
-                # print(agg[agg["seq"].isna()][id_col].head(5).tolist())
+            # print("Examples of IDs still missing (check FASTA):")
+            # print(agg[agg["seq"].isna()][id_col].head(5).tolist())
 
         # drop rows without sequence
         agg = agg.dropna(subset=["seq"])
@@ -391,6 +393,7 @@ class NADPHSeqModel(nn.Module):
         if return_reps:
             return logits, reps, mask
         return logits
+
 
 def compute_residue_saliency(
         model: NADPHSeqModel,
@@ -594,7 +597,7 @@ def train_seq_model(
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         persistent_workers=True if NUM_WORKERS > 0 else False,
-        drop_last = True
+        drop_last=True
     )
     val_loader = DataLoader(
         val_ds,
