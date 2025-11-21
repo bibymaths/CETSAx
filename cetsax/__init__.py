@@ -35,7 +35,7 @@ from .viz import (
     plot_mixture_clusters_in_pca,
     plot_cluster_size_bar
 )
-from .viz_predict import visualize_predictions
+from .viz_predict import visualize_predictions, analyze_fitting_data, generate_bio_insight
 
 __all__ = [
     "ID_COL",
@@ -87,5 +87,7 @@ __all__ = [
     "train_seq_model",
     "NADPHSeqConfig",
     "build_sequence_supervised_table",
-    "visualize_predictions"
+    "visualize_predictions",
+    "analyze_fitting_data",
+    "generate_bio_insight"
 ]

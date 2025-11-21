@@ -55,7 +55,6 @@ rule annotate:
         fasta=f"{config['results_dir']}/protein_sequences.fasta"
     shell:
         """
-        # Updated path: pointing to cetsax/annotate.py
         {config[python_bin]} cetsax/annotate.py \
             --fits-csv {input.fits} \
             --out-annot {output.annot} \
@@ -133,7 +132,9 @@ rule predict:
 rule visualize:
     input:
         preds=rules.predict.output.preds,
-        truth=rules.train_model.output.supervised
+        truth=rules.train_model.output.supervised,
+        fits=rules.fit_curves.output.fits,
+        annot=rules.annotate.output.annot
     output:
         "results/plots/plot_1_confusion_matrix.png",
         "results/plots/plot_2_roc_curves.png",
@@ -142,14 +143,20 @@ rule visualize:
         "results/plots/plot_5_ec50_correlation.png",
         "results/plots/plot_6_deltamax_correlation.png",
         "results/plots/plot_7_worst_misses.png",
-        "results/plots/plot_8_residue_importance.png"
+        "results/plots/plot_8_residue_importance.png",
+        "results/plots/plot_9_replicate_consistency.png",
+        "results/plots/plot_10_curve_reconstruction.png",
+        "results/plots/plot_11_bio_pathway_enrichment.png",
+        "results/plots/plot_12_bio_ec50_validation.png"
+
     shell:
         """
         mkdir -p results/plots
         cd results/plots
-
-        # FIX: Add '../../' before {config[python_bin]} so it finds the venv from inside the folder
+        
         ../../{config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
             --pred-file ../../{input.preds} \
-            --truth-file ../../{input.truth}
+            --truth-file ../../{input.truth} \
+            --fit-file ../../{input.fits} \
+            --annot-file ../../{input.annot}
         """

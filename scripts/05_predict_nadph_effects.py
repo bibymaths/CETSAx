@@ -158,32 +158,39 @@ def predict_nadph_from_fasta(
                     model, toks, target_class=target_class, steps=ig_steps,
                 ).detach()
 
-            # --- assemble per-protein rows
-            for i, pid in enumerate(id_chunk):
-                row = {"id": pid}
+                # --- assemble per-protein rows
+                for i, pid in enumerate(id_chunk):
+                    row = {"id": pid}
 
-                if task == "classification":
-                    pc = int(preds_np[i])
-                    row["pred_class_idx"] = pc
-                    row["pred_class"] = int_to_class.get(pc, f"class_{pc}")
-                    for k in range(probs_np.shape[1]):
-                        row[f"p_class{k}"] = float(probs_np[i, k])
-                else:
-                    row["pred_value"] = float(preds_np[i])
+                    # Get the actual sequence length for this protein
+                    # (We use seq_chunk_trunc because that's what went into the model)
+                    # ESM-2 structure: [CLS, res1, res2, ..., resN, EOS, PAD, PAD...]
+                    # Indices:          0     1     2          N    N+1
+                    seq_len = len(seq_chunk_trunc[i][1])  # [1] is the sequence string
 
-                if compute_saliency and saliency_scores is not None:
-                    token_row = toks[i]
-                    valid_mask = (token_row != 0)
-                    sal = saliency_scores[i][valid_mask].cpu().numpy()
-                    row["saliency"] = ";".join(f"{x:.6f}" for x in sal)
+                    # Prediction Logic (unchanged)
+                    if task == "classification":
+                        pc = int(preds_np[i])
+                        row["pred_class_idx"] = pc
+                        row["pred_class"] = int_to_class.get(pc, f"class_{pc}")
+                        for k in range(probs_np.shape[1]):
+                            row[f"p_class{k}"] = float(probs_np[i, k])
+                    else:
+                        row["pred_value"] = float(preds_np[i])
 
-                if compute_ig and ig_scores is not None:
-                    token_row = toks[i]
-                    valid_mask = (token_row != 0)
-                    ig = ig_scores[i][valid_mask].cpu().numpy()
-                    row["ig"] = ";".join(f"{x:.6f}" for x in ig)
+                    # We slice from 1 to seq_len + 1 to skip <cls> and <eos>
 
-                all_rows.append(row)
+                    if compute_saliency and saliency_scores is not None:
+                        # Slice exactly the residues
+                        sal = saliency_scores[i, 1: seq_len + 1].cpu().numpy()
+                        row["saliency"] = ";".join(f"{x:.6f}" for x in sal)
+
+                    if compute_ig and ig_scores is not None:
+                        # Slice exactly the residues
+                        ig = ig_scores[i, 1: seq_len + 1].cpu().numpy()
+                        row["ig"] = ";".join(f"{x:.6f}" for x in ig)
+
+                    all_rows.append(row)
 
     return pd.DataFrame(all_rows)
 

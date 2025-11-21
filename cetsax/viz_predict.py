@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from collections import Counter
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, auc
@@ -37,9 +38,9 @@ def visualize_predictions(
     plt.ylabel('True Label', fontsize=12)
     plt.title('Confusion Matrix: Where is the model making mistakes?', fontsize=14)
     plt.tight_layout()
-    plt.savefig('plot_1_confusion_matrix.png')
-    print("Saved plot_1_confusion_matrix.png")
-    # plt.show()
+    plt.savefig('plot_1_confusion_matrix.png', dpi=300)
+    # print("Saved plot_1_confusion_matrix.png")
+    plt.close()
 
     # -------------------------------------------------------
     # Plot 2: ROC Curves (One per class)
@@ -64,9 +65,9 @@ def visualize_predictions(
     plt.title('ROC Curves: How well does it separate classes?', fontsize=14)
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig('plot_2_roc_curves.png')
-    print("Saved plot_2_roc_curves.png")
-    # plt.show()
+    plt.savefig('plot_2_roc_curves.png', dpi=300)
+    # print("Saved plot_2_roc_curves.png")
+    plt.close()
 
     # -------------------------------------------------------
     # Plot 3: Probability Distributions (Box Plot)
@@ -90,9 +91,9 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability', fontsize=12)
     plt.legend(title="Probability For:")
     plt.tight_layout()
-    plt.savefig('plot_3_confidence.png')
-    print("Saved plot_3_confidence.png")
-    # plt.show()
+    plt.savefig('plot_3_confidence.png', dpi=300)
+    # print("Saved plot_3_confidence.png")
+    plt.close()
 
     # -------------------------------------------------------
     # Plot 4: Saliency / Integrated Gradients Map
@@ -128,9 +129,9 @@ def visualize_predictions(
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            plt.savefig('plot_4_saliency_map.png')
+            plt.savefig('plot_4_saliency_map.png', dpi=300)
             print(f"Saved plot_4_saliency_map.png (Example Protein: {prot_id})")
-            # plt.show()
+            plt.close()
         else:
             print("No IG/Saliency scores found in predictions file.")
     else:
@@ -164,34 +165,59 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability of "Strong" (p_class2)', fontsize=12)
     plt.legend(title="True Class")
     plt.tight_layout()
-    plt.savefig('plot_5_ec50_correlation.png')
-    print("Saved plot_5_ec50_correlation.png")
-    # plt.show()
+    plt.savefig('plot_5_ec50_correlation.png', dpi=300)
+    # print("Saved plot_5_ec50_correlation.png")
+    plt.close()
 
     # -------------------------------------------------------
     # Plot 6: Probability vs. Delta Max (Thermal Shift)
     # -------------------------------------------------------
     # Higher thermal shift usually means tighter binding
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 8))  # Increased size slightly for labels
 
+    # 1. CHANGE: Update y to 'R2'
     sns.scatterplot(
         data=df,
         x='delta_max',
-        y='p_class2',
+        y='R2',  # <--- Changed from 'p_class2'
         hue='hit_class',
-        palette={'weak': 'gray', 'medium': 'orange', 'strong': 'green'},
-        alpha=0.6
+        hue_order=['weak', 'medium', 'strong'],  # Optional: Ensures consistent color order
+        palette={'weak': 'lightgray', 'medium': 'orange', 'strong': 'green'},
+        alpha=0.6,
+        s=60  # Increased dot size slightly
     )
 
-    plt.title('Thermal Shift Validation: Model Confidence vs Stabilization', fontsize=14)
-    plt.xlabel('Delta Max (Thermal Stabilization)', fontsize=12)
-    plt.ylabel('Predicted Probability of "Strong" (p_class2)', fontsize=12)
-    plt.legend(title="True Class")
+    # 2. ADD: The "Clever" Labeling Logic
+    # Filter for strong hits and sort by R2 to find the best ones
+    top_hits = df[df['hit_class'] == 'strong'].sort_values('R2', ascending=False).head(10)
+
+    for i, row in top_hits.iterrows():
+        # Add text label
+        plt.text(
+            row['delta_max'] + 0.002,  # Slight offset X
+            row['R2'] + 0.002,  # Slight offset Y
+            row['id'],
+            fontsize=9,
+            fontweight='bold',
+            color='darkgreen'
+        )
+        # Add a circle around the labeled point
+        plt.scatter(row['delta_max'], row['R2'], s=150, facecolors='none', edgecolors='black', linewidth=0.8)
+
+    # 3. CHANGE: Update Titles and Axes
+    plt.title('Effect Size (Delta Max) vs Fit Quality (R2)', fontsize=15)
+    plt.xlabel('Effect Size (Delta Max)', fontsize=12)
+    plt.ylabel('Goodness of Fit (R2)', fontsize=12)  # <--- Changed label
+
+    # Optional: Add threshold lines for context
+    plt.axhline(0.8, color='gray', linestyle='--', alpha=0.3, label='Good Fit Threshold')
+
+    plt.legend(title="Hit Classification", loc='lower right')
     plt.tight_layout()
-    plt.savefig('plot_6_deltamax_correlation.png')
-    print("Saved plot_6_deltamax_correlation.png")
-    # plt.show()
+    plt.savefig('plot_6_deltamax_correlation.png', dpi=300)
+    # print("Saved plot_6_deltamax_correlation.png")
+    plt.close()
 
     # -------------------------------------------------------
     # Plot 7: "The Worst Misses" (High Confidence Errors)
@@ -224,9 +250,9 @@ def visualize_predictions(
         plt.legend(title="Model Predicted:")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig('plot_7_worst_misses.png')
-        print("Saved plot_7_worst_misses.png")
-        # plt.show()
+        plt.savefig('plot_7_worst_misses.png', dpi=300)
+        # print("Saved plot_7_worst_misses.png")
+        plt.close()
 
     # -------------------------------------------------------
     # Plot 8: Global Residue Importance (Aggregated IG)
@@ -275,8 +301,125 @@ def visualize_predictions(
         plt.ylabel('Avg Integrated Gradients Score', fontsize=12)
         plt.legend()
         plt.tight_layout()
-        plt.savefig('plot_8_residue_importance.png')
-        print("Saved plot_8_residue_importance.png")
-        # plt.show()
+        plt.savefig('plot_8_residue_importance.png', dpi=300)
+        # print("Saved plot_8_residue_importance.png")
+        plt.close()
     else:
         print("No IG scores found for Strong binders to generate Plot 8.")
+
+def analyze_fitting_data(
+        fits_file,
+        pred_file
+):
+    # 1. Load Data
+    fits = pd.read_csv(fits_file)
+    preds = pd.read_csv(pred_file)
+
+    # 2. Prepare Replicate Data (Pivot)
+    fits['rep'] = fits['condition'].apply(lambda x: x.split('.')[-1])
+    wide_fits = fits.pivot(index='id', columns='rep', values=['log10_EC50', 'R2', 'delta_max', 'Hill'])
+    wide_fits.columns = [f"{col[0]}_{col[1]}" for col in wide_fits.columns]
+    wide_fits = wide_fits.reset_index()
+
+    # Merge with Predictions
+    df = pd.merge(wide_fits, preds, on='id', how='inner')
+    print(f"Analyzed {len(df)} proteins with curve data.")
+
+    sns.set(style="whitegrid")
+
+    # --- Plot 1: Replicate Consistency ---
+    if 'log10_EC50_r1' in df.columns and 'log10_EC50_r2' in df.columns:
+        plt.figure(figsize=(8, 8))
+        sns.scatterplot(
+            data=df, x='log10_EC50_r1', y='log10_EC50_r2',
+            hue='pred_class', alpha=0.7, palette='viridis'
+        )
+        # Add diagonal
+        lims = [
+            min(df['log10_EC50_r1'].min(), df['log10_EC50_r2'].min()),
+            max(df['log10_EC50_r1'].max(), df['log10_EC50_r2'].max())
+        ]
+        plt.plot(lims, lims, 'r--', alpha=0.5)
+        plt.title('Replicate Consistency: Do "Strong" hits reproduce?')
+        plt.savefig('plot_9_replicate_consistency.png', dpi=300)
+        plt.close()
+
+    # --- Plot 2: Curve Reconstruction (Top Hits) ---
+    top_hits = df[df['pred_class_idx'] == 2].sort_values('p_class2', ascending=False).head(3)
+
+    if not top_hits.empty:
+        plt.figure(figsize=(10, 6))
+        x_conc = np.logspace(-9, -3, 100)  # Simulated concentration range
+
+        for idx, row in top_hits.iterrows():
+            prot_id = row['id']
+            prot_fits = fits[fits['id'] == prot_id]
+
+            for _, fit_row in prot_fits.iterrows():
+                # Reconstruct Sigmoid: Bottom + (Top-Bottom)/(1+(EC50/x)^Hill)
+                y_vals = fit_row['E0'] + (fit_row['Emax'] - fit_row['E0']) / \
+                         (1 + (fit_row['EC50'] / x_conc) ** fit_row['Hill'])
+                plt.plot(np.log10(x_conc), y_vals, label=f"{prot_id} ({fit_row['rep']})")
+
+        plt.title('Reconstructed ITDR Curves for Top Predicted Targets')
+        plt.xlabel('Log10 Concentration')
+        plt.ylabel('Response')
+        plt.legend()
+        plt.savefig('plot_10_curve_reconstruction.png', dpi=300)
+        plt.close()
+
+def generate_bio_insight(
+        pred_file,
+        truth_file,
+        annot_file
+):
+    # 1. Load and Merge
+    preds = pd.read_csv(pred_file)
+    truth = pd.read_csv(truth_file)
+    annot = pd.read_csv(annot_file)
+
+    # Merge on 'id'
+    df = pd.merge(truth, preds, on='id', how='inner')
+    df = pd.merge(df, annot, on='id', how='left')
+
+    # 2. Helper to clean pathway strings
+    def get_terms(series):
+        all_terms = []
+        for item in series:
+            if pd.isna(item): continue
+            # Split "reactome:R-HSA-123:Name" -> "Name"
+            terms = str(item).split(';')
+            for t in terms:
+                if ':' in t and not t.startswith('GO'):
+                    all_terms.append(t.split(':')[-1])
+                elif t.startswith('GO'):
+                    parts = t.split(':')
+                    if len(parts) > 2: all_terms.append(parts[-1])
+                else:
+                    all_terms.append(t)
+        return all_terms
+
+    # 3. Filter for predicted Strong binders
+    strong_preds = df[df['pred_class_idx'] == 2]
+
+    # --- Plot 1: Pathway Enrichment ---
+    pathways = get_terms(strong_preds['pathway'])
+    if pathways:
+        counts = pd.DataFrame(Counter(pathways).most_common(10), columns=['Pathway', 'Count'])
+        plt.figure(figsize=(10, 6))
+        sns.barplot(data=counts, y='Pathway', x='Count', palette='viridis')
+        plt.title('Top Pathways in Predicted Strong Binders')
+        plt.tight_layout()
+        plt.savefig('plot_11_bio_pathway_enrichment.png', dpi=300)
+        plt.close()
+
+    # --- Plot 2: EC50 Validation ---
+    plt.figure(figsize=(8, 6))
+    # Filter outliers for cleaner plot
+    plot_df = df[df['EC50'] < 100]
+    sns.boxplot(data=plot_df, x='pred_class', y='EC50', order=['weak', 'medium', 'strong'], palette='Set2')
+    plt.yscale('log')
+    plt.title('Do Predicted Strong Binders have lower EC50?')
+    plt.ylabel('Experimental EC50 (Log Scale)')
+    plt.savefig('plot_12_bio_ec50_validation.png', dpi=300)
+    plt.close()

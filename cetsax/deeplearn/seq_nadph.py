@@ -632,10 +632,8 @@ def train_seq_model(
         class_counts[class_counts == 0] = 1.0
 
         # Inverse frequency: weight = 1 / count
-        # weights = 1.0 / class_counts
-        # weights = weights / weights.sum()  # Normalize
-
         weights = 1.0 / class_counts
+        weights = weights / weights.sum()  # Normalize
 
         print(f"Class weights: {weights}")
         criterion = nn.CrossEntropyLoss(weight=weights.to(device))
