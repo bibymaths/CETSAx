@@ -1,5 +1,5 @@
 # **CETSAx-NADPH: Deep Learning & Systems Analysis of Protein-Metabolite Interactions**
- 
+
 ![Snakemake](https://img.shields.io/badge/Snakemake-Workflow-blue?logo=snakemake)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![uv](https://img.shields.io/badge/uv-fast%20package%20manager-orange)
@@ -7,9 +7,12 @@
 ![ESM-2](https://img.shields.io/badge/ESM--2-Protein%20LM-green)
 ![License](https://img.shields.io/badge/License-BSD%203--Clause-lightgrey)
 
-CETSAx is a comprehensive bioinformatics and machine learning pipeline for analyzing Cellular Thermal Shift Assay (CETSA) data. It combines classical biophysical curve fitting with modern Protein Language Models (ESM-2) to characterize and predict protein responsiveness to **NADPH**.
+CETSAx is a comprehensive bioinformatics and machine learning pipeline for analyzing Cellular Thermal Shift Assay (
+CETSA) data. It combines classical biophysical curve fitting with modern Protein Language Models (ESM-2) to characterize
+and predict protein responsiveness to **NADPH**.
 
-This repository provides an automated **Snakemake** workflow that processes raw proteomics data, fits ITDR curves, annotates proteins, fine-tunes a deep learning model, and visualizes binding sites through interpretability methods.
+This repository provides an automated **Snakemake** workflow that processes raw proteomics data, fits ITDR curves,
+annotates proteins, fine-tunes a deep learning model, and visualizes binding sites through interpretability methods.
 
 ---
 
@@ -150,7 +153,7 @@ snakemake -c8 --use-conda
 Generated under `results/plots/`.
 
 | File                            | Description                                |
-| ------------------------------- | ------------------------------------------ |
+|---------------------------------|--------------------------------------------|
 | `plot_1_confusion_matrix.png`   | Accuracy across strong/medium/weak binders |
 | `plot_2_roc_curves.png`         | AUC metrics                                |
 | `plot_4_saliency_map.png`       | Residue-level feature importance           |
@@ -174,6 +177,35 @@ Generated under `results/plots/`.
 
 ## 📚 **References**
 
-* Lin et al. *Evolutionary-scale prediction of atomic-level protein structure with a language model.*
+### Data Sources
+
+The dataset used in this repository originates from the **Cellular Thermal Shift Assay (CETSA)** study by Dziekan *et al.* I converted their provided `.Rdata` file into `.csv` format for use in this project.
+
+**Reference:**
+Dziekan, J.M., Wirjanata, G., Dai, L. *et al.*
+*Cellular thermal shift assay for the identification of drug–target interactions in the Plasmodium falciparum proteome.*
+**Nature Protocols**, 15, 1881–1921 (2020).
+[DOI](https://doi.org/10.1038/s41596-020-0310-z)
+
+**Original repository:**
+[mineCETSA](https://github.com/nkdailingyun/mineCETSA)
+
+**Data link:**
+[RData](https://github.com/nkdailingyun/mineCETSA/tree/93ab6fc3c7186077f40a71c40300803aedd9f5ee/data)
+
+---
+
+### ESM Model
+
+The ESM model used in this project (`esm2_t33_650M_UR50D`) comes from the following paper:
+
+**Reference:**
+Zeming Lin *et al.*
+*Evolutionary-scale prediction of atomic-level protein structure with a language model.*
+**Science**, 379, 1123–1130 (2023).
+[DOI](https://doi.org/10.1126/science.ade2574)
+
+**Model download:**
+[Link](https://huggingface.co/facebook/esm2_t33_650M_UR50D)
 
 ---
