@@ -179,8 +179,7 @@ Generated under `results/plots/`.
 
 ### Data Sources
 
-The dataset used in this repository originates from the **Cellular Thermal Shift Assay (CETSA)** study by Dziekan *et
-al.* I converted their provided `.Rdata` file into `.csv` format for use in this project.
+The dataset used in this repository originates from the **Cellular Thermal Shift Assay (CETSA)** study by Dziekan *et al.* I converted their provided `.Rdata` file into `.csv` format for use in this project.
 
 **Reference:**
 Dziekan, J.M., Wirjanata, G., Dai, L. *et al.*
