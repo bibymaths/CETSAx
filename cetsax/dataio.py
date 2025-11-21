@@ -27,6 +27,15 @@ def load_cetsa_csv(path: str) -> pd.DataFrame:
     Load CETSA NADPH ITDR dataset from CSV.
 
     Assumes a column 'Unnamed: 0' can be dropped if present.
+
+    Parameters
+    ----------
+    path : str
+        Path to the CSV file.
+    Returns
+    -------
+    pd.DataFrame
+        Loaded dataset with appropriate columns.
     """
     df = pd.read_csv(path)
     if "Unnamed: 0" in df.columns:
@@ -43,6 +52,15 @@ def load_cetsa_csv(path: str) -> pd.DataFrame:
 def apply_basic_qc(df: pd.DataFrame) -> type[NoneType[Any]]:
     """
     Apply simple QC criteria at the protein-replicate level.
+    Filters proteins based on minimum unique peptides, PSMs, and count number.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input CETSA dataset.
+    Returns
+    -------
+    pd.DataFrame
+        Filtered dataset passing QC criteria.
     """
     qc_df = df.query(
         f"{SUM_UNIPEPS_COL} >= @QC_MIN_UNIQUE_PEPTIDES and "

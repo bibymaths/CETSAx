@@ -4,16 +4,37 @@ bayes.py
 
 Purpose:
     Implement hierarchical Bayesian modelling of CETSA EC50 parameters.
-
-    This supports:
-    - Joint inference of EC50 across replicates (per protein)
-    - Hierarchical pooling across pathways/modules
-    - Posterior distributions for EC50, Hill, Emax
-    - Bayesian uncertainty quantification for hit calling
-    - Robustness against noisy replicates and weak signals
-
-    Requires PyMC or NumPyro (not mandatory in base install).
 """
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import annotations
 
@@ -39,7 +60,7 @@ def bayesian_fit_ec50(
     Parameters
     ----------
     df : pd.DataFrame
-        Dataframe containing CETSA data.
+        containing CETSA data.
     protein_id : str
         ID of the protein to fit.
     draws : int

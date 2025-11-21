@@ -1,3 +1,40 @@
+"""
+viz_predict.py   
+---------------------
+Visualization and Analysis of Model Predictions for Protein-Ligand Binding
+"""
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 import pandas as pd
 import numpy as np
 from collections import Counter
@@ -10,7 +47,27 @@ from sklearn.preprocessing import label_binarize
 def visualize_predictions(
         pred_file,
         truth_file
-):
+) -> None:
+    """
+    Generate a series of plots to visualize model predictions
+    against ground truth labels and experimental data.
+    Parameters
+    ----------
+    pred_file : str
+        Path to CSV file containing model predictions.
+    truth_file : str
+        Path to CSV file containing ground truth labels and experimental data.
+    -----------
+    1. Confusion Matrix
+    2. ROC Curves
+    3. Probability Distributions (Box Plot)
+    4. Saliency / Integrated Gradients Map
+    5. Probability vs. EC50 Correlation
+    6. Probability vs. Delta Max Correlation
+    7. "The Worst Misses" (High Confidence Errors)
+    8. Global Residue Importance (Aggregated IG)
+    -----------
+    """
     # 1. Load and Merge Data
     preds_df = pd.read_csv(pred_file)
     truth_df = pd.read_csv(truth_file)
@@ -312,7 +369,22 @@ def visualize_predictions(
 def analyze_fitting_data(
         fits_file,
         pred_file
-):
+) -> None:
+    """
+    Analyze and visualize the quality of curve fitting data
+    in relation to model predictions.
+    Parameters
+    ----------
+    fits_file : str
+        Path to CSV file containing curve fitting parameters.
+    pred_file : str
+        Path to CSV file containing model predictions.
+
+    -----------
+    1. Replicate Consistency Plot
+    2. Curve Reconstruction for Top Predicted Targets
+    -----------
+    """
     # 1. Load Data
     fits = pd.read_csv(fits_file)
     preds = pd.read_csv(pred_file)
@@ -375,7 +447,24 @@ def generate_bio_insight(
         pred_file,
         truth_file,
         annot_file
-):
+) -> None:
+    """
+    Generate biological insight plots based on model predictions,
+    experimental data, and pathway annotations.
+    Parameters
+    ----------
+    pred_file : str
+        Path to CSV file containing model predictions.
+    truth_file : str
+        Path to CSV file containing ground truth labels and experimental data.
+    annot_file : str
+        Path to CSV file containing protein annotations (e.g., pathways).
+    -----------
+    1. Pathway Enrichment in Predicted Strong Binders
+    2. EC50 Validation Across Predicted Classes
+    -----------
+    """
+
     # 1. Load and Merge
     preds = pd.read_csv(pred_file)
     truth = pd.read_csv(truth_file)

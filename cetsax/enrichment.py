@@ -3,28 +3,12 @@ enrichment.py
 -------------
 
 Pathway-level effect size integration and enrichment for NADPH CETSA data.
-
-Purpose
--------
 Build pathway/module-level summaries of NADPH responsiveness and perform
 enrichment tests using:
 
   - Binary hit sets (e.g. strong / medium hits)
   - Continuous scores (e.g. NSS, delta_max, EC50)
 
-Typical workflow
-----------------
-1. Start from:
-   - fitted curves (ec50_fits.csv) OR
-   - sensitivity scores (from sensitivity.compute_sensitivity_scores)
-
-2. Provide an annotation table mapping proteins to pathways/modules:
-   columns: id | pathway
-
-3. Use:
-   - summarize_pathway_effects(...)  -> pathway-level metrics
-   - enrich_overrepresentation(...)  -> Fisher exact test on hit sets
-   - enrich_continuous_mannwhitney(...) -> continuous enrichment per pathway
 """
 
 from __future__ import annotations
@@ -133,27 +117,26 @@ def enrich_overrepresentation(
 ) -> pd.DataFrame:
     """
     Perform over-representation analysis for pathways using a binary hit set.
-
     Parameters
     ----------
     hits_df : DataFrame
-        Per-protein table with at least:
-          - id_col
-          - hit_col (string labels like "strong", "medium", "weak")
-
+        Per-protein hit classification table, must contain: id_col, hit_col.
     annot_df : DataFrame
         id-to-pathway mapping.
-
+    id_col : str
+        Column name for protein IDs.
+    path_col : str
+        Column name for pathway/module names.
+    hit_col : str
+        Column name for hit classification.
     strong_labels : iterable of str
-        Values in hit_col considered "hits" (e.g. ["strong"] or ["strong", "medium"]).
-
+        Labels in hit_col to consider as "hits".
     min_genes : int
-        Minimum number of proteins annotated to a pathway to test it.
-
+        Minimum number of genes in a pathway to consider it for enrichment.
     Returns
     -------
     DataFrame
-        pathway | n_path | n_hits | n_bg | odds_ratio | pval | qval
+        path_col | n_path | n_hits | n_bg | odds_ratio | pval | qval
     """
     # Merge annotations
     df = pd.merge(hits_df[[id_col, hit_col]], annot_df[[id_col, path_col]],
@@ -241,14 +224,17 @@ def enrich_continuous_mannwhitney(
     Parameters
     ----------
     sens_df : DataFrame
-        Per-protein scores (e.g. output of compute_sensitivity_scores),
-        must contain: id_col, score_col.
-
+        Per-protein sensitivity scores, must contain: id_col, score_col.
     annot_df : DataFrame
         id-to-pathway mapping.
-
     score_col : str
-        Column to test, e.g. "NSS", "delta_max", or a custom score.
+        Column name for continuous score to test.
+    id_col : str
+        Column name for protein IDs.
+    path_col : str
+        Column name for pathway/module names.
+    min_genes : int
+        Minimum number of genes in a pathway to consider it for enrichment.
 
     Returns
     -------

@@ -2,20 +2,41 @@
 viz_hits.py
 -----------
 
-Hit calling + diagnostic plotting for CETSA ITDR EC50 fits.
-
-Inspired by the original ad-hoc script, but rewritten as a reusable module.
-
-Main entry point:
-    run_hit_calling_and_plots(fits_df, out_dir=Path("plots"))
-
-Outputs:
-    - EC50 vs delta_max plot (quadrant)
-    - EC50_r1 vs EC50_r2 replicate consistency plot
-    - R2 vs delta_max plot
-    - EC50 vs R2 plot
-    - Ranked hits table (strong / medium / weak) as DataFrame
+Hit-calling and visualization functions for CETSA ITDR data.
+This module provides functions to classify hits based on EC50, delta_max,
+and R2 thresholds, generate ranked hit tables, and create diagnostic plots
+to visualize hit characteristics and replicate consistency.
 """
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import annotations
 

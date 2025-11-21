@@ -3,44 +3,41 @@ redox.py
 --------
 
 Redox-axis reconstruction from NADPH CETSA data.
+Defines functions to build redox axes per protein based on
+sensitivity scores, hit classifications, and network centrality,
+as well as to summarize redox roles at the pathway level.
 
-Purpose
--------
-Use fitted CETSA parameters, NADPH sensitivity scores, hit classes,
-and (optionally) co-stabilization network centrality to reconstruct
-a "redox landscape" with:
-
-    - Direct NADPH cores (high affinity, strong effect, clean curves)
-    - Indirect / downstream responders (medium affinity/effect)
-    - Network mediators (high centrality, moderate response)
-    - Peripheral / non-responders
-
-This module defines three conceptual axes per protein:
-
-    Axis 1: direct_redox_axis
-        High when EC50 is low, delta_max high, hit_class strong.
-
-    Axis 2: indirect_redox_axis
-        High when EC50 is moderate, delta_max moderate, hit_class medium,
-        especially if not strongly direct.
-
-    Axis 3: network_redox_axis
-        High when network centrality (degree / betweenness) is high,
-        regardless of direct vs indirect.
-
-Typical usage
--------------
-1. Start from:
-    - fits_df (ec50_fits.csv; per-protein median summaries)
-    - sens_df (from sensitivity.compute_sensitivity_scores)
-    - hits_df (from ranked hit table; per-protein dominant hit class)
-    - net_df  (optional; per-protein network centrality stats)
-    - annot_df (id -> pathway)
-
-2. Use:
-    - build_redox_axes(...)         -> per-protein redox scores + role
-    - summarize_redox_by_pathway(...) -> pathway-level redox patterns
 """
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import annotations
 
@@ -58,6 +55,16 @@ from sklearn.preprocessing import RobustScaler
 def _robust_scale_01(series: pd.Series) -> pd.Series:
     """
     Robustly scale a 1D series to [0, 1] using median/IQR + logistic squash.
+    High raw value -> high score (0..1).
+
+    Parameters
+    ----------
+    series : pd.Series
+        Input data series.
+    Returns
+    -------
+    pd.Series
+        Scaled series in [0, 1].
     """
     vals = series.values.reshape(-1, 1)
     if len(series) == 0:
@@ -76,6 +83,14 @@ def _robust_scale_01(series: pd.Series) -> pd.Series:
 def _inv_scale_01(series: pd.Series) -> pd.Series:
     """
     Invert robust scale: low raw value -> high score (0..1).
+    Parameters
+    ----------
+    series : pd.Series
+        Input data series.
+    Returns
+    -------
+    pd.Series
+        Inverted scaled series in [0, 1].
     """
     s = _robust_scale_01(series)
     return 1.0 - s
@@ -117,6 +132,15 @@ def build_redox_axes(
     net_df : DataFrame, optional
         Network centrality stats; if provided, must contain:
             id_col, degree_col, betweenness_col
+        If None, network centrality will be ignored.
+    id_col : str
+        Column name for protein identifier.
+    hit_col : str
+        Column name for hit classification.
+    degree_col : str
+        Column name for network degree centrality.
+    betweenness_col : str
+        Column name for network betweenness centrality.
 
     Returns
     -------
@@ -231,6 +255,17 @@ def build_redox_axes(
     # 1C. Assign redox roles per protein
     # --------------------------------------------------------
     def _assign_role(row):
+        """
+        Assign redox role based on axis scores.
+        Parameters
+        ----------
+        row : pd.Series
+            Row of base DataFrame with axis scores.
+        Returns
+        -------
+        str
+            Assigned redox role.
+        """
         d = row["axis_direct"]
         ind = row["axis_indirect"]
         net = row["axis_network"]
@@ -270,6 +305,11 @@ def summarize_redox_by_pathway(
 
     annot_df : DataFrame
         id-to-pathway mapping.
+        Must contain: id_col, path_col
+    id_col : str
+        Column name for protein identifier.
+    path_col : str
+        Column name for pathway/module annotation.
 
     Returns
     -------

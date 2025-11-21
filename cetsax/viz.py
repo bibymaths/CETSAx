@@ -2,22 +2,38 @@
 viz.py
 ------
 
-High-level plotting helpers for CETSA NADPH analysis:
-
-I. Enrichment / pathway effects
-J. Redox axes & roles
-K. Latent factor models (PCA / FA)
-L. Mixture model clusters
-
-These are designed as thin wrappers around:
-
-    - enrichment.summarize_pathway_effects / enrich_*(...)
-    - redox.build_redox_axes / summarize_redox_by_pathway(...)
-    - latent.fit_pca / fit_factor_analysis(...)
-    - mixture.assign_mixture_clusters(...)
-
-All functions accept an optional `ax` and return (fig, ax).
+Plotting functions for pathway effects, redox axes, latent factors, and mixture clusters.
 """
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import annotations
 
@@ -83,19 +99,17 @@ def plot_pathway_enrichment_volcano(
         label_top_n: int = 10,
 ):
     """
-    Simple 'volcano-style' plot for pathway enrichment:
-    x = log2(odds_ratio), y = -log10(qval).
-
-    Works with output of enrich_overrepresentation(...).
+    Plot volcano plot of pathway over-representation analysis.
 
     Parameters
     ----------
     enr_df : DataFrame
-        Must contain: 'odds_ratio', 'qval', pathway column.
-
+        Output of pathway_enrichment_analysis, must contain:
+            'odds_ratio', 'qval', 'pathway' (or custom).
+    ax : Axes or None
+        If None, creates a new figure/axis.
     label_top_n : int
-        Label top_n most significant pathways.
-
+        Number of top pathways (by smallest qval) to label.
     Returns
     -------
     fig, ax
@@ -153,6 +167,9 @@ def plot_redox_axes_scatter(
     color_by : str
         Categorical column used for coloring (e.g. 'redox_role').
 
+    ax : Axes or None
+        If None, creates a new figure/axis.
+
     Returns
     -------
     fig, ax
@@ -185,12 +202,19 @@ def plot_redox_role_composition(
     """
     Stacked barplot of redox role composition per pathway.
 
-    Expects output of summarize_redox_by_pathway(...), with columns:
-        'pathway' + fractions:
-            'frac_direct_core',
-            'frac_indirect_responder',
-            'frac_network_mediator',
-            'frac_peripheral'
+    Parameters
+    ----------
+    path_redox_df : DataFrame
+        Output of summarize_pathway_redox_roles, must contain:
+            'pathway' (or custom), 'frac_direct_core', 'frac_indirect_responder',
+            'frac_network_mediator', 'frac_peripheral'.
+    top_n : int
+        Number of top pathways to show.
+    ax : Axes or None
+        If None, creates a new figure/axis.
+    Returns
+    -------
+
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -243,13 +267,20 @@ def plot_pca_scores(
     Parameters
     ----------
     scores_df : DataFrame
-        PCA scores indexed by id, columns like 'PC1', 'PC2', 'PC3', ...
-
-    meta_df : DataFrame or None
-        Optional metadata table with id_col and color_by.
-
+        PCA scores indexed by id, columns including pc_x, pc_y.
+    meta_df : DataFrame, optional
+        Metadata dataframe with id_col and color_by column.
+    id_col : str
+        Column name for protein identifier.
     color_by : str or None
-        Column in meta_df used to color points (categorical).
+        Column in meta_df to color points by. If None, no coloring.
+    pc_x, pc_y : str
+        Columns in scores_df to use as x and y coordinates.
+    ax : Axes or None
+        If None, creates a new figure/axis.
+    Returns
+    -------
+    fig, ax
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 6))
@@ -287,7 +318,24 @@ def plot_factor_scores(
         ax: Optional[plt.Axes] = None,
 ):
     """
-    Same as plot_pca_scores, but for FactorAnalysis scores (F1, F2, ...).
+    Scatter of factor analysis scores (F1 vs F2), optionally colored by a metadata column.
+    Parameters
+    ----------
+    scores_df : DataFrame
+        Factor analysis scores indexed by id, columns including f_x, f_y.
+    meta_df : DataFrame, optional
+        Metadata dataframe with id_col and color_by column.
+    id_col : str
+        Column name for protein identifier.
+    color_by : str or None
+        Column in meta_df to color points by. If None, no coloring.
+    f_x, f_y : str
+        Columns in scores_df to use as x and y coordinates.
+    ax : Axes or None
+        If None, creates a new figure/axis.
+    Returns
+    -------
+    fig, ax
     """
     return plot_pca_scores(
         scores_df=scores_df.rename(columns={f_x: "PC1", f_y: "PC2"}),
@@ -319,9 +367,17 @@ def plot_mixture_clusters_in_pca(
     ----------
     pca_scores : DataFrame
         PCA scores indexed by id, columns including pc_x, pc_y.
-
     cluster_df : DataFrame
         Output of assign_mixture_clusters, must contain id_col, 'cluster'.
+    id_col : str
+        Column name for protein identifier.
+    pc_x, pc_y : str
+        Columns in pca_scores to use as x and y coordinates.
+    ax : Axes or None
+        If None, creates a new figure/axis.
+    Returns
+    -------
+    fig, ax
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 6))
@@ -358,6 +414,11 @@ def plot_cluster_size_bar(
     ----------
     cluster_df : DataFrame
         Output of assign_mixture_clusters, must contain 'cluster'.
+    ax : Axes or None
+        If None, creates a new figure/axis.
+    Returns
+    -------
+    fig, ax
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 4))

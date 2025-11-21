@@ -3,42 +3,43 @@ latent.py
 ---------
 
 Latent-factor modelling of CETSA NADPH responsiveness.
+This module provides functions to build a feature matrix from
+CETSA sensitivity scores and redox axes, and to perform
+dimensionality reduction using PCA and Factor Analysis (FA).
+It also includes utilities to merge latent representations
+back to protein metadata tables.
 
-Purpose
--------
-Build low-dimensional latent representations of proteins using
-CETSA-derived features (EC50, delta_max, Hill, R2, NSS, redox axes, etc.)
-to uncover global structure such as:
-
-    - major response axes (direct NADPH, redox stress, chaperone response)
-    - shared signatures across pathways
-    - subpopulations of proteins with similar response patterns
-
-This module provides:
-
-    - build_feature_matrix(...)  -> construct standardized features per protein
-    - fit_pca(...)               -> principal component analysis
-    - fit_factor_analysis(...)   -> factor analysis
-    - attach_latent_to_metadata(...) -> merge latent coords back to proteins
-
-Typical workflow
-----------------
-1. Start from:
-   - sens_df  (from sensitivity.compute_sensitivity_scores)
-   - redox_df (from redox.build_redox_axes), optional
-
-2. Build features:
-   feat_df = build_feature_matrix(sens_df, redox_df)
-
-3. Fit latent models:
-   pca_res = fit_pca(feat_df, n_components=3)
-   fa_res  = fit_factor_analysis(feat_df, n_components=3)
-
-4. Attach back to proteins:
-   latent_with_ids = attach_latent_to_metadata(
-       sens_df, pca_res["scores"], id_col="id"
-   )
 """
+# BSD 3-Clause License
+#
+# Copyright (c) 2025, Abhinav Mishra
+# All rights reserved.
+# Email: mishraabhinav36@gmail.com
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
+#    be used to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import annotations
 
@@ -82,6 +83,9 @@ def build_feature_matrix(
     include_redox_axes : bool
         If True and redox_df is provided, will also include:
             ["axis_direct", "axis_indirect", "axis_network"]
+        as features.
+    id_col : str
+        Column name for protein identifier in sens_df and redox_df.
 
     Returns
     -------
@@ -243,6 +247,9 @@ def attach_latent_to_metadata(
 
     latent_df : DataFrame
         Latent representation indexed by id (e.g. PCA scores or FA scores).
+
+    id_col : str
+        Column name for protein identifier in meta_df and latent_df.
 
     Returns
     -------

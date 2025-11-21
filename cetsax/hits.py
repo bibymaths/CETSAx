@@ -1,4 +1,6 @@
 """
+hits.py
+------------
 Hit calling and summary for CETSA ITDR binding models.
 """
 
@@ -18,8 +20,21 @@ def call_hits(
     """
     Filter fitted curves to keep only high-confidence hits.
 
-    - r2_min: minimum R^2 for a good fit
-    - delta_min: minimum max change in signal across doses
+    Parameters
+    ----------
+    fit_df : pd.DataFrame
+        Data Frame containing fitted curve parameters with at least the following columns:
+        - 'R2': Coefficient of determination of the fit.
+        - 'delta_max': Maximum change in response.
+        - 'EC50': Half-maximal effective concentration.
+    r2_min : float
+        Minimum R² value to consider a fit as a hit.
+    delta_min : float
+        Minimum delta_max value to consider a fit as a hit.
+    Returns
+    -------
+    pd.DataFrame
+        Data Frame containing only the hits that meet the specified criteria.
     """
     if fit_df.empty:
         return fit_df.copy()
@@ -39,8 +54,21 @@ def call_hits(
 def summarize_hits(hits_df: pd.DataFrame, min_reps: int = 2) -> pd.DataFrame:
     """
     Aggregate hit information at the protein level across replicates.
-
-    - min_reps: minimum distinct conditions (replicates) where the protein is a hit.
+    Parameters
+    ----------
+    hits_df : pd.DataFrame
+        Data Frame containing hit information with at least the following columns:
+        - ID_COL: Identifier for the protein or target.
+        - COND_COL: Condition or replicate identifier.
+        - 'EC50': Half-maximal effective concentration.
+        - 'Emax': Maximum effect.
+        - 'Hill': Hill coefficient.
+    min_reps : int
+        Minimum number of replicates required to include a protein in the summary.
+    Returns
+    -------
+    pd.DataFrame
+        Summary Data Frame with aggregated hit information per protein.
     """
     if hits_df.empty:
         return pd.DataFrame(
