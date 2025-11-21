@@ -211,6 +211,5 @@ __marimo__/
 plots*/
 run*/
 results*/
-data/
 *.lock
 .snakemake
