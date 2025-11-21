@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from typing import Dict
-
+from networkx.algorithms.community import greedy_modularity_communities
 from .config import DOSE_COLS, ID_COL
 
 
@@ -72,8 +72,6 @@ def detect_modules(G: nx.Graph) -> Dict[str, int]:
     Returns:
         dict: {protein_id: module_id}
     """
-    from networkx.algorithms.community import greedy_modularity_communities
-
     comms = greedy_modularity_communities(G)
     module_map = {}
     for i, comm in enumerate(comms):

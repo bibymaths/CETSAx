@@ -23,13 +23,41 @@ import pymc as pm
 import arviz as az
 
 
-def bayesian_fit_ec50(df: pd.DataFrame, protein_id: str) -> Dict[str, Any]:
+def bayesian_fit_ec50(
+    df: pd.DataFrame,
+    protein_id: str,
+    draws: int = 1000,
+    tune: int = 1000,
+    chains: int = 4,
+    cores: int = 1,
+    progressbar: bool = True
+) -> Dict[str, Any]:
     """
     Fit a hierarchical Bayesian EC50 model for a single protein
     across replicates.
 
-    Returns:
-        dict containing PyMC model, posterior samples, and summary.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing CETSA data.
+    protein_id : str
+        ID of the protein to fit.
+    draws : int
+        Number of samples to draw from the posterior (per chain).
+    tune : int
+        Number of tuning steps (burn-in).
+    chains : int
+        Number of independent MCMC chains to run.
+    cores : int
+        Number of CPU cores to use for parallel sampling.
+        Set to 1 if running this function inside a joblib loop.
+        Set to equal 'chains' if running on a single protein.
+    progressbar : bool
+        Whether to show the PyMC progress bar.
+
+    Returns
+    -------
+    dict containing PyMC model, posterior samples (trace), and summary.
     """
     if pm is None:
         raise ImportError("PyMC is required for Bayesian inference.")
@@ -38,8 +66,15 @@ def bayesian_fit_ec50(df: pd.DataFrame, protein_id: str) -> Dict[str, Any]:
     if subset.empty:
         raise ValueError(f"No data for protein {protein_id}")
 
-    doses = subset.columns[subset.columns.str.contains("e-")].astype(float)
-    y = subset[doses].values  # (replicates x doses)
+    # 1. Identify dose columns (strings)
+    dose_cols = subset.columns[subset.columns.str.contains("e-")]
+
+    # 2. Get numerical values for the model (floats)
+    # We need these for the 'itdr' mathematical function
+    doses_val = dose_cols.astype(float)
+
+    # 3. Get intensity data using string column names
+    y = subset[dose_cols].values  # (replicates x doses)
 
     with pm.Model() as model:
         # Priors
@@ -54,12 +89,21 @@ def bayesian_fit_ec50(df: pd.DataFrame, protein_id: str) -> Dict[str, Any]:
         def itdr(c, E0, Emax, logEC50, Hill):
             return E0 + (Emax - E0) / (1 + (10 ** logEC50 / c) ** Hill)
 
-        mu = itdr(doses.values, E0, Emax, logEC50, Hill)
+        # Use numerical doses here
+        mu = itdr(doses_val.values, E0, Emax, logEC50, Hill)
         sigma = pm.HalfNormal("sigma", sigma=0.05)
 
         pm.Normal("obs", mu=mu, sigma=sigma, observed=y)
 
-        trace = pm.sample(1000, tune=1000, chains=2, target_accept=0.9)
+        # Parallel sampling handled here via 'cores' argument
+        trace = pm.sample(
+            draws=draws,
+            tune=tune,
+            chains=chains,
+            cores=cores,
+            target_accept=0.9,
+            progressbar=progressbar
+        )
 
     return {
         "model": model,

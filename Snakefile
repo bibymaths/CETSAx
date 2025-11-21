@@ -1,8 +1,9 @@
 configfile: "config.yaml"
 
-# --- Target Rule ---
+# --- Target Rule (What we want to produce) ---
 rule all:
     input:
+        # 1. Plots from the main pipeline
         expand("results/plots/{plot}",plot=[
             "plot_1_confusion_matrix.png",
             "plot_2_roc_curves.png",
@@ -11,9 +12,20 @@ rule all:
             "plot_5_ec50_correlation.png",
             "plot_6_deltamax_correlation.png",
             "plot_7_worst_misses.png",
-            "plot_8_residue_importance.png"
+            "plot_8_residue_importance.png",
+            "plot_9_replicate_consistency.png",
+            "plot_10_curve_reconstruction.png",
+            "plot_11_bio_pathway_enrichment.png",
+            "plot_12_bio_ec50_validation.png"
         ]),
-        f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv"
+        # 2. System analysis output
+        f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv",
+
+        # 3. NEW MODULES OUTPUTS (This was missing)
+        f"{config['results_dir']}/network/network_modules.csv",# Rule 8
+        f"{config['results_dir']}/curve_ml/curve_clusters.csv",# Rule 9
+        f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv",# Rule 10
+        f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png"  # Rule 11
 
 # --- 1. Fit Curves ---
 rule fit_curves:
@@ -47,8 +59,7 @@ rule hit_calling:
 rule annotate:
     input:
         fits=rules.fit_curves.output.fits,
-        # SERIALIZATION HACK: We add this input just to force
-        # annotation to wait until hit_calling is done.
+        # SERIALIZATION HACK: Force wait for hit_calling
         _wait_for_hits=rules.hit_calling.output.hits_csv
     output:
         annot=f"{config['results_dir']}/protein_annotations.csv",
@@ -85,7 +96,7 @@ rule train_model:
     input:
         fits=rules.fit_curves.output.fits,
         fasta=rules.annotate.output.fasta,
-        # SERIALIZATION HACK: Force Training to wait for System Analysis
+        # SERIALIZATION HACK: Force wait for system_analysis
         _wait_for_sys=rules.system_analysis.output.cluster_labels
     output:
         supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
@@ -148,15 +159,85 @@ rule visualize:
         "results/plots/plot_10_curve_reconstruction.png",
         "results/plots/plot_11_bio_pathway_enrichment.png",
         "results/plots/plot_12_bio_ec50_validation.png"
-
     shell:
         """
         mkdir -p results/plots
         cd results/plots
-        
+
         ../../{config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
             --pred-file ../../{input.preds} \
             --truth-file ../../{input.truth} \
             --fit-file ../../{input.fits} \
             --annot-file ../../{input.annot}
+        """
+
+# --- 8. Network Analysis ---
+# (Does not strictly need to wait for viz, but we can add a dep if we want total serialization)
+rule network_analysis:
+    input:
+        csv=config["input_csv"],
+        # Optional: Force wait for viz if you want STRICT serial order
+        _wait_for_viz="results/plots/plot_1_confusion_matrix.png"
+    output:
+        outdir=directory(f"{config['results_dir']}/network"),
+        modules=f"{config['results_dir']}/network/network_modules.csv"
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/07_network_analysis.py \
+            --input-csv {input.csv} \
+            --out-dir {output.outdir}
+        """
+
+# --- 9. Curve ML ---
+rule curve_ml:
+    input:
+        csv=config["input_csv"],
+        # Force wait for network
+        _wait_for_net=rules.network_analysis.output.modules
+    output:
+        outdir=directory(f"{config['results_dir']}/curve_ml"),
+        clusters=f"{config['results_dir']}/curve_ml/curve_clusters.csv"
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/08_curve_ml.py \
+            --input-csv {input.csv} \
+            --out-dir {output.outdir}
+        """
+
+# --- 10. Bayesian Validation ---
+rule bayesian_fit:
+    input:
+        csv=config["input_csv"],
+        hits=rules.hit_calling.output.hits_csv,
+        # Force wait for curve_ml
+        _wait_for_ml=rules.curve_ml.output.clusters
+    output:
+        outdir=directory(f"{config['results_dir']}/bayesian"),
+        summary=f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv"
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/09_bayesian_fit.py \
+            --input-csv {input.csv} \
+            --hits-csv {input.hits} \
+            --out-dir {output.outdir}
+        """
+
+# --- 11. Detailed Plotting ---
+rule detailed_plots:
+    input:
+        csv=config["input_csv"],
+        fits=rules.fit_curves.output.fits,
+        hits=rules.hit_calling.output.hits_csv,
+        # Force wait for bayesian
+        _wait_for_bayes=rules.bayesian_fit.output.summary
+    output:
+        outdir=directory(f"{config['results_dir']}/detailed_plots"),
+        gof=f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png"
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/10_plot_curves.py \
+            --input-csv {input.csv} \
+            --fits-csv {input.fits} \
+            --hits-csv {input.hits} \
+            --out-dir {output.outdir}
         """
