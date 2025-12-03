@@ -36,6 +36,8 @@ Script to build CETSA co-stabilization network from processed data.
 import argparse
 import pandas as pd
 import networkx as nx
+import seaborn as sns
+import matplotlib.pyplot as plt
 from pathlib import Path
 from cetsax import load_cetsa_csv, apply_basic_qc
 from cetsax import compute_costab_matrix, make_network_from_matrix, detect_modules
@@ -59,6 +61,13 @@ def main():
     print("Computing co-stabilization matrix...")
     corr_matrix = compute_costab_matrix(df)
     corr_matrix.to_csv(out_dir / "costab_matrix.csv")
+
+    # Plot heat-map of co-stabilization matrix
+    plt.figure(figsize=(16, 16))
+    sns.heatmap(corr_matrix, cmap='viridis')
+    plt.title('Co-stabilization Matrix Heatmap')
+    plt.savefig(out_dir / "costab_matrix_heatmap.png", dpi=300)
+    plt.close()
 
     # 2. Build Network
     print(f"Building graph (cutoff={args.corr_cutoff})...")
