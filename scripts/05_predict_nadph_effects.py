@@ -113,7 +113,7 @@ def predict_nadph_from_fasta(
 
     # 4) Inference in batches
     all_rows = []
-    int_to_class = {0: "weak", 1: "medium", 2: "strong"}
+    int_to_class = {0: "weak", 1: "strong"}
     grad_context = torch.no_grad if not (compute_saliency or compute_ig) else lambda: torch.enable_grad()
 
     # <--- [MONITORING 4] Batch calculation

@@ -89,8 +89,8 @@ def visualize_predictions(
 
     # Create heatmap
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
-                xticklabels=['Weak', 'Medium', 'Strong'],
-                yticklabels=['Weak', 'Medium', 'Strong'])
+                xticklabels=['Weak', 'Strong'],
+                yticklabels=['Weak', 'Strong'])
 
     plt.xlabel('Predicted Label', fontsize=12)
     plt.ylabel('True Label', fontsize=12)
@@ -106,8 +106,8 @@ def visualize_predictions(
     # Binarize labels for multi-class ROC
     n_classes = 3
     y_true = label_binarize(df['label_cls'], classes=[0, 1, 2])
-    y_score = df[['p_class0', 'p_class1', 'p_class2']].values
-    class_names = ['Weak', 'Medium', 'Strong']
+    y_score = df[['p_class0', 'p_class1']].values
+    class_names = ['Weak', 'Strong']
 
     plt.figure(figsize=(10, 7))
     for i in range(n_classes):
@@ -131,18 +131,18 @@ def visualize_predictions(
     # Plot 3: Probability Distributions (Box Plot)
     # -------------------------------------------------------
     # Melt for easier plotting with seaborn
-    probs_cols = ['p_class0', 'p_class1', 'p_class2']
+    probs_cols = ['p_class0', 'p_class1']
     plot_df = df.melt(id_vars=['hit_class'], value_vars=probs_cols,
                       var_name='Pred_Class_Prob', value_name='Probability')
 
     # Rename columns for readability
     plot_df['Pred_Class_Prob'] = plot_df['Pred_Class_Prob'].map({
-        'p_class0': 'Weak', 'p_class1': 'Medium', 'p_class2': 'Strong'
+        'p_class0': 'Weak', 'p_class1': 'Strong'
     })
 
     plt.figure(figsize=(12, 6))
     sns.boxplot(x='hit_class', y='Probability', hue='Pred_Class_Prob',
-                data=plot_df, order=['weak', 'medium', 'strong'], palette="Set2")
+                data=plot_df, order=['weak','strong'], palette="Set2")
 
     plt.title('Model Confidence: Probabilities assigned to each class', fontsize=14)
     plt.xlabel('True Class (Ground Truth)', fontsize=12)
@@ -162,7 +162,7 @@ def visualize_predictions(
 
     if not strong_hits.empty:
         # Pick top 1 by probability
-        best_hit = strong_hits.sort_values('p_class2', ascending=False).iloc[0]
+        best_hit = strong_hits.sort_values('p_class1', ascending=False).iloc[0]
         prot_id = best_hit['id']
         ig_str = best_hit.get('ig')  # Use 'ig' (Integrated Gradients) if available, else 'saliency'
 
@@ -209,9 +209,9 @@ def visualize_predictions(
     scatter = sns.scatterplot(
         data=plot_df,
         x='EC50',
-        y='p_class2',
+        y='p_class1',
         hue='hit_class',
-        palette={'weak': 'gray', 'medium': 'orange', 'strong': 'green'},
+        palette={'weak': 'orange', 'strong': 'green'},
         alpha=0.6
     )
 
@@ -240,8 +240,8 @@ def visualize_predictions(
         x='delta_max',
         y='R2',  # <--- Changed from 'p_class2'
         hue='hit_class',
-        hue_order=['weak', 'medium', 'strong'],  # Optional: Ensures consistent color order
-        palette={'weak': 'lightgray', 'medium': 'orange', 'strong': 'green'},
+        hue_order=['weak','strong'],  # Optional: Ensures consistent color order
+        palette={'weak': 'orange', 'strong': 'green'},
         alpha=0.6,
         s=60  # Increased dot size slightly
     )
@@ -509,7 +509,7 @@ def generate_bio_insight(
     plt.figure(figsize=(8, 6))
     # Filter outliers for cleaner plot
     plot_df = df[df['EC50'] < 100]
-    sns.boxplot(data=plot_df, x='pred_class', y='EC50', order=['weak', 'medium', 'strong'], palette='Set2')
+    sns.boxplot(data=plot_df, x='pred_class', y='EC50', order=['weak', 'strong'], palette='Set2')
     plt.yscale('log')
     plt.title('Do Predicted Strong Binders have lower EC50?')
     plt.ylabel('Experimental EC50 (Log Scale)')

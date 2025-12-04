@@ -23,16 +23,16 @@ def analyze_results():
     print(f"Matched {len(merged)} proteins for analysis.\n")
 
     # 3. Define the specific columns based on your headers
-    y_true = merged['label_cls']  # 0, 1, 2 from supervised file
-    y_pred = merged['pred_class_idx']  # 0, 1, 2 from predictions
+    y_true = merged['label_cls']  # 0, 1 from supervised file
+    y_pred = merged['pred_class_idx']  # 0, 1  from predictions
 
     # 4. Calculate & Print Metrics
     acc = accuracy_score(y_true, y_pred)
     print(f"=== Overall Accuracy: {acc:.2%} ===\n")
 
-    # Target names map to 0, 1, 2 (Weak, Medium, Strong)
+    # Target names map to 0, 1 (Weak, Strong)
     print("--- Detailed Classification Report ---")
-    print(classification_report(y_true, y_pred, target_names=['Weak', 'Medium', 'Strong']))
+    print(classification_report(y_true, y_pred, target_names=['Weak', 'Strong']))
 
     print("--- Confusion Matrix (Row=Actual, Col=Predicted) ---")
     cm = confusion_matrix(y_true, y_pred)
@@ -41,7 +41,7 @@ def analyze_results():
 
     # 5. DIAGNOSTICS: Find the Missed "Strong" Hits
     # We want to know which Strong binders (2) were predicted as Weak (0)
-    missed_hits = merged[(merged['label_cls'] == 2) & (merged['pred_class_idx'] == 0)]
+    missed_hits = merged[(merged['label_cls'] == 1) & (merged['pred_class_idx'] == 0)]
 
     if not missed_hits.empty:
         print(f"WARNING: The model completely missed {len(missed_hits)} Strong hits (predicted as Weak).")

@@ -214,7 +214,7 @@ Use it as a checklist when you browse `results/`.
 
 **What matters**
 
-* Columns with hit labels like `strong`, `medium`, `weak`, `non_responder`.
+* Columns with hit labels like `strong`, `weak`, `non_responder`.
 * QC metrics: minimum replicate count, fit convergence, R² thresholds.
 
 **Biological interpretation**

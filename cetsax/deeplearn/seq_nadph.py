@@ -106,11 +106,8 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
 def classify_hit_row(
         row: pd.Series,
         ec50_strong: float = 0.01,
-        ec50_medium: float = 0.5,
         delta_strong: float = 0.10,
-        delta_medium: float = 0.08,
         r2_strong: float = 0.70,
-        r2_medium: float = 0.50,
 ) -> str:
     ec50 = float(row["EC50"])
     dm = float(row["delta_max"])
@@ -118,8 +115,6 @@ def classify_hit_row(
 
     if (ec50 < ec50_strong) and (dm > delta_strong) and (r2 > r2_strong):
         return "strong"
-    elif (ec50 < ec50_medium) and (dm > delta_medium) and (r2 > r2_medium):
-        return "medium"
     else:
         return "weak"
 
@@ -142,7 +137,7 @@ def build_sequence_supervised_table(
     )
 
     agg["hit_class"] = agg.apply(classify_hit_row, axis=1)
-    class_to_int = {"weak": 0, "medium": 1, "strong": 2}
+    class_to_int = {"weak": 0, "strong": 1}
     agg["label_cls"] = agg["hit_class"].map(class_to_int).astype(int)
 
     if use_nss and "NSS" in agg.columns:
@@ -307,7 +302,7 @@ class NADPHSeqModel(nn.Module):
             esm_model,
             embed_dim: int,
             task: str = "classification",
-            num_classes: int = 3,
+            num_classes: int = 2,
             dropout: float = 0.3, # Increased dropout slightly
     ):
         super().__init__()

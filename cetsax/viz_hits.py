@@ -53,18 +53,14 @@ import matplotlib.pyplot as plt
 def classify_hit(
         row: pd.Series,
         ec50_strong: float = 0.01,
-        ec50_medium: float = 0.5,
         delta_strong: float = 0.10,
-        delta_medium: float = 0.08,
         r2_strong: float = 0.70,
-        r2_medium: float = 0.50,
 ) -> str:
     """
-    Classify a single (EC50, delta_max, R2) triplet into strong/medium/weak.
+    Classify a single (EC50, delta_max, R2) triplet into strong/weak.
 
     Thresholds are configurable but default to:
         strong: EC50 < 0.01, delta_max > 0.10, R2 > 0.70
-        medium: EC50 < 0.5,  delta_max > 0.08, R2 > 0.50
         else:  weak
     """
     ec50 = float(row["EC50"])
@@ -73,8 +69,6 @@ def classify_hit(
 
     if (ec50 < ec50_strong) and (dm > delta_strong) and (r2 > r2_strong):
         return "strong"
-    elif (ec50 < ec50_medium) and (dm > delta_medium) and (r2 > r2_medium):
-        return "medium"
     else:
         return "weak"
 
@@ -82,11 +76,8 @@ def classify_hit(
 def build_hits_table(
         fits_df: pd.DataFrame,
         ec50_strong: float = 0.01,
-        ec50_medium: float = 0.5,
         delta_strong: float = 0.10,
-        delta_medium: float = 0.08,
         r2_strong: float = 0.70,
-        r2_medium: float = 0.50,
         id_col: str = "id",
         cond_col: str = "condition",
 ) -> pd.DataFrame:
@@ -102,11 +93,8 @@ def build_hits_table(
         classify_hit,
         axis=1,
         ec50_strong=ec50_strong,
-        ec50_medium=ec50_medium,
         delta_strong=delta_strong,
-        delta_medium=delta_medium,
         r2_strong=r2_strong,
-        r2_medium=r2_medium,
     )
 
     agg = (
@@ -125,17 +113,14 @@ def build_hits_table(
         if not isinstance(d, dict):
             return "weak"
         strong = d.get("strong", 0)
-        medium = d.get("medium", 0)
         weak = d.get("weak", 0)
         if strong > 0:
             return "strong"
-        if medium > 0:
-            return "medium"
         return "weak"
 
     agg["dominant_class"] = agg["class_counts"].apply(dominant_class)
 
-    class_rank = {"strong": 0, "medium": 1, "weak": 2}
+    class_rank = {"strong": 0, "weak": 1}
     agg["class_rank"] = agg["dominant_class"].map(class_rank)
 
     agg_sorted = agg.sort_values(
@@ -266,11 +251,8 @@ def run_hit_calling_and_plots(
         id_col: str = "id",
         cond_col: str = "condition",
         ec50_strong: float = 0.01,
-        ec50_medium: float = 0.5,
         delta_strong: float = 0.10,
-        delta_medium: float = 0.08,
         r2_strong: float = 0.70,
-        r2_medium: float = 0.50,
 ) -> Dict[str, str | pd.DataFrame]:
     """
     Full hit-calling + plotting pipeline.
@@ -300,11 +282,8 @@ def run_hit_calling_and_plots(
     hits_df = build_hits_table(
         fits_df,
         ec50_strong=ec50_strong,
-        ec50_medium=ec50_medium,
         delta_strong=delta_strong,
-        delta_medium=delta_medium,
         r2_strong=r2_strong,
-        r2_medium=r2_medium,
         id_col=id_col,
         cond_col=cond_col,
     )

@@ -122,7 +122,7 @@ def main() -> None:
         id_col=ID_COL,
         path_col="pathway",
         hit_col="dominant_class",
-        strong_labels=("strong", "medium"),
+        strong_labels="strong",
     )
     enr_path = out_dir / "pathway_enrichment_overrepresentation.csv"
     enr.to_csv(enr_path, index=False)

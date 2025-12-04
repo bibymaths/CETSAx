@@ -73,7 +73,7 @@ def main() -> None:
         "--task",
         choices=["classification", "regression"],
         default="classification",
-        help="Train for classification (strong/medium/weak) or regression (e.g. -log10 EC50).",
+        help="Train for classification (strong/weak) or regression (e.g. -log10 EC50).",
     )
     p.add_argument(
         "--epochs",

@@ -190,7 +190,6 @@ def build_redox_axes(
     # Hit class weights
     hit = base[hit_col].fillna("weak").astype(str)
     w_strong = (hit == "strong").astype(float)
-    w_medium = (hit == "medium").astype(float)
     w_weak = (hit == "weak").astype(float)
 
     # --------------------------------------------------------
@@ -220,7 +219,6 @@ def build_redox_axes(
             0.20 * nss_scaled +
             0.20 * r2_scaled
     )
-    axis_indirect = axis_indirect * (1.0 + 0.5 * w_medium)
 
     # Axis 3: network mediator
     #   - High when: centrality high, NSS moderate, not extremely strong direct.
@@ -229,8 +227,6 @@ def build_redox_axes(
             0.25 * nss_scaled +
             0.15 * r2_scaled
     )
-    # Downweight pure strong-core binders; upweight mediums
-    axis_network = axis_network * (1.0 + 0.3 * w_medium - 0.3 * w_strong)
 
     # Normalize axes to [0,1] for interpretability
     def _norm01(s: pd.Series) -> pd.Series:
