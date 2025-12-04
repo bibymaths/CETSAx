@@ -14,6 +14,7 @@ DAG Structure:
 9. Curve ML
 10. Bayesian Validation
 11. Detailed Plotting
+12. Model Performance Analysis
 """
 
 # BSD 3-Clause License
@@ -69,12 +70,23 @@ rule all:
         ]),
         # 2. System analysis output
         f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv",
+        f"{config['results_dir']}/system_analysis/pca_scores.csv",
+        f"{config['results_dir']}/system_analysis/pathway_enrichment_overrepresentation.csv",
+        f"{config['results_dir']}/system_analysis/redox_axes_per_protein.csv",
 
-        # 3. NEW MODULES OUTPUTS (This was missing)
-        f"{config['results_dir']}/network/network_modules.csv",# Rule 8
-        f"{config['results_dir']}/curve_ml/curve_clusters.csv",# Rule 9
-        f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv",# Rule 10
-        f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png"  # Rule 11
+        f"{config['results_dir']}/network/network_modules.csv",
+        f"{config['results_dir']}/network/network_graph.gexf",
+
+        f"{config['results_dir']}/curve_ml/curve_clusters.csv",
+        f"{config['results_dir']}/curve_ml/curve_outliers.csv",
+
+        f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv",
+
+        f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png",
+        f"{config['results_dir']}/detailed_plots/individual_curves",
+
+        f"{config['results_dir']}/model_performance_report.txt"
+
 
 # --- 1. Fit Curves ---
 rule fit_curves:
@@ -95,7 +107,11 @@ rule hit_calling:
         fits=rules.fit_curves.output.fits
     output:
         outdir=directory(f"{config['results_dir']}/hit_calling"),
-        hits_csv=f"{config['results_dir']}/hit_calling/cetsa_hits_ranked.csv"
+        hits_csv=f"{config['results_dir']}/hit_calling/cetsa_hits_ranked.csv",
+        diag1=f"{config['results_dir']}/hit_calling/ec50_r1_vs_r2.png",
+        diag2=f"{config['results_dir']}/hit_calling/ec50_vs_delta_max.png",
+        diag3=f"{config['results_dir']}/hit_calling/ec50_vs_r2.png",
+        diag4=f"{config['results_dir']}/hit_calling/r2_vs_delta_max.png"
     shell:
         """
         mkdir -p {output.outdir}
@@ -108,7 +124,6 @@ rule hit_calling:
 rule annotate:
     input:
         fits=rules.fit_curves.output.fits,
-        # SERIALIZATION HACK: Force wait for hit_calling
         _wait_for_hits=rules.hit_calling.output.hits_csv
     output:
         annot=f"{config['results_dir']}/protein_annotations.csv",
@@ -129,7 +144,18 @@ rule system_analysis:
         annot=rules.annotate.output.annot
     output:
         outdir=directory(f"{config['results_dir']}/system_analysis"),
-        cluster_labels=f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv"
+        # Core Clusters
+        cluster_labels=f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv",
+        cluster_probs=f"{config['results_dir']}/system_analysis/mixture_clusters_per_protein.csv",
+        cluster_plot=f"{config['results_dir']}/system_analysis/mixture_clusters_in_pca.png",
+        # PCA & FA Components
+        pca_scores=f"{config['results_dir']}/system_analysis/pca_scores.csv",
+        pca_loadings=f"{config['results_dir']}/system_analysis/pca_loadings.csv",
+        fa_scores=f"{config['results_dir']}/system_analysis/fa_scores.csv",
+        # Pathway & Redox
+        pathway_enrich=f"{config['results_dir']}/system_analysis/pathway_enrichment_overrepresentation.csv",
+        redox_axes=f"{config['results_dir']}/system_analysis/redox_axes_per_protein.csv",
+        sensitivity=f"{config['results_dir']}/system_analysis/sensitivity_scores.csv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -221,15 +247,16 @@ rule visualize:
         """
 
 # --- 8. Network Analysis ---
-# (Does not strictly need to wait for viz, but we can add a dep if we want total serialization)
 rule network_analysis:
     input:
         csv=config["input_csv"],
-        # Optional: Force wait for viz if you want STRICT serial order
         _wait_for_viz="results/plots/plot_1_confusion_matrix.png"
     output:
         outdir=directory(f"{config['results_dir']}/network"),
-        modules=f"{config['results_dir']}/network/network_modules.csv"
+        modules=f"{config['results_dir']}/network/network_modules.csv",
+        costab_hmap=f"{config['results_dir']}/network/costab_matrix_heatmap.png",
+        costab_csv=f"{config['results_dir']}/network/costab_matrix.csv",
+        graph_gexf=f"{config['results_dir']}/network/network_graph.gexf"
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/07_network_analysis.py \
@@ -241,11 +268,12 @@ rule network_analysis:
 rule curve_ml:
     input:
         csv=config["input_csv"],
-        # Force wait for network
         _wait_for_net=rules.network_analysis.output.modules
     output:
         outdir=directory(f"{config['results_dir']}/curve_ml"),
-        clusters=f"{config['results_dir']}/curve_ml/curve_clusters.csv"
+        clusters=f"{config['results_dir']}/curve_ml/curve_clusters.csv",
+        outliers=f"{config['results_dir']}/curve_ml/curve_outliers.csv",
+        pca_feats=f"{config['results_dir']}/curve_ml/curve_pca_features.csv"
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/08_curve_ml.py \
@@ -268,7 +296,7 @@ rule bayesian_fit:
         {config[python_bin]} {config[scripts_dir]}/09_bayesian_fit.py \
             --input-csv {input.csv} \
             --hits-csv {input.hits} \
-            --out-dir {output.outdir}
+            --out-dir {output.outdir} 
         """
 
 # --- 11. Detailed Plotting ---
@@ -277,11 +305,12 @@ rule detailed_plots:
         csv=config["input_csv"],
         fits=rules.fit_curves.output.fits,
         hits=rules.hit_calling.output.hits_csv,
-        # Force wait for bayesian
         _wait_for_bayes=rules.bayesian_fit.output.summary
     output:
         outdir=directory(f"{config['results_dir']}/detailed_plots"),
-        gof=f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png"
+        gof=f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png",
+        # Explicitly track the subfolder of curves
+        curves_dir=directory(f"{config['results_dir']}/detailed_plots/individual_curves")
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/10_plot_curves.py \
@@ -289,4 +318,16 @@ rule detailed_plots:
             --fits-csv {input.fits} \
             --hits-csv {input.hits} \
             --out-dir {output.outdir}
+        """
+
+# --- 12. Model Performance Analysis ---
+rule model_performance:
+    input:
+        supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
+        preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
+    output:
+        report=f"{config['results_dir']}/model_performance_report.txt",
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/11_model_performance.py > {output.report}
         """

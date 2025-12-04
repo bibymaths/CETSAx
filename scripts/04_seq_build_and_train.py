@@ -73,7 +73,7 @@ def main() -> None:
         "--task",
         choices=["classification", "regression"],
         default="classification",
-        help="Train for classification (strong/medium/weak) or regression (e.g. -log10 EC50).",
+        help="Train for classification (strong/weak) or regression (e.g. -log10 EC50).",
     )
     p.add_argument(
         "--epochs",
@@ -104,7 +104,7 @@ def main() -> None:
     # 2) Train sequence model
     cfg = NADPHSeqConfig(
         task=args.task,
-        num_classes=3,
+        num_classes=2,
         epochs=args.epochs,
         device=args.device,
     )

@@ -3,11 +3,37 @@ input_csv: "data/nadph.csv"
 scripts_dir: "scripts"
 results_dir: "results"
 
-# Python Environment (Critical: Points to your UV venv)
+# Python Environment
 python_bin: ".venv/bin/python"
 
 # Training Hyperparameters
 epochs: 100
 batch_size: 32
 task: "classification"
-device: "cuda"  # Set to 'cpu' if needed
+device: "cuda"
+
+# --- CETSA Experimental Parameters ---
+experiment:
+  dose_columns:
+    - "3.81e-06"
+    - "1.526e-05"
+    - "6.104e-05"
+    - "0.00024414"
+    - "0.00097656"
+    - "0.00390625"
+    - "0.015625"
+    - "0.0625"
+    - "0.25"
+    - "1"
+
+  qc_thresholds:
+    min_unique_peptides: 3
+    min_psms: 15
+    min_countnum: 8
+
+  column_names:
+    id: "id"
+    condition: "condition"
+    sum_unipeps: "sumUniPeps"
+    sum_psms: "sumPSMs"
+    countnum: "countNum"

@@ -65,8 +65,8 @@ def main():
     plt.close(fig)
 
     # 2. Individual Hit Curves
-    # Plot Top 50 Strong/Medium hits
-    top_hits = hits[hits['dominant_class'].isin(['strong', 'medium'])].head(50)
+    # Plot Top 50 Strong hits
+    top_hits = hits[hits['dominant_class'].isin(['strong'])].head(50)
 
     curves_dir = out_dir / "individual_curves"
     curves_dir.mkdir(exist_ok=True)

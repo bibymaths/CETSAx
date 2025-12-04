@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CETSA-NADPH Analysis Report</title>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-color);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: rgba(0,0,0,0.2);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .sidebar-header p {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-links li {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-links a {
+            display: block;
+            padding: 15px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: background 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background-color: var(--accent-color);
+            border-left: 4px solid white;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .section-header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .section-header h2 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .section-desc {
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        /* Cards Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .grid-full {
+            grid-column: 1 / -1;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            background-color: #fafafa;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* Image embedding */
+        .card-img-container {
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .card-img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* File Links */
+        .file-link {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .file-icon {
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .file-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .file-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Modal for images */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90vh;
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        /* Anchor offset for fixed header if needed */
+        section {
+            scroll-margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h1>CETSA-NADPH</h1>
+            <p>Analysis Pipeline Report</p>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#summary" class="active" onclick="setActive(this)">Summary</a></li>
+            <li><a href="#model" onclick="setActive(this)">1. ESM-2 Model</a></li>
+            <li><a href="#hits" onclick="setActive(this)">2. Hit Calling</a></li>
+            <li><a href="#system" onclick="setActive(this)">3. System Analysis</a></li>
+            <li><a href="#network" onclick="setActive(this)">4. Network Analysis</a></li>
+            <li><a href="#validation" onclick="setActive(this)">5. Validation</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Section: Summary -->
+        <section id="summary">
+            <div class="section-header">
+                <h2>Pipeline Summary</h2>
+                <div class="section-desc">
+                    Overview of the CETSA-NADPH analysis pipeline execution. This report aggregates all outputs found in the <code>results/</code> directory.
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <a href="results/ec50_fits.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>Raw EC50 Fits</h4>
+                            <p>ec50_fits.csv</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="card">
+                    <a href="results/protein_annotations.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>Protein Annotations</h4>
+                            <p>protein_annotations.csv</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="card">
+                    <a href="results/predictions_nadph_seq.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>Model Predictions</h4>
+                            <p>predictions_nadph_seq.csv</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1: Model Performance -->
+        <section id="model">
+            <div class="section-header">
+                <h2>1. ESM-2 Model Performance</h2>
+                <div class="section-desc">
+                    Evaluation of the sequence-based deep learning model trained to predict NADPH responsiveness.
+                </div>
+            </div>
+
+            <h3>Performance Metrics</h3>
+            <div class="grid">
+                <!-- Confusion Matrix -->
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Confusion Matrix</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_1_confusion_matrix.png" alt="Confusion Matrix" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+
+                <!-- ROC Curves -->
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">ROC Curves</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_2_roc_curves.png" alt="ROC Curves" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+
+                <!-- Confidence -->
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Prediction Confidence</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_3_confidence.png" alt="Confidence" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+            </div>
+
+            <h3>Interpretability</h3>
+            <div class="grid">
+                <!-- Saliency Map -->
+                <div class="card grid-full">
+                    <div class="card-header"><h3 class="card-title">Saliency Map (Residue Importance)</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_4_saliency_map.png" alt="Saliency Map" onerror="this.src='https://placehold.co/800x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+
+                 <!-- Residue Importance Stats -->
+                 <div class="card">
+                    <div class="card-header"><h3 class="card-title">Residue Statistical Importance</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_8_residue_importance.png" alt="Residue Stats" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+            </div>
+
+            <h3>Correlations</h3>
+            <div class="grid">
+                 <div class="card">
+                    <div class="card-header"><h3 class="card-title">EC50 Correlation</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_5_ec50_correlation.png" alt="EC50" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+                 <div class="card">
+                    <div class="card-header"><h3 class="card-title">Delta Max Correlation</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_6_deltamax_correlation.png" alt="Delta Max" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Hit Calling -->
+        <section id="hits">
+            <div class="section-header">
+                <h2>2. Hit Calling & Diagnostics</h2>
+                <div class="section-desc">
+                    Results from the experimental curve fitting and hit classification.
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card grid-full">
+                    <a href="results/hit_calling/cetsa_hits_ranked.csv" class="file-link" style="background-color: #e8f4f8;">
+                        <span class="file-icon">📊</span>
+                        <div class="file-info">
+                            <h4>Ranked Hits Table (Main Result)</h4>
+                            <p>Download cetsa_hits_ranked.csv</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <h3>Diagnostic Plots</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Replicate Consistency (R1 vs R2)</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/hit_calling/ec50_r1_vs_r2.png" alt="R1 vs R2" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Shift vs Amplitude</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/hit_calling/ec50_vs_delta_max.png" alt="Shift vs Amp" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: System Analysis -->
+        <section id="system">
+            <div class="section-header">
+                <h2>3. System Level Analysis</h2>
+                <div class="section-desc">
+                    Global analysis including PCA, Factor Analysis, and Pathway Enrichment.
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <a href="results/system_analysis/mixture_cluster_labels.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>Cluster Labels</h4>
+                            <p>mixture_cluster_labels.csv</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="card">
+                    <a href="results/system_analysis/pathway_enrichment_overrepresentation.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>Pathway Enrichment</h4>
+                            <p>pathway_enrichment.csv</p>
+                        </div>
+                    </a>
+                </div>
+                 <div class="card">
+                    <a href="results/system_analysis/pca_scores.csv" class="file-link">
+                        <span class="file-icon">📄</span>
+                        <div class="file-info">
+                            <h4>PCA Scores</h4>
+                            <p>pca_scores.csv</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Mixture Clusters in PCA</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/system_analysis/mixture_clusters_in_pca.png" alt="Clusters PCA" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Redox Axes (Direct vs Indirect)</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/system_analysis/redox_axes_direct_vs_indirect.png" alt="Redox Axes" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+                 <div class="card">
+                    <div class="card-header"><h3 class="card-title">Biological Validation</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/plots/plot_11_bio_pathway_enrichment.png" alt="Bio Enrichment" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Network -->
+        <section id="network">
+            <div class="section-header">
+                <h2>4. Network & Curve ML</h2>
+                <div class="section-desc">
+                    Co-stabilization network analysis and unsupervised curve shape clustering.
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Co-stabilization Matrix</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/network/costab_matrix_heatmap.png" alt="Costab Matrix" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+
+                <!-- Links -->
+                <div class="card">
+                    <a href="results/network/network_modules.csv" class="file-link">
+                        <span class="file-icon">🕸️</span>
+                        <div class="file-info">
+                            <h4>Network Modules</h4>
+                            <p>network_modules.csv</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="card">
+                    <a href="results/network/network_graph.gexf" class="file-link">
+                        <span class="file-icon">🕸️</span>
+                        <div class="file-info">
+                            <h4>Network Graph (Gephi)</h4>
+                            <p>network_graph.gexf</p>
+                        </div>
+                    </a>
+                </div>
+                 <div class="card">
+                    <a href="results/curve_ml/curve_clusters.csv" class="file-link">
+                        <span class="file-icon">📈</span>
+                        <div class="file-info">
+                            <h4>Curve Phenotypes (ML)</h4>
+                            <p>curve_clusters.csv</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Validation -->
+        <section id="validation">
+            <div class="section-header">
+                <h2>5. Bayesian Validation & Detailed Plots</h2>
+                <div class="section-desc">
+                    Rigorous Bayesian fitting results and global goodness-of-fit metrics.
+                </div>
+            </div>
+
+            <div class="grid">
+                 <div class="card">
+                    <div class="card-header"><h3 class="card-title">Global Goodness of Fit</h3></div>
+                    <div class="card-img-container" onclick="openModal(this)">
+                        <img src="results/detailed_plots/global_goodness_of_fit.png" alt="GOF" onerror="this.src='https://placehold.co/400x300?text=Plot+Not+Found'">
+                    </div>
+                </div>
+
+                 <div class="card">
+                    <a href="results/bayesian/bayesian_ec50_summaries.csv" class="file-link">
+                        <span class="file-icon">📐</span>
+                        <div class="file-info">
+                            <h4>Bayesian Summaries</h4>
+                            <p>Posterior distributions for EC50</p>
+                        </div>
+                    </a>
+                </div>
+                 <div class="card">
+                    <a href="results/detailed_plots/individual_curves/" class="file-link">
+                        <span class="file-icon">📂</span>
+                        <div class="file-info">
+                            <h4>Individual Curves Folder</h4>
+                            <p>Browse individual protein plots</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Image Modal -->
+    <div id="imgModal" class="modal" onclick="closeModal()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImg">
+    </div>
+
+    <script>
+        // Modal Logic
+        function openModal(element) {
+            const modal = document.getElementById("imgModal");
+            const modalImg = document.getElementById("modalImg");
+            const img = element.querySelector('img');
+
+            if(img.src.includes('placehold.co')) return; // Don't open placeholders
+
+            modal.style.display = "flex";
+            modalImg.src = img.src;
+        }
+
+        function closeModal() {
+            document.getElementById("imgModal").style.display = "none";
+        }
+
+        // Navigation Highlight Logic
+        function setActive(element) {
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
