@@ -14,6 +14,7 @@ DAG Structure:
 9. Curve ML
 10. Bayesian Validation
 11. Detailed Plotting
+12. Model Performance Analysis
 """
 
 # BSD 3-Clause License
@@ -82,8 +83,9 @@ rule all:
         f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv",
 
         f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png",
-        # Ensure individual plots directory is created
-        directory(f"{config['results_dir']}/detailed_plots/individual_curves")
+        f"{config['results_dir']}/detailed_plots/individual_curves",
+
+        f"{config['results_dir']}/model_performance_report.txt"
 
 
 # --- 1. Fit Curves ---
@@ -316,4 +318,16 @@ rule detailed_plots:
             --fits-csv {input.fits} \
             --hits-csv {input.hits} \
             --out-dir {output.outdir}
+        """
+
+# --- 12. Model Performance Analysis ---
+rule model_performance:
+    input:
+        supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
+        preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
+    output:
+        report=f"{config['results_dir']}/model_performance_report.txt",
+    shell:
+        """
+        {config[python_bin]} {config[scripts_dir]}/11_model_performance.py > {output.report}
         """
