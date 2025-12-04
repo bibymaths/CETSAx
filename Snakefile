@@ -296,7 +296,7 @@ rule bayesian_fit:
         {config[python_bin]} {config[scripts_dir]}/09_bayesian_fit.py \
             --input-csv {input.csv} \
             --hits-csv {input.hits} \
-            --out-dir {output.outdir}
+            --out-dir {output.outdir} 
         """
 
 # --- 11. Detailed Plotting ---

@@ -122,7 +122,7 @@ def bayesian_fit_ec50(
             tune=tune,
             chains=chains,
             cores=cores,
-            target_accept=0.9,
+            target_accept=0.95,
             progressbar=progressbar
         )
 

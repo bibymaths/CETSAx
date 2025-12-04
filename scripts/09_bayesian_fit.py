@@ -74,7 +74,6 @@ def main():
     parser.add_argument("--input-csv", required=True, help="Path to raw CETSA data")
     parser.add_argument("--hits-csv", required=True, help="Path to ranked hits file")
     parser.add_argument("--out-dir", required=True, help="Directory to save results")
-    parser.add_argument("--top-n", type=int, default=10, help="Number of top hits to analyze")
 
     # New argument for core control
     parser.add_argument("--n-jobs", type=int, default=-1, help="Number of parallel jobs (-1 for all cores)")
@@ -92,9 +91,9 @@ def main():
 
     # 2. Select targets
     hits = pd.read_csv(args.hits_csv)
-    top_targets = hits.head(args.top_n)['id'].tolist()
+    top_targets = hits['id'].tolist()
 
-    print(f"Running Bayesian inference for top {len(top_targets)} targets using {args.n_jobs} cores...")
+    print(f"Running Bayesian inference for ({len(top_targets)}) targets using {args.n_jobs} cores...")
 
     # 3. Run Parallel Inference
     # Parallel() creates the pool. delayed() wraps the function call.
