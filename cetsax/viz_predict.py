@@ -104,7 +104,7 @@ def visualize_predictions(
     # Plot 2: ROC Curves (One per class)
     # -------------------------------------------------------
     # Binarize labels for multi-class ROC
-    n_classes = 3
+    n_classes = 2
     y_true = label_binarize(df['label_cls'], classes=[0, 1, 2])
     y_score = df[['p_class0', 'p_class1']].values
     class_names = ['Weak', 'Strong']
@@ -156,9 +156,9 @@ def visualize_predictions(
     # -------------------------------------------------------
     # Plot 4: Saliency / Integrated Gradients Map
     # -------------------------------------------------------
-    # Find the Strong binder (True Class 2) that the model was MOST confident about
+    # Find the Strong binder (True Class 1) that the model was MOST confident about
     # This is usually a good example to look at for "what did the model learn?"
-    strong_hits = df[(df['label_cls'] == 2) & (df['pred_class_idx'] == 2)]
+    strong_hits = df[(df['label_cls'] == 1) & (df['pred_class_idx'] == 1)]
 
     if not strong_hits.empty:
         # Pick top 1 by probability
@@ -318,7 +318,7 @@ def visualize_predictions(
     # Answers: "Which amino acids are universally important for Strong binders?"
 
     # Filter for Strong binders only
-    strong_df = df[df['label_cls'] == 2].copy()
+    strong_df = df[df['label_cls'] == 1].copy()
 
     all_residues = []
     all_scores = []
@@ -419,7 +419,7 @@ def analyze_fitting_data(
         plt.close()
 
     # --- Plot 2: Curve Reconstruction (Top Hits) ---
-    top_hits = df[df['pred_class_idx'] == 2].sort_values('p_class2', ascending=False).head(3)
+    top_hits = df[df['pred_class_idx'] == 1].sort_values('p_class1', ascending=False).head(3)
 
     if not top_hits.empty:
         plt.figure(figsize=(10, 6))
@@ -492,7 +492,7 @@ def generate_bio_insight(
         return all_terms
 
     # 3. Filter for predicted Strong binders
-    strong_preds = df[df['pred_class_idx'] == 2]
+    strong_preds = df[df['pred_class_idx'] == 1]
 
     # --- Plot 1: Pathway Enrichment ---
     pathways = get_terms(strong_preds['pathway'])

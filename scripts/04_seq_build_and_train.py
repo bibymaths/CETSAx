@@ -104,7 +104,7 @@ def main() -> None:
     # 2) Train sequence model
     cfg = NADPHSeqConfig(
         task=args.task,
-        num_classes=3,
+        num_classes=2,
         epochs=args.epochs,
         device=args.device,
     )

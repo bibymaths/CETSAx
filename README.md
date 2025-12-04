@@ -219,7 +219,7 @@ Use it as a checklist when you browse `results/`.
 
 **Biological interpretation**
 
-* **Strong / medium hits** – prime candidates for:
+* **Strong hits** – prime candidates for:
 
   * direct NADPH binding,
   * conformational stabilization via redox state,

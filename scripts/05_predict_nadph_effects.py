@@ -260,7 +260,7 @@ def main() -> None:
     parser.add_argument(
         "--num-classes",
         type=int,
-        default=3,
+        default=2,
         help="Number of classes for classification.",
     )
     parser.add_argument(
