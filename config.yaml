@@ -12,6 +12,8 @@ epochs: 100
 batch_size: 32
 task: "classification"
 device: "cuda"
+lr: 0.0001
+patience: false
 
 # --- CETSA Experimental Parameters ---
 experiment:

@@ -179,18 +179,25 @@ rule train_model:
     params:
         epochs=config["epochs"],
         task=config["task"],
-        device=config["device"]
+        device=config["device"],
+        lr=config["lr"],
+        batch_size=config["batch_size"],
+        patience_flag=lambda wc: "--no-patience" if not config.get("patience", True) else "--patience"
     shell:
+        r"""
+        python scripts/04_seq_build_and_train.py \
+          --fits-csv {input.fits} \
+          --fasta {input.fasta} \
+          --out-supervised {output.supervised} \
+          --out-head {output.checkpoint} \
+          --epochs {params.epochs} \
+          --task {params.task} \
+          --device {params.device} \
+          --lr {params.lr} \
+          --batch-size {params.batch_size} \
+          {params.patience_flag}
         """
-        {config[python_bin]} {config[scripts_dir]}/04_seq_build_and_train.py \
-            --fits-csv {input.fits} \
-            --fasta {input.fasta} \
-            --out-supervised {output.supervised} \
-            --out-head {output.checkpoint} \
-            --epochs {params.epochs} \
-            --task {params.task} \
-            --device {params.device}
-        """
+
 
 # --- 6. Predict on Sequences ---
 rule predict:
@@ -201,7 +208,8 @@ rule predict:
         preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
     params:
         task=config["task"],
-        device=config["device"]
+        device=config["device"],
+        batch_size=config["batch_size"]
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/05_predict_nadph_effects.py \
@@ -211,7 +219,8 @@ rule predict:
             --task {params.task} \
             --saliency \
             --ig \
-            --device {params.device}
+            --device {params.device} \
+            --batch-size {params.batch_size}
         """
 
 # --- 7. Visualization ---
@@ -326,7 +335,7 @@ rule model_performance:
         supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
         preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
     output:
-        report=f"{config['results_dir']}/model_performance_report.txt",
+        report=f"{config['results_dir']}/model_performance_report.txt"
     shell:
         """
         {config[python_bin]} {config[scripts_dir]}/11_model_performance.py > {output.report}

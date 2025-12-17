@@ -87,6 +87,34 @@ def main() -> None:
         help="Device to use: 'cuda' or 'cpu'.",
     )
 
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=32,
+        help="Training batch size.",
+    )
+
+    p.add_argument(
+        "--lr",
+        type=float,
+        default=1e-3,
+        help="Learning rate.",
+    )
+
+    p.add_argument(
+        "--patience",
+        dest="patience",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+
+    # group = p.add_mutually_exclusive_group()
+    # group.add_argument("--patience", dest="patience", action="store_true",
+    #                    help="Enable early stopping.")
+    # group.add_argument("--no-patience", dest="patience", action="store_false",
+    #                    help="Disable early stopping.")
+    # p.set_defaults(patience=True)
+
     args = p.parse_args()
 
     fits = pd.read_csv(args.fits_csv)
@@ -107,11 +135,14 @@ def main() -> None:
         num_classes=2,
         epochs=args.epochs,
         device=args.device,
+        batch_size=args.batch_size,
+        lr=args.lr
     )
 
     model, metrics = train_seq_model(
         csv_path=args.out_supervised,
         cfg=cfg,
+        patience=args.patience
     )
     print("Training finished. Best validation metric:", metrics["best_val"])
 

@@ -429,6 +429,7 @@ def load_esm_model_and_alphabet(model_name: str = "esm2_t33_650M_UR50D"):
 def train_seq_model(
         csv_path: str | Path,
         cfg: NADPHSeqConfig,
+        patience: bool,
 ) -> Tuple[NADPHSeqModel, Dict[str, float]]:
     """
     Train a sequence-based NADPH responsiveness model.
@@ -474,7 +475,7 @@ def train_seq_model(
         class_counts[class_counts == 0] = 1.0
 
         # Calculate DAMPENED Weights (Square Root method)
-        # This prevents the model from over-predicting the minority class
+        # This prevents the model from overpredicting the minority class
         weights = 1.0 / torch.sqrt(class_counts)
         weights = weights / weights.sum() * cfg.num_classes
         weights = weights.to(device)
@@ -535,17 +536,17 @@ def train_seq_model(
         drop_last=True
     )
 
+    pat = 5 # Increased patience slightly for Focal Loss
+    trigger_times = 0
+    best_model_state = None
+
     # Optional: Scheduler to reduce LR on plateau
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=pat)
 
     # 5. Setup Early Stopping
     best_val_acc = -math.inf
     best_val_loss = math.inf
     best_val_loss_monitor = math.inf
-
-    patience = 5 # Increased patience slightly for Focal Loss
-    trigger_times = 0
-    best_model_state = None
 
     metrics = {}
 
@@ -611,17 +612,18 @@ def train_seq_model(
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
 
-        # --- EARLY STOPPING LOGIC ---
-        if val_loss < best_val_loss_monitor:
-            best_val_loss_monitor = val_loss
-            trigger_times = 0
-            best_model_state = copy.deepcopy(model.head.state_dict())
-        else:
-            trigger_times += 1
-            print(f"  >> No improvement in val_loss. Patience: {trigger_times}/{patience}")
-            if trigger_times >= patience:
-                print("  >> Early stopping triggered!")
-                break
+        if patience:
+            # --- EARLY STOPPING LOGIC ---
+            if val_loss < best_val_loss_monitor:
+                best_val_loss_monitor = val_loss
+                trigger_times = 0
+                best_model_state = copy.deepcopy(model.head.state_dict())
+            else:
+                trigger_times += 1
+                print(f"  >> No improvement in val_loss. Patience: {trigger_times}/{pat}")
+                if trigger_times >= pat:
+                    print("  >> Early stopping triggered!")
+                    break
 
     # 7. Restore Best Model
     if best_model_state is not None:

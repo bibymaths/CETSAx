@@ -266,7 +266,7 @@ def main() -> None:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=8,
+        default=32,
         help="Batch size for inference.",
     )
     parser.add_argument(
