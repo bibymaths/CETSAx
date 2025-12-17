@@ -43,11 +43,24 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
+from pathlib import Path
+
+def _savefig(out_dir, name):
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plt.tight_layout()
+    plt.savefig(out_dir / name, dpi=300)
+    plt.close()
+
+def _placeholder(out_dir, name, msg):
+    plt.figure(figsize=(10, 4))
+    plt.axis("off")
+    plt.text(0.01, 0.5, msg, fontsize=12)
+    _savefig(out_dir, name)
 
 def visualize_predictions(
         pred_file,
-        truth_file
-) -> None:
+        truth_file, out_dir) -> None:
     """
     Generate a series of plots to visualize model predictions
     against ground truth labels and experimental data.
@@ -96,9 +109,7 @@ def visualize_predictions(
     plt.ylabel('True Label', fontsize=12)
     plt.title('Confusion Matrix: Where is the model making mistakes?', fontsize=14)
     plt.tight_layout()
-    plt.savefig('plot_1_confusion_matrix.png', dpi=300)
-    # print("Saved plot_1_confusion_matrix.png")
-    plt.close()
+    _savefig(out_dir, 'plot_1_confusion_matrix.png')
 
     # -------------------------------------------------------
     # Plot 2: ROC Curves (One per class)
@@ -123,9 +134,7 @@ def visualize_predictions(
     plt.title('ROC Curves: How well does it separate classes?', fontsize=14)
     plt.legend(loc="lower right")
     plt.tight_layout()
-    plt.savefig('plot_2_roc_curves.png', dpi=300)
-    # print("Saved plot_2_roc_curves.png")
-    plt.close()
+    _savefig(out_dir, 'plot_2_roc_curves.png')
 
     # -------------------------------------------------------
     # Plot 3: Probability Distributions (Box Plot)
@@ -149,9 +158,7 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability', fontsize=12)
     plt.legend(title="Probability For:")
     plt.tight_layout()
-    plt.savefig('plot_3_confidence.png', dpi=300)
-    # print("Saved plot_3_confidence.png")
-    plt.close()
+    _savefig(out_dir, 'plot_3_confidence.png')
 
     # -------------------------------------------------------
     # Plot 4: Saliency / Integrated Gradients Map
@@ -187,9 +194,7 @@ def visualize_predictions(
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            plt.savefig('plot_4_saliency_map.png', dpi=300)
-            print(f"Saved plot_4_saliency_map.png (Example Protein: {prot_id})")
-            plt.close()
+            _savefig(out_dir, f'plot_4_saliency_map.png')
         else:
             print("No IG/Saliency scores found in predictions file.")
     else:
@@ -223,9 +228,7 @@ def visualize_predictions(
     plt.ylabel('Predicted Probability of "Strong" (p_class2)', fontsize=12)
     plt.legend(title="True Class")
     plt.tight_layout()
-    plt.savefig('plot_5_ec50_correlation.png', dpi=300)
-    # print("Saved plot_5_ec50_correlation.png")
-    plt.close()
+    _savefig(out_dir, 'plot_5_ec50_correlation.png')
 
     # -------------------------------------------------------
     # Plot 6: Probability vs. Delta Max (Thermal Shift)
@@ -273,9 +276,7 @@ def visualize_predictions(
 
     plt.legend(title="Hit Classification", loc='lower right')
     plt.tight_layout()
-    plt.savefig('plot_6_deltamax_correlation.png', dpi=300)
-    # print("Saved plot_6_deltamax_correlation.png")
-    plt.close()
+    _savefig(out_dir, 'plot_6_deltamax_correlation.png')
 
     # -------------------------------------------------------
     # Plot 7: "The Worst Misses" (High Confidence Errors)
@@ -308,9 +309,7 @@ def visualize_predictions(
         plt.legend(title="Model Predicted:")
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig('plot_7_worst_misses.png', dpi=300)
-        # print("Saved plot_7_worst_misses.png")
-        plt.close()
+        _savefig(out_dir, 'plot_7_worst_misses.png')
 
     # -------------------------------------------------------
     # Plot 8: Global Residue Importance (Aggregated IG)
@@ -359,17 +358,14 @@ def visualize_predictions(
         plt.ylabel('Avg Integrated Gradients Score', fontsize=12)
         plt.legend()
         plt.tight_layout()
-        plt.savefig('plot_8_residue_importance.png', dpi=300)
-        # print("Saved plot_8_residue_importance.png")
-        plt.close()
+        _savefig(out_dir, 'plot_8_residue_importance.png')
     else:
         print("No IG scores found for Strong binders to generate Plot 8.")
 
 
 def analyze_fitting_data(
         fits_file,
-        pred_file
-) -> None:
+        pred_file, out_dir) -> None:
     """
     Analyze and visualize the quality of curve fitting data
     in relation to model predictions.
@@ -415,8 +411,10 @@ def analyze_fitting_data(
         ]
         plt.plot(lims, lims, 'r--', alpha=0.5)
         plt.title('Replicate Consistency: Do "Strong" hits reproduce?')
-        plt.savefig('plot_9_replicate_consistency.png', dpi=300)
-        plt.close()
+        _savefig(out_dir, 'plot_9_replicate_consistency.png')
+
+    else:
+        print("No 'log10_EC50_r1' or 'log10_EC50_r2' columns found in fits file.")
 
     # --- Plot 2: Curve Reconstruction (Top Hits) ---
     top_hits = df[df['pred_class_idx'] == 1].sort_values('p_class1', ascending=False).head(3)
@@ -439,15 +437,16 @@ def analyze_fitting_data(
         plt.xlabel('Log10 Concentration')
         plt.ylabel('Response')
         plt.legend()
-        plt.savefig('plot_10_curve_reconstruction.png', dpi=300)
-        plt.close()
+        _savefig(out_dir, 'plot_10_curve_reconstruction.png')
+
+    else:
+        print("No Strong predictions found to visualize.")
 
 
 def generate_bio_insight(
         pred_file,
         truth_file,
-        annot_file
-) -> None:
+        annot_file, out_dir) -> None:
     """
     Generate biological insight plots based on model predictions,
     experimental data, and pathway annotations.
@@ -502,8 +501,7 @@ def generate_bio_insight(
         sns.barplot(data=counts, y='Pathway', x='Count', palette='viridis')
         plt.title('Top Pathways in Predicted Strong Binders')
         plt.tight_layout()
-        plt.savefig('plot_11_bio_pathway_enrichment.png', dpi=300)
-        plt.close()
+        _savefig(out_dir, 'plot_11_bio_pathway_enrichment.png')
 
     # --- Plot 2: EC50 Validation ---
     plt.figure(figsize=(8, 6))
@@ -513,5 +511,6 @@ def generate_bio_insight(
     plt.yscale('log')
     plt.title('Do Predicted Strong Binders have lower EC50?')
     plt.ylabel('Experimental EC50 (Log Scale)')
-    plt.savefig('plot_12_bio_ec50_validation.png', dpi=300)
-    plt.close()
+    _savefig(out_dir, 'plot_12_bio_ec50_validation.png')
+
+

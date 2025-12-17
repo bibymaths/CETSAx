@@ -13,9 +13,10 @@ seq_model:
   num_classes: 2
   task: "classification"     # classification | regression
   device: "cuda"              # cpu | cuda
-  epochs: 100
+  epochs: 1000
   lr: 0.0001
   patience: false
+  repr_layer: 33
 
   # Training batch size:
   # - if embedding_cache=true: this is mostly used for caching (ESM forward) and/or head-only.
@@ -30,7 +31,7 @@ seq_model:
     dir: "results/cache"
     token_cache: true
     pooled_cache: true        # pooled embeddings cache (N,D)  -> fast training/pred
-    reps_cache: false         # residue reps cache (list of (L,D)) -> needed for saliency/IG without ESM
+    reps_cache: true         # residue reps cache (list of (L,D)) -> needed for saliency/IG without ESM
     fp16: true                # store pooled cache as fp16 to save disk/mem
 
   # Head-only training batch size (when pooled_cache=true)
@@ -38,11 +39,11 @@ seq_model:
 
 # Prediction settings
 predict:
-  mode: "pooled"              # pooled | reps | tokens
+  mode: "reps"              # pooled | reps | tokens
   batch_size: 256             # head-only batch size for pooled/reps
   esm_batch_size: 2           # only used when mode=tokens
-  saliency: false             # only valid for reps/tokens
-  ig: false                   # only valid for reps/tokens
+  saliency: true             # only valid for reps/tokens
+  ig: true                   # only valid for reps/tokens
   ig_steps: 50
 
 # --- CETSA Experimental Parameters ---

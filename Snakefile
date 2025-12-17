@@ -4,17 +4,22 @@ Snakefile for the CETSA-NADPH analysis pipeline.
 # BSD 3-Clause License
 # Copyright (c) 2025, Abhinav Mishra
 
+from pathlib import Path
+
 configfile: "config.yaml"
 
 # Convenience
 PY = config["python_bin"]
 SCRIPTS = config["scripts_dir"]
 RES = config["results_dir"]
-
 SEQ = config["seq_model"]
 PRED = config["predict"]
 MAX_LEN = SEQ["max_len"]
 MODEL_NAME = SEQ["model_name"]
+REPR_LAYER = SEQ.get("repr_layer", 33)
+
+BASE = Path(__file__).resolve().parent
+SCRIPTS_ABS = (BASE / SCRIPTS).resolve()
 
 # --- Target Rule (What we want to produce) ---
 rule all:
@@ -142,7 +147,7 @@ rule train_model:
         head_ckpt=f"{RES}/nadph_seq_head.pt",
         meta=f"{RES}/nadph_seq_meta.json",
         token_cache= f"{RES}/cache/tokens_nadph_seq_supervised_{MAX_LEN}.pt",
-        pooled_cache= f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}.pt"
+        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}_L{REPR_LAYER}.pt"
     params:
         model_name=SEQ["model_name"],
         max_len=SEQ["max_len"],
@@ -231,28 +236,32 @@ rule visualize:
         fits=rules.fit_curves.output.fits,
         annot=rules.annotate.output.annot
     output:
-        "results/plots/plot_1_confusion_matrix.png",
-        "results/plots/plot_2_roc_curves.png",
-        "results/plots/plot_3_confidence.png",
-        "results/plots/plot_4_saliency_map.png",
-        "results/plots/plot_5_ec50_correlation.png",
-        "results/plots/plot_6_deltamax_correlation.png",
-        "results/plots/plot_7_worst_misses.png",
-        "results/plots/plot_8_residue_importance.png",
-        "results/plots/plot_9_replicate_consistency.png",
-        "results/plots/plot_10_curve_reconstruction.png",
-        "results/plots/plot_11_bio_pathway_enrichment.png",
-        "results/plots/plot_12_bio_ec50_validation.png"
+        expand(f"{RES}/plots/{{plot}}", plot=[
+            "plot_1_confusion_matrix.png",
+            "plot_2_roc_curves.png",
+            "plot_3_confidence.png",
+            "plot_4_saliency_map.png",
+            "plot_5_ec50_correlation.png",
+            "plot_6_deltamax_correlation.png",
+            "plot_7_worst_misses.png",
+            "plot_8_residue_importance.png",
+            "plot_9_replicate_consistency.png",
+            "plot_10_curve_reconstruction.png",
+            "plot_11_bio_pathway_enrichment.png",
+            "plot_12_bio_ec50_validation.png",
+        ])
+    params:
+        outdir=f"{RES}/plots"
     shell:
         r"""
-        mkdir -p results/plots
-        cd results/plots
+        mkdir -p {params.outdir}
 
-        ../../{PY} ../../{SCRIPTS}/06_model_predict_results.py \
-            --pred-file ../../{input.preds} \
-            --truth-file ../../{input.truth} \
-            --fit-file ../../{input.fits} \
-            --annot-file ../../{input.annot}
+        {PY} {SCRIPTS}/06_model_predict_results.py \
+            --pred-file {input.preds} \
+            --truth-file {input.truth} \
+            --fit-file {input.fits} \
+            --annot-file {input.annot} \
+            --out-dir {params.outdir}
         """
 
 
