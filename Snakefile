@@ -147,7 +147,8 @@ rule train_model:
         head_ckpt=f"{RES}/nadph_seq_head.pt",
         meta=f"{RES}/nadph_seq_meta.json",
         token_cache= f"{RES}/cache/tokens_nadph_seq_supervised_{MAX_LEN}.pt",
-        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}_L{REPR_LAYER}.pt"
+        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}_L{REPR_LAYER}.pt",
+        history=f"{RES}/nadph_seq_train_info.csv"
     params:
         model_name=SEQ["model_name"],
         max_len=SEQ["max_len"],
@@ -174,7 +175,8 @@ rule train_model:
           --fasta {input.fasta} \
           --out-supervised {output.supervised} \
           --out-head {output.head_ckpt} \
-          --out-meta {output.meta} \
+          --out-meta {output.meta} \ 
+          --out-info {output.history} \
           --cache-dir {params.cache_dir} \
           --model-name {params.model_name} \
           --max-len {params.max_len} \
@@ -234,7 +236,8 @@ rule visualize:
         preds=rules.predict.output.preds,
         truth=rules.train_model.output.supervised,
         fits=rules.fit_curves.output.fits,
-        annot=rules.annotate.output.annot
+        annot=rules.annotate.output.annot,
+        hist=rules.train_model.output.history
     output:
         expand(f"{RES}/plots/{{plot}}", plot=[
             "plot_1_confusion_matrix.png",
@@ -249,6 +252,8 @@ rule visualize:
             "plot_10_curve_reconstruction.png",
             "plot_11_bio_pathway_enrichment.png",
             "plot_12_bio_ec50_validation.png",
+            "plot_13_training_loss.png",
+            "plot_14_training_accuracy.png"
         ])
     params:
         outdir=f"{RES}/plots"
@@ -261,6 +266,7 @@ rule visualize:
             --truth-file {input.truth} \
             --fit-file {input.fits} \
             --annot-file {input.annot} \
+            --history-file {input.hist} \
             --out-dir {params.outdir}
         """
 

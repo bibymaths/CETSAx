@@ -725,7 +725,7 @@ def train_seq_model(
     csv_path: str | Path,
     cfg: NADPHSeqConfig,
     patience: bool = True,
-) -> Tuple[nn.Module, Dict[str, float], Dict[str, Path]]:
+) -> Tuple[nn.Module, Dict[str, float], Dict[str, Path], pd.DataFrame]:
     """
     Returns:
       model, metrics, paths(dict of caches)
@@ -856,6 +856,26 @@ def train_seq_model(
         drop_last=True,
     )
 
+    # ---- run ----
+    run_info = {
+        "csv_path": str(csv_path),
+        "task": str(cfg.task),
+        "train_mode": str(cfg.train_mode),
+        "model_name": str(cfg.model_name),
+        "repr_layer": int(cfg.repr_layer),
+        "max_len": int(cfg.max_len),
+        "device": str(device),
+        "batch_size": int(batch_size),
+        "head_batch_size": int(cfg.head_batch_size),
+        "lr_init": float(cfg.lr),
+        "epochs_cfg": int(cfg.epochs),
+        "patience_cfg": int(cfg.patience),
+        "gamma_focal": float(cfg.gamma_focal) if cfg.task == "classification" else None,
+        "n_train": int(len(train_ds)),
+        "n_val": int(len(val_ds)),
+    }
+    history_rows: list[dict] = []
+
     # ---- early stopping ----
     best_model_state = None
     best_val_loss_monitor = math.inf
@@ -870,7 +890,7 @@ def train_seq_model(
         train_loss = 0.0
         n_train_batches = 0
 
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch} [train]"):
+        for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
 
             if mode == "pooled":
@@ -937,12 +957,28 @@ def train_seq_model(
         val_loss /= max(1, n_val_batches)
         scheduler.step(val_loss)
 
+        lr_now = float(optimizer.param_groups[0]["lr"])
+
         if cfg.task == "classification":
             val_acc = correct / max(1, total)
             print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
             best_val_acc = max(best_val_acc, val_acc)
         else:
             print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
+
+            # ---- append epoch row (DataFrame) ----
+        history_rows.append(
+            {
+                **run_info,
+                "epoch": int(epoch),
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+                "val_acc": (float(val_acc) if val_acc is not None else None),
+                "lr": float(lr_now),
+                "early_stop_trigger_times": int(trigger_times),
+                "best_val_loss_so_far": float(min(best_val_loss_monitor, val_loss)),
+            }
+        )
 
         if patience:
             if val_loss < best_val_loss_monitor:
@@ -966,4 +1002,6 @@ def train_seq_model(
     if cfg.task == "classification":
         metrics["best_val_acc"] = float(best_val_acc)
 
-    return model, metrics, cache_paths
+    history_df = pd.DataFrame(history_rows)
+
+    return model, metrics, cache_paths, history_df

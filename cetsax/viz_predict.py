@@ -116,7 +116,7 @@ def visualize_predictions(
     # -------------------------------------------------------
     # Binarize labels for multi-class ROC
     n_classes = 2
-    y_true = label_binarize(df['label_cls'], classes=[0, 1, 2])
+    y_true = label_binarize(df['label_cls'], classes=[0, 1])
     y_score = df[['p_class0', 'p_class1']].values
     class_names = ['Weak', 'Strong']
 
@@ -513,4 +513,40 @@ def generate_bio_insight(
     plt.ylabel('Experimental EC50 (Log Scale)')
     _savefig(out_dir, 'plot_12_bio_ec50_validation.png')
 
+def plot_training_loop(
+        history_file,
+        out_dir) -> None:
+    """
+    Plot training and validation loss/accuracy curves
+    from model training history.
+    Parameters
+    ----------
+    history_file : str
+        Path to CSV file containing training history.
+    -----------
+    1. Loss Curves
+    2. Accuracy Curves (if applicable)
+    -----------
+    """
+    history = pd.read_csv(history_file)
 
+    # --- Plot 1: Loss Curves ---
+    plt.figure(figsize=(10, 6))
+    plt.plot(history['epoch'], history['train_loss'], label='Train Loss', color='blue')
+    plt.plot(history['epoch'], history['val_loss'], label='Validation Loss', color='orange')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss Over Epochs')
+    plt.legend()
+    _savefig(out_dir, 'plot_13_training_loss.png')
+
+    # --- Plot 2: Accuracy Curves (if available) ---
+    if 'train_acc' in history.columns and 'val_acc' in history.columns:
+        plt.figure(figsize=(10, 6))
+        plt.plot(history['epoch'], history['train_acc'], label='Train Accuracy', color='blue')
+        plt.plot(history['epoch'], history['val_acc'], label='Validation Accuracy', color='orange')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.title('Training and Validation Accuracy Over Epochs')
+        plt.legend()
+        _savefig(out_dir, 'plot_14_training_accuracy.png')

@@ -61,15 +61,17 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Build seq-supervised table and train NADPH seq model.")
 
     # Inputs/outputs
-    p.add_argument("--fits-csv", default="../results/ec50_fits.csv", help="Path to ec50_fits.csv")
-    p.add_argument("--fasta", default="../results/protein_sequences.fasta",
+    p.add_argument("--fits-csv", default="results/ec50_fits.csv", help="Path to ec50_fits.csv")
+    p.add_argument("--fasta", default="results/protein_sequences.fasta",
                    help="Path to FASTA with IDs in headers (>P12345 ... or >sp|P12345|...).")
-    p.add_argument("--out-supervised", default="../results/nadph_seq_supervised.csv",
+    p.add_argument("--out-supervised", default="results/nadph_seq_supervised.csv",
                    help="Output CSV with merged EC50 + sequences + labels.")
-    p.add_argument("--out-head", default="../results/nadph_seq_head.pt",
+    p.add_argument("--out-head", default="results/nadph_seq_head.pt",
                    help="Output path for trained model.head state_dict.")
-    p.add_argument("--out-meta", default="../results/nadph_seq_train_meta.json",
+    p.add_argument("--out-meta", default="results/nadph_seq_train_meta.json",
                    help="Output JSON for config/metrics/cache paths.")
+    p.add_argument("--out-info", default="results/nadph_seq_train_info.csv",
+                   help="Output CSV for per-epoch training info.")
 
     # Task
     p.add_argument("--task", choices=["classification", "regression"], default="classification",
@@ -91,7 +93,7 @@ def main() -> None:
     # Caching / mode
     p.add_argument("--train-mode", choices=["pooled", "reps", "tokens"], default="pooled",
                    help="Training mode: pooled (fast), reps (fast-ish + explain), tokens (slow).")
-    p.add_argument("--cache-dir", default="../results/cache_seq_nadph",
+    p.add_argument("--cache-dir", default="results/cache_seq_nadph",
                    help="Directory to store caches (tokens/pooled/reps).")
     p.add_argument("--cache-fp16", dest="cache_fp16", action=argparse.BooleanOptionalAction, default=True,
                    help="Store caches in float16 where applicable.")
@@ -193,7 +195,7 @@ def main() -> None:
         cache_reps=bool(args.cache_reps),
     )
 
-    model, metrics, cache_paths = train_seq_model(
+    model, metrics, cache_paths, run_info = train_seq_model(
         csv_path=out_supervised,
         cfg=cfg,
         patience=bool(args.patience),
@@ -246,6 +248,10 @@ def main() -> None:
     out_meta.write_text(json.dumps(meta, indent=2))
     print(f"Saved training metadata to {out_meta}")
 
+    out_info = Path(args.out_info)
+    out_info.parent.mkdir(parents=True, exist_ok=True)
+    run_info.to_csv(out_info, index=False)
+    print(f"Saved training info to {out_info}")
 
 if __name__ == "__main__":
     main()

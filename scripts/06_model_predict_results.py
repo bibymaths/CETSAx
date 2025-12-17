@@ -34,7 +34,7 @@ Script to visualize model predictions, analyze fitting data, and generate biolog
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-from cetsax import visualize_predictions, analyze_fitting_data, generate_bio_insight
+from cetsax import visualize_predictions, analyze_fitting_data, generate_bio_insight, plot_training_loop
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
@@ -42,9 +42,11 @@ if __name__ == "__main__":
     p.add_argument("--pred-file", required=True)
     p.add_argument("--truth-file", required=True)
     p.add_argument("--annot-file", required=True)
+    p.add_argument("--history-file", required=True)
     p.add_argument("--out-dir", required=True)
     args = p.parse_args()
 
     visualize_predictions(args.pred_file, args.truth_file, out_dir=args.out_dir)
     analyze_fitting_data(args.fit_file, args.pred_file, out_dir=args.out_dir)
     generate_bio_insight(args.pred_file, args.truth_file, args.annot_file, out_dir=args.out_dir)
+    plot_training_loop(args.history_file, out_dir=args.out_dir)
