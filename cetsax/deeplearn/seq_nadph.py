@@ -60,6 +60,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
 import esm
 import warnings
+import os
 
 warnings.filterwarnings("ignore", category=UserWarning, module='torch')
 
@@ -312,9 +313,8 @@ class NADPHSeqModel(nn.Module):
         for p in self.esm.parameters():
             p.requires_grad = False
 
-        for n, p in self.esm.named_parameters():
-            if "layers.32" in n:
-                p.requires_grad = True
+        for p in self.esm.parameters():
+            p.requires_grad = False
 
         self.pooler = AttentionPooling(embed_dim)
         self.norm = nn.LayerNorm(embed_dim)
@@ -330,8 +330,9 @@ class NADPHSeqModel(nn.Module):
 
     def forward(self, tokens, return_reps=False):
         mask = (tokens != 1)
-        out = self.esm(tokens, repr_layers=[33], return_contacts=False)
-        reps = out["representations"][33]
+        with torch.no_grad():
+            out = self.esm(tokens, repr_layers=[33], return_contacts=False)
+            reps = out["representations"][33]
         pooled = self.pooler(reps, mask)
         pooled = self.norm(pooled)
         logits = self.head(pooled)
@@ -449,8 +450,17 @@ def train_seq_model(
     n_train = int(0.8 * n)
     n_val = n - n_train
     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-    n_workers = 32 if torch.cuda.is_available() else 0
-    pin_memory = True if device.type == 'cuda' else False
+
+
+    cpu = os.cpu_count() or 1
+
+    if device.type == "cuda":
+        n_workers = min(8, max(2, cpu // 8))
+        pin_memory = True
+    else:
+        # CPU training: allow parallel data loading/tokenization
+        n_workers = min(16, max(4, cpu // 4))
+        pin_memory = False
 
     # 3. Initialize Model
     embed_dim = esm_model.embed_dim
@@ -478,7 +488,8 @@ def train_seq_model(
         # This prevents the model from overpredicting the minority class
         weights = 1.0 / torch.sqrt(class_counts)
         weights = weights / weights.sum() * cfg.num_classes
-        weights = weights.to(device)
+        weights_cpu = weights.detach().cpu()
+        weights = weights_cpu.to(device)
 
         print(f"Class counts: {class_counts}")
         print(f"Class weights (alpha): {weights}")
@@ -488,11 +499,14 @@ def train_seq_model(
         criterion = FocalLoss(alpha=weights, gamma=3.0)
 
         # 1. Calculate weights for each SAMPLE (not just class)
-        sample_weights_train = [weights[label] for _, label in train_ds]
-        sample_weights_train = torch.stack(sample_weights_train)
-
-        sample_weights_val = [weights[label] for _, label in val_ds]
-        sample_weights_val = torch.stack(sample_weights_val)
+        sample_weights_train = torch.tensor(
+            [float(weights_cpu[label]) for _, label in train_ds],
+            dtype=torch.double
+        )
+        sample_weights_val = torch.tensor(
+            [float(weights_cpu[label]) for _, label in val_ds],
+            dtype=torch.double
+        )
 
         # 2. Create the sampler
         sampler_train = WeightedRandomSampler(
@@ -510,7 +524,9 @@ def train_seq_model(
     else:
         criterion = nn.MSELoss()
 
-    optimizer = torch.optim.AdamW(model.head.parameters(), lr=cfg.lr)
+    head_params = (model.module.head.parameters() if isinstance(model, nn.DataParallel)
+                   else model.head.parameters())
+    optimizer = torch.optim.AdamW(head_params, lr=cfg.lr)
 
     train_loader = DataLoader(
         train_ds,
@@ -561,7 +577,7 @@ def train_seq_model(
             toks = toks.to(device)
             labels = labels.to(device)
 
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             outputs = model(toks)
 
             loss = criterion(outputs, labels)
@@ -627,7 +643,8 @@ def train_seq_model(
 
     # 7. Restore Best Model
     if best_model_state is not None:
-        model.head.load_state_dict(best_model_state)
+        head = model.module.head if isinstance(model, nn.DataParallel) else model.head
+        head.load_state_dict(best_model_state)
         print(f"Restored best model from memory (val_loss={best_val_loss_monitor:.4f})")
 
     metrics["best_val"] = best_val_acc if cfg.task == "classification" else best_val_loss
