@@ -64,6 +64,15 @@ import os
 
 warnings.filterwarnings("ignore", category=UserWarning, module='torch')
 
+def configure_cpu_threads(num_threads: int = 64, interop_threads: int = 4):
+    # Good defaults for a 64-core box
+    os.environ.setdefault("OMP_NUM_THREADS", str(num_threads))
+    os.environ.setdefault("MKL_NUM_THREADS", str(num_threads))
+    try:
+        torch.set_num_threads(num_threads)
+        torch.set_num_interop_threads(interop_threads)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------
 # 1. Utility: read FASTA as id -> sequence
@@ -190,11 +199,15 @@ class NADPHSeqConfig:
     model_name: str = "esm2_t33_650M_UR50D"
     max_len: int = 1022
     task: str = "classification"  # or "regression"
-    num_classes: int = 3
+    num_classes: int = 2
     batch_size: int = 8
     lr: float = 1e-4  # Lowered slightly for Focal Loss stability
     epochs: int = 15   # Increased slightly for better convergence
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    cache_dir: str = "cache"
+    use_token_cache: bool = True
+    use_embedding_cache: bool = True
+    cache_fp16: bool = True
 
 class NADPHSeqDataset(Dataset):
     def __init__(
@@ -231,6 +244,25 @@ class NADPHSeqDataset(Dataset):
             label = float(row["label_reg"])
             return toks, label
 
+class NADPHSeqDatasetTokenCached(Dataset):
+    def __init__(self, token_cache_pt: str | Path, task: str = "classification"):
+        obj = torch.load(token_cache_pt, map_location="cpu")
+        self.tokens = obj["tokens"]
+        self.task = task
+        if task == "classification":
+            self.labels = obj["label_cls"]
+        else:
+            self.labels = obj["label_reg"]
+
+    def __len__(self) -> int:
+        return len(self.labels)
+
+    def __getitem__(self, idx: int):
+        t = self.tokens[idx]
+        if self.task == "classification":
+            return t, int(self.labels[idx])
+        else:
+            return t, float(self.labels[idx])
 
 def collate_fn_esm(batch: List[Tuple[torch.Tensor, int | float]]) -> Tuple[torch.Tensor, torch.Tensor]:
     toks, labels = zip(*batch)
@@ -309,9 +341,6 @@ class NADPHSeqModel(nn.Module):
         super().__init__()
         self.esm = esm_model
         self.task = task
-
-        for p in self.esm.parameters():
-            p.requires_grad = False
 
         for p in self.esm.parameters():
             p.requires_grad = False
@@ -420,12 +449,142 @@ def compute_residue_integrated_gradients(
 # ---------------------------------------------------------------------
 # 5. Training utilities
 # ---------------------------------------------------------------------
+def _ensure_dir(p: str | Path) -> Path:
+    p = Path(p)
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
+    """
+    Saves tokenized sequences + labels to disk so you don't redo tokenization each epoch.
+    """
+    cache_dir = _ensure_dir(cfg.cache_dir)
+    out_pt = cache_dir / f"tokens_{Path(csv_path).stem}_{cfg.max_len}.pt"
+    if out_pt.exists():
+        return out_pt
+
+    # IMPORTANT: tokenization does NOT require putting ESM model on GPU/CPU
+    _, alphabet = load_esm_model_and_alphabet(cfg.model_name)
+    batch_converter = alphabet.get_batch_converter()
+
+    df = pd.read_csv(csv_path)
+    tokens = []
+    for rid, seq in zip(df["id"].astype(str), df["seq"].astype(str)):
+        if len(seq) > cfg.max_len:
+            seq = seq[: cfg.max_len]
+        _, _, toks = batch_converter([(rid, seq)])
+        tokens.append(toks[0].cpu())
+
+    labels_cls = torch.tensor(df["label_cls"].values, dtype=torch.long)
+    labels_reg = torch.tensor(df["label_reg"].values, dtype=torch.float32) if "label_reg" in df.columns else None
+
+    payload = {"tokens": tokens, "label_cls": labels_cls}
+    if labels_reg is not None:
+        payload["label_reg"] = labels_reg
+
+    torch.save(payload, out_pt)
+    print(f"[cache] wrote token cache: {out_pt} (n={len(tokens)})")
+    return out_pt
 
 def load_esm_model_and_alphabet(model_name: str = "esm2_t33_650M_UR50D"):
     model, alphabet = esm.pretrained.load_model_and_alphabet(model_name)
     model.eval()
     return model, alphabet
 
+@torch.no_grad()
+def build_embedding_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
+    cache_dir = _ensure_dir(cfg.cache_dir)
+    out_pt = cache_dir / f"embs_{Path(token_cache_pt).stem}_{cfg.model_name}.pt"
+    if out_pt.exists():
+        return out_pt
+
+    device = torch.device(cfg.device)
+
+    esm_model, _ = load_esm_model_and_alphabet(cfg.model_name)
+    esm_model.to(device).eval()
+
+    obj = torch.load(token_cache_pt, map_location="cpu")
+    tokens_list = obj["tokens"]
+    y_cls = obj["label_cls"]
+    y_reg = obj.get("label_reg", None)
+
+    embed_dim = esm_model.embed_dim
+    pooler = AttentionPooling(embed_dim).to(device).eval()
+    norm = nn.LayerNorm(embed_dim).to(device).eval()
+
+    dtype = torch.float16 if cfg.cache_fp16 else torch.float32
+    embs = torch.empty((len(tokens_list), embed_dim), dtype=dtype)
+
+    # IMPORTANT for 1x15GB GPU: ESM2-650M often OOM above bs=2 for long sequences
+    if device.type == "cuda":
+        bs = min(2, cfg.batch_size)
+    else:
+        bs = cfg.batch_size
+
+    for i in tqdm(range(0, len(tokens_list), bs), desc="Caching ESM pooled embeddings"):
+        batch_tokens = tokens_list[i:i + bs]
+
+        toks = collate_fn_esm([(t, 0) for t in batch_tokens])[0].to(device)
+        mask = (toks != 1)
+
+        out = esm_model(toks, repr_layers=[33], return_contacts=False)
+        reps = out["representations"][33]  # (B, L, D)
+
+        pooled = pooler(reps, mask)
+        pooled = norm(pooled).to("cpu")
+
+        if dtype == torch.float16:
+            pooled = pooled.half()
+
+        embs[i:i + pooled.size(0)] = pooled
+
+    payload = {"embs": embs, "label_cls": y_cls}
+    if y_reg is not None:
+        payload["label_reg"] = y_reg
+
+    torch.save(payload, out_pt)
+    print(f"[cache] wrote embedding cache: {out_pt} | shape={tuple(embs.shape)} dtype={embs.dtype}")
+    return out_pt
+
+class NADPHEmbeddingDataset(Dataset):
+    def __init__(self, emb_pt: str | Path, task: str = "classification"):
+        obj = torch.load(emb_pt, map_location="cpu")
+        self.x = obj["embs"]  # float16/float32
+        self.task = task
+        if task == "classification":
+            self.y = obj["label_cls"].long()
+        else:
+            self.y = obj["label_reg"].float()
+
+    def __len__(self): return len(self.y)
+
+    def __getitem__(self, i):
+        # Train in float32 for stability even if cache is fp16
+        x = self.x[i].float()
+        if self.task == "classification":
+            return x, int(self.y[i])
+        else:
+            return x, float(self.y[i])
+
+class HeadOnlyModel(nn.Module):
+    def __init__(self, embed_dim: int, task: str = "classification", num_classes: int = 2, dropout: float = 0.3):
+        super().__init__()
+        hidden = 256
+        out_dim = num_classes if task == "classification" else 1
+        self.task = task
+        self.net = nn.Sequential(
+            nn.Linear(embed_dim, hidden),
+            nn.BatchNorm1d(hidden),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden, out_dim),
+        )
+
+    def forward(self, x):
+        logits = self.net(x)
+        if self.task == "regression":
+            logits = logits.squeeze(-1)
+        return logits
 
 def train_seq_model(
         csv_path: str | Path,
@@ -437,20 +596,41 @@ def train_seq_model(
     """
     global sampler_train, sampler_val
     device = torch.device(cfg.device)
+    configure_cpu_threads(num_threads=64, interop_threads=4)
 
-    # 1. Load ESM model
-    esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
-    esm_model.to(device)
+    # 2. Prepare Dataset (CACHED PATH)
+    token_cache_pt = None
+    emb_cache_pt = None
 
-    # 2. Prepare Dataset
-    ds = NADPHSeqDataset(csv_path, alphabet, task=cfg.task, max_len=cfg.max_len)
+    if cfg.use_token_cache:
+        token_cache_pt = build_token_cache(csv_path, cfg)
+
+    if cfg.use_embedding_cache:
+        if token_cache_pt is None:
+            token_cache_pt = build_token_cache(csv_path, cfg)
+        emb_cache_pt = build_embedding_cache(token_cache_pt, cfg)
+
+    # Build dataset depending on cache mode
+    if emb_cache_pt is not None:
+        ds = NADPHEmbeddingDataset(emb_cache_pt, task=cfg.task)
+        embed_dim_for_head = ds.x.shape[1]
+    else:
+        # Fall back to token-cache or original dataset
+        if token_cache_pt is not None:
+            # Need alphabet only if you are NOT embedding-caching (token->ESM still needed)
+            esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
+            esm_model.to(device)
+            ds = NADPHSeqDatasetTokenCached(token_cache_pt, task=cfg.task)
+        else:
+            esm_model, alphabet = load_esm_model_and_alphabet(cfg.model_name)
+            esm_model.to(device)
+            ds = NADPHSeqDataset(csv_path, alphabet, task=cfg.task, max_len=cfg.max_len)
 
     # Simple train/val split
     n = len(ds)
     n_train = int(0.8 * n)
     n_val = n - n_train
     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-
 
     cpu = os.cpu_count() or 1
 
@@ -463,22 +643,39 @@ def train_seq_model(
         pin_memory = False
 
     # 3. Initialize Model
-    embed_dim = esm_model.embed_dim
-    model = NADPHSeqModel(
-        esm_model,
-        embed_dim=embed_dim,
-        task=cfg.task,
-        num_classes=cfg.num_classes,
-    ).to(device)
+    if emb_cache_pt is not None:
+        # Head-only training (fast)
+        model = HeadOnlyModel(
+            embed_dim=embed_dim_for_head,
+            task=cfg.task,
+            num_classes=cfg.num_classes,
+        ).to(device)
+    else:
+        # Full model (ESM forward still happens)
+        embed_dim = esm_model.embed_dim
+        model = NADPHSeqModel(
+            esm_model,
+            embed_dim=embed_dim,
+            task=cfg.task,
+            num_classes=cfg.num_classes,
+        ).to(device)
 
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-        model = nn.DataParallel(model)
+        if torch.cuda.device_count() > 1:
+            print(f"Using {torch.cuda.device_count()} GPUs!")
+            model = nn.DataParallel(model)
 
     # 4. Calculate Class Weights & Init Focal Loss
     if cfg.task == "classification":
         print("Calculating class weights for Focal Loss...")
-        train_labels = [label for _, label in train_ds]
+        # Efficient label extraction
+        if hasattr(train_ds, "dataset") and hasattr(train_ds.dataset, "y"):
+            # EmbeddingDataset via random_split
+            base_y = train_ds.dataset.y
+            train_labels = base_y[train_ds.indices].tolist()
+            val_labels = val_ds.dataset.y[val_ds.indices].tolist()
+        else:
+            train_labels = [int(train_ds[i][1]) for i in range(len(train_ds))]
+            val_labels = [int(val_ds[i][1]) for i in range(len(val_ds))]
         class_counts = torch.bincount(torch.tensor(train_labels))
 
         class_counts = class_counts.float()
@@ -499,14 +696,8 @@ def train_seq_model(
         criterion = FocalLoss(alpha=weights, gamma=3.0)
 
         # 1. Calculate weights for each SAMPLE (not just class)
-        sample_weights_train = torch.tensor(
-            [float(weights_cpu[label]) for _, label in train_ds],
-            dtype=torch.double
-        )
-        sample_weights_val = torch.tensor(
-            [float(weights_cpu[label]) for _, label in val_ds],
-            dtype=torch.double
-        )
+        sample_weights_train = [weights_cpu[label] for label in train_labels]
+        sample_weights_val = [weights_cpu[label] for label in val_labels]
 
         # 2. Create the sampler
         sampler_train = WeightedRandomSampler(
@@ -524,28 +715,32 @@ def train_seq_model(
     else:
         criterion = nn.MSELoss()
 
-    head_params = (model.module.head.parameters() if isinstance(model, nn.DataParallel)
-                   else model.head.parameters())
-    optimizer = torch.optim.AdamW(head_params, lr=cfg.lr)
+    if emb_cache_pt is not None:
+        optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr)
+    else:
+        head_params = (model.module.head.parameters() if isinstance(model, nn.DataParallel)
+                       else model.head.parameters())
+        optimizer = torch.optim.AdamW(head_params, lr=cfg.lr)
+
+    # choose collate fn
+    collate = None if emb_cache_pt is not None else collate_fn_esm
 
     train_loader = DataLoader(
         train_ds,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.batch_size if emb_cache_pt is None else 256,  # head-only can be huge
         sampler=sampler_train,
-        # shuffle=True,
-        collate_fn=collate_fn_esm,
+        collate_fn=collate,
         num_workers=n_workers,
         pin_memory=pin_memory,
-        persistent_workers=True if n_workers> 0 else False,
+        persistent_workers=True if n_workers > 0 else False,
         drop_last=True
     )
 
     val_loader = DataLoader(
         val_ds,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.batch_size if emb_cache_pt is None else 256,
         sampler=sampler_val,
-        # shuffle=True,
-        collate_fn=collate_fn_esm,
+        collate_fn=collate,
         num_workers=n_workers,
         pin_memory=pin_memory,
         persistent_workers=True if n_workers > 0 else False,
@@ -633,7 +828,11 @@ def train_seq_model(
             if val_loss < best_val_loss_monitor:
                 best_val_loss_monitor = val_loss
                 trigger_times = 0
-                best_model_state = copy.deepcopy(model.head.state_dict())
+                if emb_cache_pt is not None:
+                    best_model_state = copy.deepcopy(model.net.state_dict())
+                else:
+                    best_model_state = copy.deepcopy(
+                        (model.module.head if isinstance(model, nn.DataParallel) else model.head).state_dict())
             else:
                 trigger_times += 1
                 print(f"  >> No improvement in val_loss. Patience: {trigger_times}/{pat}")
@@ -643,8 +842,11 @@ def train_seq_model(
 
     # 7. Restore Best Model
     if best_model_state is not None:
-        head = model.module.head if isinstance(model, nn.DataParallel) else model.head
-        head.load_state_dict(best_model_state)
+        if emb_cache_pt is not None:
+            model.net.load_state_dict(best_model_state)
+        else:
+            head = model.module.head if isinstance(model, nn.DataParallel) else model.head
+            head.load_state_dict(best_model_state)
         print(f"Restored best model from memory (val_loss={best_val_loss_monitor:.4f})")
 
     metrics["best_val"] = best_val_acc if cfg.task == "classification" else best_val_loss
