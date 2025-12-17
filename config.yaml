@@ -4,7 +4,8 @@ scripts_dir: "scripts"
 results_dir: "results"
 
 # Python Environment
-python_bin: ".venv/bin/python"
+#python_bin: ".venv/bin/python"
+python_bin: "python"
 
 # Training Hyperparameters
 epochs: 100
