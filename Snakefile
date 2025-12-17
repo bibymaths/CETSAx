@@ -175,7 +175,7 @@ rule train_model:
           --fasta {input.fasta} \
           --out-supervised {output.supervised} \
           --out-head {output.head_ckpt} \
-          --out-meta {output.meta} \ 
+          --out-meta {output.meta} \
           --out-info {output.history} \
           --cache-dir {params.cache_dir} \
           --model-name {params.model_name} \
@@ -194,6 +194,7 @@ rule train_model:
           {params.fp16} \
           {params.patience_flag}
         """
+
 
 # --- 6. Predict on Sequences (new predictor, reads meta.json) ---
 rule predict:

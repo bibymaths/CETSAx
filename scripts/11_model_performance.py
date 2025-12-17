@@ -49,7 +49,7 @@ def analyze_results():
         print(missed_hits['id'].head(5).tolist())
 
         # Save them for inspection
-        missed_hits.to_csv("missed_strong_hits.csv", index=False)
+        missed_hits.to_csv(f"{base_dir}/missed_strong_hits.csv", index=False)
         print("Saved full list to 'missed_strong_hits.csv'")
     else:
         print("Great news: No Strong hits were completely missed!")

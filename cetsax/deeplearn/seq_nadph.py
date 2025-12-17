@@ -889,6 +889,10 @@ def train_seq_model(
         model.train()
         train_loss = 0.0
         n_train_batches = 0
+        train_correct = 0
+        train_total = 0
+        train_acc = None
+        val_acc = None
 
         for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
@@ -916,6 +920,15 @@ def train_seq_model(
 
             train_loss += float(loss.item())
             n_train_batches += 1
+
+            if cfg.task == "classification":
+                preds = outputs.argmax(dim=1)
+                train_correct += int((preds == labels).sum().item())
+                train_total += int(labels.size(0))
+
+        train_loss /= max(1, n_train_batches)
+        if cfg.task == "classification":
+            train_acc = train_correct / max(1, train_total)
 
         train_loss /= max(1, n_train_batches)
 
@@ -961,17 +974,21 @@ def train_seq_model(
 
         if cfg.task == "classification":
             val_acc = correct / max(1, total)
-            print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
+            print(
+                f"Epoch {epoch}: train_loss={train_loss:.4f} train_acc={train_acc:.4f} "
+                f"val_loss={val_loss:.4f} val_acc={val_acc:.4f}"
+            )
             best_val_acc = max(best_val_acc, val_acc)
         else:
             print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
 
-            # ---- append epoch row (DataFrame) ----
+        # ---- append epoch row ----
         history_rows.append(
             {
                 **run_info,
                 "epoch": int(epoch),
                 "train_loss": float(train_loss),
+                "train_acc": (float(train_acc) if train_acc is not None else None),
                 "val_loss": float(val_loss),
                 "val_acc": (float(val_acc) if val_acc is not None else None),
                 "lr": float(lr_now),
