@@ -13,6 +13,8 @@ RES = config["results_dir"]
 
 SEQ = config["seq_model"]
 PRED = config["predict"]
+MAX_LEN = SEQ["max_len"]
+MODEL_NAME = SEQ["model_name"]
 
 # --- Target Rule (What we want to produce) ---
 rule all:
@@ -139,8 +141,8 @@ rule train_model:
         supervised=f"{RES}/nadph_seq_supervised.csv",
         head_ckpt=f"{RES}/nadph_seq_head.pt",
         meta=f"{RES}/nadph_seq_meta.json",
-        token_cache=f"{RES}/cache/tokens_nadph_seq_supervised_{SEQ[max_len]}.pt",
-        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{SEQ[max_len]}_{SEQ[model_name]}.pt"
+        token_cache= f"{RES}/cache/tokens_nadph_seq_supervised_{MAX_LEN}.pt",
+        pooled_cache= f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}.pt"
     params:
         model_name=SEQ["model_name"],
         max_len=SEQ["max_len"],
@@ -155,7 +157,7 @@ rule train_model:
         cache_dir=SEQ["cache"]["dir"],
         token_cache="--use-token-cache" if SEQ["cache"].get("token_cache", True) else "--no-token-cache",
         pooled_cache="--use-pooled-cache" if SEQ["cache"].get("pooled_cache", True) else "--no-pooled-cache",
-        reps_cache="--use-reps-cache" if SEQ["cache"].get("reps_cache", False) else "--no-reps-cache",
+        reps_cache="--use-reps-cache" if SEQ["cache"].get("reps_cache", False) else "--no-use-reps-cache",
         fp16="--cache-fp16" if SEQ["cache"].get("fp16", True) else "--cache-fp32",
         patience_flag="--patience" if SEQ.get("patience", True) else "--no-patience"
     shell:

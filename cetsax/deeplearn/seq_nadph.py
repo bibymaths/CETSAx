@@ -669,6 +669,24 @@ def build_reps_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
 # -----------------------------------------------------------------------------
 # 8) Training
 # -----------------------------------------------------------------------------
+
+def _get_head_module(model: nn.Module) -> nn.Module:
+    """
+    Return the trainable head module regardless of model type:
+    - NADPHSeqModel: model.head
+    - HeadOnlyModel: model.net
+    - DataParallel/DDP: unwrap .module
+    """
+    base = model.module if hasattr(model, "module") else model
+
+    if hasattr(base, "head") and isinstance(getattr(base, "head"), nn.Module):
+        return base.head
+
+    if hasattr(base, "net") and isinstance(getattr(base, "net"), nn.Module):
+        return base.net
+
+    raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
+
 def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
     n = len(ds)
     n_train = int(train_frac * n)
@@ -929,7 +947,8 @@ def train_seq_model(
         if patience:
             if val_loss < best_val_loss_monitor:
                 best_val_loss_monitor = val_loss
-                best_model_state = copy.deepcopy(model.head.state_dict())
+                head_mod = _get_head_module(model)
+                best_model_state = copy.deepcopy(head_mod.state_dict())
                 trigger_times = 0
             else:
                 trigger_times += 1
@@ -939,7 +958,8 @@ def train_seq_model(
                     break
 
     if best_model_state is not None:
-        model.head.load_state_dict(best_model_state)
+        head_mod = _get_head_module(model)
+        head_mod.load_state_dict(best_model_state)
         print(f"Restored best head from memory (val_loss={best_val_loss_monitor:.4f})")
 
     metrics["best_val_loss"] = float(best_val_loss_monitor)

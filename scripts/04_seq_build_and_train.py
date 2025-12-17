@@ -54,6 +54,7 @@ from cetsax import (
     NADPHSeqConfig,
     train_seq_model,
 )
+from cetsax.deeplearn.seq_nadph import _get_head_module
 
 
 def main() -> None:
@@ -94,8 +95,6 @@ def main() -> None:
                    help="Directory to store caches (tokens/pooled/reps).")
     p.add_argument("--cache-fp16", dest="cache_fp16", action=argparse.BooleanOptionalAction, default=True,
                    help="Store caches in float16 where applicable.")
-    p.add_argument("--cache-reps", action="store_true", default=False,
-                   help="Also cache residue reps+mask (big, enables explainability without ESM).")
 
     # --- Model / ESM control ---
     p.add_argument(
@@ -126,29 +125,29 @@ def main() -> None:
         help="Batch size for ESM forward pass / embedding cache (GPU-safe)."
     )
 
-    # --- Cache toggles (explicit, Snakemake-friendly) ---
+    # --- Cache toggles---
     p.add_argument(
-        "--cache-tokens",
+        "--use-token-cache",
         dest="cache_tokens",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Enable/disable token cache."
+        help="Enable/disable token cache.",
     )
 
     p.add_argument(
-        "--cache-pooled",
+        "--use-pooled-cache",
         dest="cache_pooled",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Enable/disable pooled embedding cache."
+        help="Enable/disable pooled embedding cache.",
     )
 
     p.add_argument(
-        "--cache-reps",
+        "--use-reps-cache",
         dest="cache_reps",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Enable/disable residue-level representation cache."
+        help="Enable/disable residue-level reps cache (large).",
     )
 
     args = p.parse_args()
@@ -209,7 +208,8 @@ def main() -> None:
     # 3) Save head
     out_head = Path(args.out_head)
     out_head.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.head.state_dict(), out_head)
+    head_mod = _get_head_module(model)
+    torch.save(head_mod.state_dict(), out_head)
     print(f"Saved model head state_dict to {out_head}")
 
     # 4) Save metadata for reproducibility
