@@ -213,3 +213,4 @@ run*/
 results*/
 *.lock
 .snakemake
+cache/
