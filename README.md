@@ -1,6 +1,7 @@
 <img src="logo.svg" alt="CETSAx Logo" width="400"/>  
 
-![uv](https://img.shields.io/badge/uv-env-orange)
+![uv](https://img.shields.io/badge/uv-env-orange) 
+![conda](https://img.shields.io/badge/Conda-Package%20Manager-green?logo=anaconda)
 ![Snakemake](https://img.shields.io/badge/Snakemake-Workflow-blue?logo=snakemake)
 ![Python](https://img.shields.io/badge/Python-3.11.13-blue?logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?logo=pytorch) 
@@ -84,7 +85,7 @@ cd cetsax-nadph
 
 > **Note:** A CUDA-capable GPU is recommended for efficient ESM-2 training.
 
-## ⚙️ **Set Up the Environment**
+## ⚙️ **Set Up the Environment with uv**
 
 ```bash
 uv venv
@@ -94,10 +95,22 @@ uv pip install -r requirements.txt
 
 ---
 
+##    **Setting up the Environment with Conda**
+
+```bash
+conda env create -f environment.yml
+conda activate cetsax 
+# Dependencies are installed in the environment.yml file
+pip install -r requirements.txt  
+# Install the package in editable mode 
+pip install -e .
+---
+
+
 ## 🏃 Run the Workflow
 
 ```bash
-snakemake -c8
+snakemake --cores 8 # or whatever number of cores you have to spare
 ```
 
 ---
@@ -154,10 +167,15 @@ All settings are controlled through `config.yaml`.
 
 ```yaml
 input_csv: "data/nadph.csv"
-python_bin: ".venv/bin/python"
+
+# for uv
+python_bin: ".venv/bin/python" 
+
+# for conda
+# python_bin: "python"
 
 # Deep Learning Hyperparameters
-epochs: 10
+epochs: 10 # or 100/1000 depending on dataset size
 batch_size: 8
 task: "classification"   # classification or regression
 device: "cuda"
