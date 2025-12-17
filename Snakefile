@@ -1,60 +1,23 @@
 """
 Snakefile for the CETSA-NADPH analysis pipeline.
-
-DAG Structure:
-
-1. Fit Curves
-2. Hit Calling
-3. Annotate & Fetch Sequences
-4. System Analysis
-5. Train ESM-2 Model
-6. Predict on Sequences
-7. Visualization
-8. Network Analysis
-9. Curve ML
-10. Bayesian Validation
-11. Detailed Plotting
-12. Model Performance Analysis
 """
-
 # BSD 3-Clause License
-#
 # Copyright (c) 2025, Abhinav Mishra
-# All rights reserved.
-# Email: mishraabhinav36@gmail.com
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of Abhinav Mishra nor the names of its contributors may
-#    be used to endorse or promote products derived from this software without
-#    specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 configfile: "config.yaml"
+
+# Convenience
+PY = config["python_bin"]
+SCRIPTS = config["scripts_dir"]
+RES = config["results_dir"]
+
+SEQ = config["seq_model"]
+PRED = config["predict"]
 
 # --- Target Rule (What we want to produce) ---
 rule all:
     input:
-        # 1. Plots from the main pipeline
-        expand("results/plots/{plot}",plot=[
+        expand("results/plots/{plot}", plot=[
             "plot_1_confusion_matrix.png",
             "plot_2_roc_curves.png",
             "plot_3_confidence.png",
@@ -68,24 +31,23 @@ rule all:
             "plot_11_bio_pathway_enrichment.png",
             "plot_12_bio_ec50_validation.png"
         ]),
-        # 2. System analysis output
-        f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv",
-        f"{config['results_dir']}/system_analysis/pca_scores.csv",
-        f"{config['results_dir']}/system_analysis/pathway_enrichment_overrepresentation.csv",
-        f"{config['results_dir']}/system_analysis/redox_axes_per_protein.csv",
+        f"{RES}/system_analysis/mixture_cluster_labels.csv",
+        f"{RES}/system_analysis/pca_scores.csv",
+        f"{RES}/system_analysis/pathway_enrichment_overrepresentation.csv",
+        f"{RES}/system_analysis/redox_axes_per_protein.csv",
 
-        f"{config['results_dir']}/network/network_modules.csv",
-        f"{config['results_dir']}/network/network_graph.gexf",
+        f"{RES}/network/network_modules.csv",
+        f"{RES}/network/network_graph.gexf",
 
-        f"{config['results_dir']}/curve_ml/curve_clusters.csv",
-        f"{config['results_dir']}/curve_ml/curve_outliers.csv",
+        f"{RES}/curve_ml/curve_clusters.csv",
+        f"{RES}/curve_ml/curve_outliers.csv",
 
-        f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv",
+        f"{RES}/bayesian/bayesian_ec50_summaries.csv",
 
-        f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png",
-        f"{config['results_dir']}/detailed_plots/individual_curves",
+        f"{RES}/detailed_plots/global_goodness_of_fit.png",
+        f"{RES}/detailed_plots/individual_curves",
 
-        f"{config['results_dir']}/model_performance_report.txt"
+        f"{RES}/model_performance_report.txt"
 
 
 # --- 1. Fit Curves ---
@@ -93,32 +55,34 @@ rule fit_curves:
     input:
         csv=config["input_csv"]
     output:
-        fits=f"{config['results_dir']}/ec50_fits.csv"
+        fits=f"{RES}/ec50_fits.csv"
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/01_fit_itdr_curves.py \
+        r"""
+        {PY} {SCRIPTS}/01_fit_itdr_curves.py \
             --input-csv {input.csv} \
             --out-fits {output.fits}
         """
+
 
 # --- 2. Hit Calling ---
 rule hit_calling:
     input:
         fits=rules.fit_curves.output.fits
     output:
-        outdir=directory(f"{config['results_dir']}/hit_calling"),
-        hits_csv=f"{config['results_dir']}/hit_calling/cetsa_hits_ranked.csv",
-        diag1=f"{config['results_dir']}/hit_calling/ec50_r1_vs_r2.png",
-        diag2=f"{config['results_dir']}/hit_calling/ec50_vs_delta_max.png",
-        diag3=f"{config['results_dir']}/hit_calling/ec50_vs_r2.png",
-        diag4=f"{config['results_dir']}/hit_calling/r2_vs_delta_max.png"
+        outdir=directory(f"{RES}/hit_calling"),
+        hits_csv=f"{RES}/hit_calling/cetsa_hits_ranked.csv",
+        diag1=f"{RES}/hit_calling/ec50_r1_vs_r2.png",
+        diag2=f"{RES}/hit_calling/ec50_vs_delta_max.png",
+        diag3=f"{RES}/hit_calling/ec50_vs_r2.png",
+        diag4=f"{RES}/hit_calling/r2_vs_delta_max.png"
     shell:
-        """
+        r"""
         mkdir -p {output.outdir}
-        {config[python_bin]} {config[scripts_dir]}/02_hit_calling_and_diagnostics.py \
+        {PY} {SCRIPTS}/02_hit_calling_and_diagnostics.py \
             --fits-csv {input.fits} \
             --out-dir {output.outdir}
         """
+
 
 # --- 3. Annotate & Fetch Sequences ---
 rule annotate:
@@ -126,15 +90,16 @@ rule annotate:
         fits=rules.fit_curves.output.fits,
         _wait_for_hits=rules.hit_calling.output.hits_csv
     output:
-        annot=f"{config['results_dir']}/protein_annotations.csv",
-        fasta=f"{config['results_dir']}/protein_sequences.fasta"
+        annot=f"{RES}/protein_annotations.csv",
+        fasta=f"{RES}/protein_sequences.fasta"
     shell:
-        """
-        {config[python_bin]} cetsax/annotate.py \
+        r"""
+        {PY} cetsax/annotate.py \
             --fits-csv {input.fits} \
             --out-annot {output.annot} \
             --out-fasta {output.fasta}
         """
+
 
 # --- 4. System Analysis ---
 rule system_analysis:
@@ -143,85 +108,118 @@ rule system_analysis:
         hits=rules.hit_calling.output.hits_csv,
         annot=rules.annotate.output.annot
     output:
-        outdir=directory(f"{config['results_dir']}/system_analysis"),
-        # Core Clusters
-        cluster_labels=f"{config['results_dir']}/system_analysis/mixture_cluster_labels.csv",
-        cluster_probs=f"{config['results_dir']}/system_analysis/mixture_clusters_per_protein.csv",
-        cluster_plot=f"{config['results_dir']}/system_analysis/mixture_clusters_in_pca.png",
-        # PCA & FA Components
-        pca_scores=f"{config['results_dir']}/system_analysis/pca_scores.csv",
-        pca_loadings=f"{config['results_dir']}/system_analysis/pca_loadings.csv",
-        fa_scores=f"{config['results_dir']}/system_analysis/fa_scores.csv",
-        # Pathway & Redox
-        pathway_enrich=f"{config['results_dir']}/system_analysis/pathway_enrichment_overrepresentation.csv",
-        redox_axes=f"{config['results_dir']}/system_analysis/redox_axes_per_protein.csv",
-        sensitivity=f"{config['results_dir']}/system_analysis/sensitivity_scores.csv"
+        outdir=directory(f"{RES}/system_analysis"),
+        cluster_labels=f"{RES}/system_analysis/mixture_cluster_labels.csv",
+        cluster_probs=f"{RES}/system_analysis/mixture_clusters_per_protein.csv",
+        cluster_plot=f"{RES}/system_analysis/mixture_clusters_in_pca.png",
+        pca_scores=f"{RES}/system_analysis/pca_scores.csv",
+        pca_loadings=f"{RES}/system_analysis/pca_loadings.csv",
+        fa_scores=f"{RES}/system_analysis/fa_scores.csv",
+        pathway_enrich=f"{RES}/system_analysis/pathway_enrichment_overrepresentation.csv",
+        redox_axes=f"{RES}/system_analysis/redox_axes_per_protein.csv",
+        sensitivity=f"{RES}/system_analysis/sensitivity_scores.csv"
     shell:
-        """
+        r"""
         mkdir -p {output.outdir}
-        {config[python_bin]} {config[scripts_dir]}/03_system_level_analysis.py \
+        {PY} {SCRIPTS}/03_system_level_analysis.py \
             --fits-csv {input.fits} \
             --hits-csv {input.hits} \
             --annot-csv {input.annot} \
             --out-dir {output.outdir}
         """
 
-# --- 5. Train ESM-2 Model ---
+
+# --- 5. Train ESM-2 Model (with caching + meta.json) ---
 rule train_model:
     input:
         fits=rules.fit_curves.output.fits,
         fasta=rules.annotate.output.fasta,
-        # SERIALIZATION HACK: Force wait for system_analysis
         _wait_for_sys=rules.system_analysis.output.cluster_labels
     output:
-        supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
-        checkpoint=f"{config['results_dir']}/nadph_seq_head.pt"
+        supervised=f"{RES}/nadph_seq_supervised.csv",
+        head_ckpt=f"{RES}/nadph_seq_head.pt",
+        meta=f"{RES}/nadph_seq_meta.json",
+        token_cache=f"{RES}/cache/tokens_nadph_seq_supervised_{SEQ[max_len]}.pt",
+        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{SEQ[max_len]}_{SEQ[model_name]}.pt"
     params:
-        epochs=config["epochs"],
-        task=config["task"],
-        device=config["device"],
-        lr=config["lr"],
-        batch_size=config["batch_size"],
-        patience_flag=lambda wc: "--no-patience" if not config.get("patience", True) else "--patience"
+        model_name=SEQ["model_name"],
+        max_len=SEQ["max_len"],
+        num_classes=SEQ["num_classes"],
+        task=SEQ["task"],
+        device=SEQ["device"],
+        epochs=SEQ["epochs"],
+        lr=SEQ["lr"],
+        batch_size=SEQ["batch_size"],
+        esm_batch_size=SEQ["esm_batch_size"],
+        head_batch_size=SEQ["head_batch_size"],
+        cache_dir=SEQ["cache"]["dir"],
+        token_cache="--use-token-cache" if SEQ["cache"].get("token_cache", True) else "--no-token-cache",
+        pooled_cache="--use-pooled-cache" if SEQ["cache"].get("pooled_cache", True) else "--no-pooled-cache",
+        reps_cache="--use-reps-cache" if SEQ["cache"].get("reps_cache", False) else "--no-reps-cache",
+        fp16="--cache-fp16" if SEQ["cache"].get("fp16", True) else "--cache-fp32",
+        patience_flag="--patience" if SEQ.get("patience", True) else "--no-patience"
     shell:
         r"""
-        python scripts/04_seq_build_and_train.py \
+        mkdir -p {RES}/cache
+
+        {PY} {SCRIPTS}/04_seq_build_and_train.py \
           --fits-csv {input.fits} \
           --fasta {input.fasta} \
           --out-supervised {output.supervised} \
-          --out-head {output.checkpoint} \
-          --epochs {params.epochs} \
+          --out-head {output.head_ckpt} \
+          --out-meta {output.meta} \
+          --cache-dir {params.cache_dir} \
+          --model-name {params.model_name} \
+          --max-len {params.max_len} \
           --task {params.task} \
+          --num-classes {params.num_classes} \
           --device {params.device} \
+          --epochs {params.epochs} \
           --lr {params.lr} \
           --batch-size {params.batch_size} \
+          --esm-batch-size {params.esm_batch_size} \
+          --head-batch-size {params.head_batch_size} \
+          {params.token_cache} \
+          {params.pooled_cache} \
+          {params.reps_cache} \
+          {params.fp16} \
           {params.patience_flag}
         """
 
-
-# --- 6. Predict on Sequences ---
+# --- 6. Predict on Sequences (new predictor, reads meta.json) ---
 rule predict:
     input:
         fasta=rules.annotate.output.fasta,
-        checkpoint=rules.train_model.output.checkpoint
+        head_ckpt=rules.train_model.output.head_ckpt,
+        meta=rules.train_model.output.meta
     output:
-        preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
+        preds=f"{RES}/predictions_nadph_seq.csv"
     params:
-        task=config["task"],
-        device=config["device"],
-        batch_size=config["batch_size"]
+        mode=PRED["mode"],
+        task=SEQ["task"],
+        device=SEQ["device"],
+        batch_size=PRED["batch_size"],
+        esm_batch_size=PRED["esm_batch_size"],
+        saliency_flag="--saliency" if PRED.get("saliency", False) else "",
+        ig_flag="--ig" if PRED.get("ig", False) else "",
+        ig_steps=PRED.get("ig_steps", 50)
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/05_predict_nadph_effects.py \
+        r"""
+        {PY} {SCRIPTS}/05_predict_nadph_effects.py \
             --fasta {input.fasta} \
-            --checkpoint {input.checkpoint} \
-            --out {output.preds} \
+            --head {input.head_ckpt} \
+            --meta {input.meta} \
+            --mode {params.mode} \
             --task {params.task} \
-            --saliency \
-            --ig \
             --device {params.device} \
-            --batch-size {params.batch_size}
+            --batch-size {params.batch_size} \
+            --esm-batch-size {params.esm_batch_size} \
+            {params.saliency_flag} \
+            {params.ig_flag} \
+            --ig-steps {params.ig_steps} \
+            --out {output.preds}
         """
+
 
 # --- 7. Visualization ---
 rule visualize:
@@ -244,16 +242,17 @@ rule visualize:
         "results/plots/plot_11_bio_pathway_enrichment.png",
         "results/plots/plot_12_bio_ec50_validation.png"
     shell:
-        """
+        r"""
         mkdir -p results/plots
         cd results/plots
 
-        ../../{config[python_bin]} ../../{config[scripts_dir]}/06_model_predict_results.py \
+        ../../{PY} ../../{SCRIPTS}/06_model_predict_results.py \
             --pred-file ../../{input.preds} \
             --truth-file ../../{input.truth} \
             --fit-file ../../{input.fits} \
             --annot-file ../../{input.annot}
         """
+
 
 # --- 8. Network Analysis ---
 rule network_analysis:
@@ -261,17 +260,18 @@ rule network_analysis:
         csv=config["input_csv"],
         _wait_for_viz="results/plots/plot_1_confusion_matrix.png"
     output:
-        outdir=directory(f"{config['results_dir']}/network"),
-        modules=f"{config['results_dir']}/network/network_modules.csv",
-        costab_hmap=f"{config['results_dir']}/network/costab_matrix_heatmap.png",
-        costab_csv=f"{config['results_dir']}/network/costab_matrix.csv",
-        graph_gexf=f"{config['results_dir']}/network/network_graph.gexf"
+        outdir=directory(f"{RES}/network"),
+        modules=f"{RES}/network/network_modules.csv",
+        costab_hmap=f"{RES}/network/costab_matrix_heatmap.png",
+        costab_csv=f"{RES}/network/costab_matrix.csv",
+        graph_gexf=f"{RES}/network/network_graph.gexf"
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/07_network_analysis.py \
+        r"""
+        {PY} {SCRIPTS}/07_network_analysis.py \
             --input-csv {input.csv} \
             --out-dir {output.outdir}
         """
+
 
 # --- 9. Curve ML ---
 rule curve_ml:
@@ -279,34 +279,35 @@ rule curve_ml:
         csv=config["input_csv"],
         _wait_for_net=rules.network_analysis.output.modules
     output:
-        outdir=directory(f"{config['results_dir']}/curve_ml"),
-        clusters=f"{config['results_dir']}/curve_ml/curve_clusters.csv",
-        outliers=f"{config['results_dir']}/curve_ml/curve_outliers.csv",
-        pca_feats=f"{config['results_dir']}/curve_ml/curve_pca_features.csv"
+        outdir=directory(f"{RES}/curve_ml"),
+        clusters=f"{RES}/curve_ml/curve_clusters.csv",
+        outliers=f"{RES}/curve_ml/curve_outliers.csv",
+        pca_feats=f"{RES}/curve_ml/curve_pca_features.csv"
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/08_curve_ml.py \
+        r"""
+        {PY} {SCRIPTS}/08_curve_ml.py \
             --input-csv {input.csv} \
             --out-dir {output.outdir}
         """
+
 
 # --- 10. Bayesian Validation ---
 rule bayesian_fit:
     input:
         csv=config["input_csv"],
         hits=rules.hit_calling.output.hits_csv,
-        # Force wait for curve_ml
         _wait_for_ml=rules.curve_ml.output.clusters
     output:
-        outdir=directory(f"{config['results_dir']}/bayesian"),
-        summary=f"{config['results_dir']}/bayesian/bayesian_ec50_summaries.csv"
+        outdir=directory(f"{RES}/bayesian"),
+        summary=f"{RES}/bayesian/bayesian_ec50_summaries.csv"
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/09_bayesian_fit.py \
+        r"""
+        {PY} {SCRIPTS}/09_bayesian_fit.py \
             --input-csv {input.csv} \
             --hits-csv {input.hits} \
-            --out-dir {output.outdir} 
+            --out-dir {output.outdir}
         """
+
 
 # --- 11. Detailed Plotting ---
 rule detailed_plots:
@@ -316,27 +317,27 @@ rule detailed_plots:
         hits=rules.hit_calling.output.hits_csv,
         _wait_for_bayes=rules.bayesian_fit.output.summary
     output:
-        outdir=directory(f"{config['results_dir']}/detailed_plots"),
-        gof=f"{config['results_dir']}/detailed_plots/global_goodness_of_fit.png",
-        # Explicitly track the subfolder of curves
-        curves_dir=directory(f"{config['results_dir']}/detailed_plots/individual_curves")
+        outdir=directory(f"{RES}/detailed_plots"),
+        gof=f"{RES}/detailed_plots/global_goodness_of_fit.png",
+        curves_dir=directory(f"{RES}/detailed_plots/individual_curves")
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/10_plot_curves.py \
+        r"""
+        {PY} {SCRIPTS}/10_plot_curves.py \
             --input-csv {input.csv} \
             --fits-csv {input.fits} \
             --hits-csv {input.hits} \
             --out-dir {output.outdir}
         """
 
+
 # --- 12. Model Performance Analysis ---
 rule model_performance:
     input:
-        supervised=f"{config['results_dir']}/nadph_seq_supervised.csv",
-        preds=f"{config['results_dir']}/predictions_nadph_seq.csv"
+        supervised=f"{RES}/nadph_seq_supervised.csv",
+        preds=f"{RES}/predictions_nadph_seq.csv"
     output:
-        report=f"{config['results_dir']}/model_performance_report.txt"
+        report=f"{RES}/model_performance_report.txt"
     shell:
-        """
-        {config[python_bin]} {config[scripts_dir]}/11_model_performance.py > {output.report}
+        r"""
+        {PY} {SCRIPTS}/11_model_performance.py > {output.report}
         """

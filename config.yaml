@@ -4,16 +4,46 @@ scripts_dir: "scripts"
 results_dir: "results"
 
 # Python Environment
-#python_bin: ".venv/bin/python"
 python_bin: "python"
 
-# Training Hyperparameters
-epochs: 100
-batch_size: 8
-task: "classification"
-device: "cpu"
-lr: 0.0001
-patience: false
+# ESM / Sequence Model
+seq_model:
+  model_name: "esm2_t33_650M_UR50D"
+  max_len: 1022
+  num_classes: 2
+  task: "classification"     # classification | regression
+  device: "cpu"              # cpu | cuda
+  epochs: 100
+  lr: 0.0001
+  patience: false
+
+  # Training batch size:
+  # - if embedding_cache=true: this is mostly used for caching (ESM forward) and/or head-only.
+  # - head-only training can be bigger; we’ll set head_batch_size separately.
+  batch_size: 8
+
+  # For 1×15GB GPU with ESM2-650M: keep ESM forward tiny
+  esm_batch_size: 2
+
+  # Caching
+  cache:
+    dir: "results/cache"
+    token_cache: true
+    pooled_cache: true        # pooled embeddings cache (N,D)  -> fast training/pred
+    reps_cache: false         # residue reps cache (list of (L,D)) -> needed for saliency/IG without ESM
+    fp16: true                # store pooled cache as fp16 to save disk/mem
+
+  # Head-only training batch size (when pooled_cache=true)
+  head_batch_size: 256
+
+# Prediction settings
+predict:
+  mode: "pooled"              # pooled | reps | tokens
+  batch_size: 256             # head-only batch size for pooled/reps
+  esm_batch_size: 2           # only used when mode=tokens
+  saliency: false             # only valid for reps/tokens
+  ig: false                   # only valid for reps/tokens
+  ig_steps: 50
 
 # --- CETSA Experimental Parameters ---
 experiment:
