@@ -43,7 +43,8 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import WeightedRandomSampler, Dataset, DataLoader
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import WeightedRandomSampler, Dataset, DataLoader, Subset
 from tqdm.auto import tqdm
 import esm
 
@@ -687,13 +688,31 @@ def _get_head_module(model: nn.Module) -> nn.Module:
 
     raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
 
-def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
-    n = len(ds)
-    n_train = int(train_frac * n)
-    n_val = n - n_train
-    g = torch.Generator().manual_seed(seed)
-    return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
+# def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
+#     n = len(ds)
+#     n_train = int(train_frac * n)
+#     n_val = n - n_train
+#     g = torch.Generator().manual_seed(seed)
+#     return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
 
+def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8, stratify: bool = True):
+    n = len(ds)
+    idx = np.arange(n)
+
+    if (not stratify) or (not hasattr(ds, "y")):
+        # fallback to your original behavior
+        n_train = int(train_frac * n)
+        n_val = n - n_train
+        g = torch.Generator().manual_seed(seed)
+        return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
+
+    # ds.y must be the label vector (works for NADPHPooledDataset / NADPHRepsDataset)
+    y = ds.y.cpu().numpy() if torch.is_tensor(ds.y) else np.asarray(ds.y)
+
+    splitter = StratifiedShuffleSplit(n_splits=1, train_size=train_frac, random_state=seed)
+    train_idx, val_idx = next(splitter.split(idx, y))
+
+    return Subset(ds, train_idx.tolist()), Subset(ds, val_idx.tolist())
 
 def _get_labels_for_split(split_ds) -> List[int] | List[float]:
     """
@@ -841,19 +860,19 @@ def train_seq_model(
         num_workers=n_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
-        drop_last=True,
+        drop_last=False,
     )
 
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
-        sampler=sampler_val,
+        sampler=None,
         shuffle=False,
         collate_fn=collate,
         num_workers=n_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
-        drop_last=True,
+        drop_last=False,
     )
 
     # ---- run ----
