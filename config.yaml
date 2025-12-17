@@ -12,7 +12,7 @@ seq_model:
   max_len: 1022
   num_classes: 2
   task: "classification"     # classification | regression
-  device: "cpu"              # cpu | cuda
+  device: "cuda"              # cpu | cuda
   epochs: 100
   lr: 0.0001
   patience: false
