@@ -54,7 +54,7 @@ from cetsax import (
     NADPHSeqConfig,
     train_seq_model,
 )
-from cetsax.deeplearn.seq_nadph import _get_head_module
+from cetsax.deeplearn.esm_seq_nadph import _get_head_module
 
 
 def main() -> None:
@@ -119,6 +119,12 @@ def main() -> None:
         help="Maximum sequence length (longer sequences are truncated)."
     )
 
+    p.add_argument(
+        "--repr-layer",
+        type=int,
+        default=33,
+        help="ESM representation layer to use for pooled/reps features."
+    )
     # --- ESM execution control (IMPORTANT for 1x15GB GPU) ---
     p.add_argument(
         "--esm-batch-size",
@@ -172,6 +178,7 @@ def main() -> None:
     # 2) Train sequence model (via module)
     cfg = NADPHSeqConfig(
         model_name=args.model_name,
+        repr_layer=args.repr_layer,
         task=args.task,
         num_classes=args.num_classes,
         epochs=args.epochs,

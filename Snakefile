@@ -16,7 +16,7 @@ SEQ = config["seq_model"]
 PRED = config["predict"]
 MAX_LEN = SEQ["max_len"]
 MODEL_NAME = SEQ["model_name"]
-REPR_LAYER = SEQ.get("repr_layer", 33)
+REPR_LAYER = SEQ.get("repr_layer",33)
 
 BASE = Path(__file__).resolve().parent
 SCRIPTS_ABS = (BASE / SCRIPTS).resolve()
@@ -24,7 +24,7 @@ SCRIPTS_ABS = (BASE / SCRIPTS).resolve()
 # --- Target Rule (What we want to produce) ---
 rule all:
     input:
-        expand("results/plots/{plot}", plot=[
+        expand("results/plots/{plot}",plot=[
             "plot_1_confusion_matrix.png",
             "plot_2_roc_curves.png",
             "plot_3_confidence.png",
@@ -146,11 +146,12 @@ rule train_model:
         supervised=f"{RES}/nadph_seq_supervised.csv",
         head_ckpt=f"{RES}/nadph_seq_head.pt",
         meta=f"{RES}/nadph_seq_meta.json",
-        token_cache= f"{RES}/cache/tokens_nadph_seq_supervised_{MAX_LEN}.pt",
-        pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}_L{REPR_LAYER}.pt",
+        # token_cache=f"{RES}/cache/tokens_nadph_seq_supervised_{MAX_LEN}.pt",
+        # pooled_cache=f"{RES}/cache/pooled_tokens_nadph_seq_supervised_{MAX_LEN}_{MODEL_NAME}_L{REPR_LAYER}.pt",
         history=f"{RES}/nadph_seq_train_info.csv"
     params:
         model_name=SEQ["model_name"],
+        repr_layer=SEQ["repr_layer"],
         max_len=SEQ["max_len"],
         num_classes=SEQ["num_classes"],
         task=SEQ["task"],
@@ -169,8 +170,7 @@ rule train_model:
     shell:
         r"""
         mkdir -p {RES}/cache
-
-        {PY} {SCRIPTS}/04_seq_build_and_train.py \
+        {PY} {SCRIPTS}/04_my_seq_build_and_train.py \
           --fits-csv {input.fits} \
           --fasta {input.fasta} \
           --out-supervised {output.supervised} \
@@ -186,7 +186,6 @@ rule train_model:
           --epochs {params.epochs} \
           --lr {params.lr} \
           --batch-size {params.batch_size} \
-          --esm-batch-size {params.esm_batch_size} \
           --head-batch-size {params.head_batch_size} \
           {params.token_cache} \
           {params.pooled_cache} \
@@ -194,7 +193,6 @@ rule train_model:
           {params.fp16} \
           {params.patience_flag}
         """
-
 
 # --- 6. Predict on Sequences (new predictor, reads meta.json) ---
 rule predict:
@@ -210,12 +208,12 @@ rule predict:
         device=SEQ["device"],
         batch_size=PRED["batch_size"],
         esm_batch_size=PRED["esm_batch_size"],
-        saliency_flag="--saliency" if PRED.get("saliency", False) else "",
-        ig_flag="--ig" if PRED.get("ig", False) else "",
-        ig_steps=PRED.get("ig_steps", 50)
+        saliency_flag="--saliency" if PRED.get("saliency",False) else "",
+        ig_flag="--ig" if PRED.get("ig",False) else "",
+        ig_steps=PRED.get("ig_steps",50)
     shell:
         r"""
-        {PY} {SCRIPTS}/05_predict_nadph_effects.py \
+        {PY} {SCRIPTS}/05_my_predict_nadph_effects.py \
             --fasta {input.fasta} \
             --head {input.head_ckpt} \
             --meta {input.meta} \
@@ -240,7 +238,7 @@ rule visualize:
         annot=rules.annotate.output.annot,
         hist=rules.train_model.output.history
     output:
-        expand(f"{RES}/plots/{{plot}}", plot=[
+        expand(f"{RES}/plots/{{plot}}",plot=[
             "plot_1_confusion_matrix.png",
             "plot_2_roc_curves.png",
             "plot_3_confidence.png",

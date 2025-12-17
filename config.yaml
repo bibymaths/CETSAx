@@ -15,15 +15,15 @@ seq_model:
   # - esm2_t30_150M_UR50D: 30 layers, ~150M parameters
   # - esm2_t12_35M_UR50D : 12 layers, ~35M parameters
   # - esm2_t6_8M_UR50D   : 6 layers, ~8M parameters
-  model_name: "esm2_t33_650M_UR50D"
+  model_name: "facebook/esm2_t12_35M_UR50D"
   max_len: 1022
   num_classes: 2
   task: "classification"     # classification | regression
   device: "cuda"              # cpu | cuda
-  epochs: 1000
-  lr: 1e-3
+  epochs: 100
+  lr: 5e-5
   patience: false
-  repr_layer: 33
+  repr_layer: 12
 
   # Training batch size:
   # - if embedding_cache=true: this is mostly used for caching (ESM forward) and/or head-only.
