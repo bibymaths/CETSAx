@@ -36,7 +36,7 @@ and NADPH response measurements.
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# from .esm_seq_nadph import train_seq_model, NADPHSeqConfig, build_sequence_supervised_table
-from .my_seq_nadph import train_seq_model, NADPHSeqConfig, build_sequence_supervised_table
+from .esm_seq_nadph import train_seq_model, NADPHSeqConfig, build_sequence_supervised_table
+# from .my_seq_nadph import train_seq_model, NADPHSeqConfig, build_sequence_supervised_table
 
 __all__ = ['train_seq_model', 'NADPHSeqConfig', 'build_sequence_supervised_table']
