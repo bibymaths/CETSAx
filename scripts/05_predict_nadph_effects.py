@@ -6,10 +6,6 @@ Modes:
 - pooled: uses cached pooled embeddings (fastest)
 - reps:   uses cached residue reps + mask (fast, supports saliency/IG without ESM)
 - tokens: runs ESM forward (slow, supports saliency/IG)
-
-IMPORTANT:
-Your current module caches do NOT store ids inside pooled/reps cache.
-So we align cache rows using nadph_seq_supervised.csv order (from meta.json).
 """
 from __future__ import annotations
 
@@ -23,7 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 
-from cetsax.deeplearn.seq_nadph import (
+from cetsax.deeplearn.esm_seq_nadph import (
     read_fasta_to_dict,
     load_esm_model_and_alphabet,
     AttentionPooling,
@@ -128,34 +124,50 @@ class RepsHeadModel(nn.Module):
 
 
 # -----------------------------
-# Cache readers (match your module)
+# Cache readers
 # -----------------------------
-def _load_pooled_cache(pooled_pt: str | Path) -> torch.Tensor:
-    """
-    Your module writes: {"pooled": (N,D), "label_cls":..., "label_reg"?:...}
-    """
-    obj = torch.load(pooled_pt, map_location="cpu")
-    if "pooled" not in obj:
-        raise ValueError(f"Pooled cache {pooled_pt} missing key 'pooled'. Keys={list(obj.keys())}")
-    return obj["pooled"]  # (N,D) fp16/fp32
+
+def _load_pooled_cache(pooled_pt: str | Path) -> Tuple[List[str], torch.Tensor]:
+    obj = torch.load(pooled_pt, map_location="cpu", weights_only=False)
+    if "ids" not in obj or "pooled" not in obj:
+        raise ValueError(f"{pooled_pt} must contain keys 'ids' and 'pooled'. Keys={list(obj.keys())}")
+    return [str(x) for x in obj["ids"]], obj["pooled"]
 
 
-def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
-    """
-    Your module writes: {"reps": list[(L,D)], "mask": list[(L,)], ...}
-    """
-    obj = torch.load(reps_pt, map_location="cpu")
-    for k in ("reps", "mask"):
+def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[str], List[torch.Tensor], List[torch.Tensor]]:
+    obj = torch.load(reps_pt, map_location="cpu", weights_only=False)
+    for k in ("ids", "reps", "mask"):
         if k not in obj:
-            raise ValueError(f"Reps cache {reps_pt} missing key '{k}'. Keys={list(obj.keys())}")
-    return obj["reps"], obj["mask"]
+            raise ValueError(f"{reps_pt} missing key '{k}'. Keys={list(obj.keys())}")
+    return [str(x) for x in obj["ids"]], obj["reps"], obj["mask"]
 
 
-def _load_supervised_ids(supervised_csv: str | Path) -> List[str]:
-    df = pd.read_csv(supervised_csv)
-    if "id" not in df.columns:
-        raise ValueError(f"{supervised_csv} missing column 'id'")
-    return df["id"].astype(str).tolist()
+# def _load_pooled_cache(pooled_pt: str | Path) -> torch.Tensor:
+#     """
+#     Your module writes: {"pooled": (N,D), "label_cls":..., "label_reg"?:...}
+#     """
+#     obj = torch.load(pooled_pt, map_location="cpu")
+#     if "pooled" not in obj:
+#         raise ValueError(f"Pooled cache {pooled_pt} missing key 'pooled'. Keys={list(obj.keys())}")
+#     return obj["pooled"]  # (N,D) fp16/fp32
+#
+#
+# def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+#     """
+#     Your module writes: {"reps": list[(L,D)], "mask": list[(L,)], ...}
+#     """
+#     obj = torch.load(reps_pt, map_location="cpu")
+#     for k in ("reps", "mask"):
+#         if k not in obj:
+#             raise ValueError(f"Reps cache {reps_pt} missing key '{k}'. Keys={list(obj.keys())}")
+#     return obj["reps"], obj["mask"]
+
+
+# def _load_supervised_ids(supervised_csv: str | Path) -> List[str]:
+#     df = pd.read_csv(supervised_csv)
+#     if "id" not in df.columns:
+#         raise ValueError(f"{supervised_csv} missing column 'id'")
+#     return df["id"].astype(str).tolist()
 
 
 # -----------------------------
@@ -212,41 +224,85 @@ def predict_nadph_from_fasta(
     # -------------------------
     # MODE: pooled (fast)
     # -------------------------
+    # if mode == "pooled":
+    #     if pooled_cache_pt is None:
+    #         raise ValueError("mode=pooled requires pooled_cache_pt (use --pooled-cache or provide meta.json).")
+    #     if supervised_csv_for_alignment is None:
+    #         raise ValueError(
+    #             "mode=pooled requires supervised_csv_for_alignment because your pooled cache does not store ids. "
+    #             "Provide --meta so we can read artifacts.supervised_csv, or pass --supervised-csv."
+    #         )
+    #
+    #     # load pooled embeddings (N,D) and supervised ids (N,)
+    #     X = _load_pooled_cache(pooled_cache_pt)
+    #     sup_ids = _load_supervised_ids(supervised_csv_for_alignment)
+    #
+    #     if len(sup_ids) != int(X.shape[0]):
+    #         raise ValueError(
+    #             f"Alignment mismatch: supervised has n={len(sup_ids)} but pooled cache has N={int(X.shape[0])}. "
+    #             "They must match because we align by row order."
+    #         )
+    #
+    #     # map from id -> row index (supervised order)
+    #     sup_index = {pid: i for i, pid in enumerate(sup_ids)}
+    #
+    #     keep = [pid for pid in fasta_ids if pid in sup_index]
+    #     if not keep:
+    #         raise ValueError("No FASTA ids matched supervised ids (used to align pooled cache).")
+    #
+    #     idxs = [sup_index[pid] for pid in keep]
+    #     X_sel = X[idxs].float()  # use fp32 for inference stability
+    #
+    #     # head-only model
+    #     embed_dim = int(X_sel.shape[1])
+    #     model = HeadOnlyModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+    #
+    #     state = torch.load(head_checkpoint, map_location=device_t)
+    #     model.head.load_state_dict(state, strict=True)  # you saved head.state_dict()
+    #     model.eval()
+    #
+    #     rows = []
+    #     with torch.no_grad():
+    #         for j0 in tqdm(range(0, len(keep), batch_size), desc="Predict (pooled)"):
+    #             j1 = min(len(keep), j0 + batch_size)
+    #             xb = X_sel[j0:j1].to(device_t)
+    #             out = model(xb)
+    #
+    #             if task == "classification":
+    #                 probs = F.softmax(out, dim=1).cpu().numpy()
+    #                 preds = probs.argmax(axis=1)
+    #                 for k, pid in enumerate(keep[j0:j1]):
+    #                     pc = int(preds[k])
+    #                     row = {"id": pid, "pred_class_idx": pc, "pred_class": int_to_class.get(pc, f"class_{pc}")}
+    #                     for c in range(probs.shape[1]):
+    #                         row[f"p_class{c}"] = float(probs[k, c])
+    #                     rows.append(row)
+    #             else:
+    #                 vals = out.cpu().numpy()
+    #                 for k, pid in enumerate(keep[j0:j1]):
+    #                     rows.append({"id": pid, "pred_value": float(vals[k])})
+    #
+    #     return pd.DataFrame(rows)
+
     if mode == "pooled":
         if pooled_cache_pt is None:
-            raise ValueError("mode=pooled requires pooled_cache_pt (use --pooled-cache or provide meta.json).")
-        if supervised_csv_for_alignment is None:
-            raise ValueError(
-                "mode=pooled requires supervised_csv_for_alignment because your pooled cache does not store ids. "
-                "Provide --meta so we can read artifacts.supervised_csv, or pass --supervised-csv."
-            )
+            raise ValueError("mode=pooled requires pooled_cache_pt (use --pooled-cache or --meta).")
 
-        # load pooled embeddings (N,D) and supervised ids (N,)
-        X = _load_pooled_cache(pooled_cache_pt)
-        sup_ids = _load_supervised_ids(supervised_csv_for_alignment)
+        ids, X = _load_pooled_cache(pooled_cache_pt)
+        id_to_idx = {pid: i for i, pid in enumerate(ids)}
 
-        if len(sup_ids) != int(X.shape[0]):
-            raise ValueError(
-                f"Alignment mismatch: supervised has n={len(sup_ids)} but pooled cache has N={int(X.shape[0])}. "
-                "They must match because we align by row order."
-            )
-
-        # map from id -> row index (supervised order)
-        sup_index = {pid: i for i, pid in enumerate(sup_ids)}
-
-        keep = [pid for pid in fasta_ids if pid in sup_index]
+        keep = [pid for pid in fasta_ids if pid in id_to_idx]
         if not keep:
-            raise ValueError("No FASTA ids matched supervised ids (used to align pooled cache).")
+            raise ValueError("No FASTA ids matched pooled cache ids.")
 
-        idxs = [sup_index[pid] for pid in keep]
-        X_sel = X[idxs].float()  # use fp32 for inference stability
+        idxs = [id_to_idx[pid] for pid in keep]
+        X_sel = X[idxs].float()  # fp32 for stable inference
 
-        # head-only model
         embed_dim = int(X_sel.shape[1])
-        model = HeadOnlyModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+        model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
 
-        state = torch.load(head_checkpoint, map_location=device_t)
-        model.head.load_state_dict(state, strict=True)  # you saved head.state_dict()
+        state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
+        model.head.load_state_dict(state, strict=True)
         model.eval()
 
         rows = []
@@ -254,7 +310,7 @@ def predict_nadph_from_fasta(
             for j0 in tqdm(range(0, len(keep), batch_size), desc="Predict (pooled)"):
                 j1 = min(len(keep), j0 + batch_size)
                 xb = X_sel[j0:j1].to(device_t)
-                out = model(xb)
+                out = model(pooled=xb)
 
                 if task == "classification":
                     probs = F.softmax(out, dim=1).cpu().numpy()
@@ -275,35 +331,143 @@ def predict_nadph_from_fasta(
     # -------------------------
     # MODE: reps (cached reps + mask)
     # -------------------------
+    # if mode == "reps":
+    #     if reps_cache_pt is None:
+    #         raise ValueError("mode=reps requires reps_cache_pt (use --reps-cache or meta.json).")
+    #     if supervised_csv_for_alignment is None:
+    #         raise ValueError(
+    #             "mode=reps requires supervised_csv_for_alignment because your reps cache does not store ids. "
+    #             "Provide --meta or pass --supervised-csv."
+    #         )
+    #
+    #     reps_list, mask_list = _load_reps_cache(reps_cache_pt)
+    #     sup_ids = _load_supervised_ids(supervised_csv_for_alignment)
+    #
+    #     if len(sup_ids) != len(reps_list) or len(sup_ids) != len(mask_list):
+    #         raise ValueError(
+    #             f"Alignment mismatch: supervised n={len(sup_ids)} reps n={len(reps_list)} mask n={len(mask_list)}"
+    #         )
+    #
+    #     sup_index = {pid: i for i, pid in enumerate(sup_ids)}
+    #     keep = [pid for pid in fasta_ids if pid in sup_index]
+    #     if not keep:
+    #         raise ValueError("No FASTA ids matched supervised ids (used to align reps cache).")
+    #
+    #     # infer embed dim
+    #     embed_dim = int(reps_list[sup_index[keep[0]]].shape[-1])
+    #
+    #     model = RepsHeadModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+    #     state = torch.load(head_checkpoint, map_location=device_t)
+    #
+    #     # you saved head.state_dict() from NADPHSeqModel.head, so load into model.head
+    #     model.head.load_state_dict(state, strict=True)
+    #     model.eval()
+    #
+    #     rows = []
+    #     grad_enabled = (compute_saliency or compute_ig)
+    #     ctx = torch.enable_grad if grad_enabled else torch.no_grad
+    #
+    #     with ctx():
+    #         for j0 in tqdm(range(0, len(keep), batch_size), desc="Predict (reps)"):
+    #             batch_ids = keep[j0:j0 + batch_size]
+    #             idxs = [sup_index[pid] for pid in batch_ids]
+    #
+    #             reps_batch = [reps_list[i] for i in idxs]
+    #             mask_batch = [mask_list[i] for i in idxs]
+    #
+    #             Lmax = max(int(r.shape[0]) for r in reps_batch)
+    #             D = embed_dim
+    #
+    #             reps_pad = torch.zeros((len(batch_ids), Lmax, D), dtype=torch.float32)
+    #             mask_pad = torch.zeros((len(batch_ids), Lmax), dtype=torch.bool)
+    #
+    #             for i, (r, m) in enumerate(zip(reps_batch, mask_batch)):
+    #                 r = r.float()
+    #                 m = m.bool()
+    #                 L = int(r.shape[0])
+    #                 reps_pad[i, :L] = r
+    #                 mask_pad[i, :L] = m
+    #
+    #             reps_pad = reps_pad.to(device_t)
+    #             mask_pad = mask_pad.to(device_t)
+    #
+    #             if grad_enabled:
+    #                 reps_pad.requires_grad_(True)
+    #
+    #             logits = model(reps_pad, mask_pad)
+    #
+    #             if task == "classification":
+    #                 probs = F.softmax(logits, dim=1)
+    #                 preds = probs.argmax(dim=1)
+    #                 probs_np = probs.detach().cpu().numpy()
+    #                 preds_np = preds.detach().cpu().numpy()
+    #             else:
+    #                 preds_np = logits.detach().cpu().numpy()
+    #
+    #             # Explainability using your module functions (in reps-space)
+    #             sal_scores = None
+    #             ig_scores = None
+    #
+    #             if compute_saliency:
+    #                 # We need a NADPHSeqModel-like object for the helper, easiest is to wrap.
+    #                 # Instead, compute via your helpers by creating a dummy NADPHSeqModel with same head/pooler/norm.
+    #                 dummy = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+    #                 dummy.pooler = model.pooler
+    #                 dummy.norm = model.norm
+    #                 dummy.head = model.head
+    #                 dummy.eval()
+    #                 sal_scores = compute_residue_saliency_from_reps(dummy, reps_pad, mask_pad, target_class=target_class).detach().cpu()
+    #
+    #             if compute_ig:
+    #                 dummy = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+    #                 dummy.pooler = model.pooler
+    #                 dummy.norm = model.norm
+    #                 dummy.head = model.head
+    #                 dummy.eval()
+    #                 ig_scores = compute_residue_integrated_gradients_from_reps(
+    #                     dummy, reps_pad, mask_pad, target_class=target_class, steps=ig_steps
+    #                 ).detach().cpu()
+    #
+    #             for i, pid in enumerate(batch_ids):
+    #                 row = {"id": pid}
+    #                 if task == "classification":
+    #                     pc = int(preds_np[i])
+    #                     row["pred_class_idx"] = pc
+    #                     row["pred_class"] = int_to_class.get(pc, f"class_{pc}")
+    #                     for c in range(probs_np.shape[1]):
+    #                         row[f"p_class{c}"] = float(probs_np[i, c])
+    #                 else:
+    #                     row["pred_value"] = float(preds_np[i])
+    #
+    #                 if compute_saliency and sal_scores is not None:
+    #                     L = int(mask_pad[i].sum().item())
+    #                     s = sal_scores[i, :L].numpy()
+    #                     row["saliency"] = ";".join(f"{x:.6f}" for x in s)
+    #
+    #                 if compute_ig and ig_scores is not None:
+    #                     L = int(mask_pad[i].sum().item())
+    #                     g = ig_scores[i, :L].numpy()
+    #                     row["ig"] = ";".join(f"{x:.6f}" for x in g)
+    #
+    #                 rows.append(row)
+    #
+    #     return pd.DataFrame(rows)
+
     if mode == "reps":
         if reps_cache_pt is None:
-            raise ValueError("mode=reps requires reps_cache_pt (use --reps-cache or meta.json).")
-        if supervised_csv_for_alignment is None:
-            raise ValueError(
-                "mode=reps requires supervised_csv_for_alignment because your reps cache does not store ids. "
-                "Provide --meta or pass --supervised-csv."
-            )
+            raise ValueError("mode=reps requires reps_cache_pt (use --reps-cache or --meta).")
 
-        reps_list, mask_list = _load_reps_cache(reps_cache_pt)
-        sup_ids = _load_supervised_ids(supervised_csv_for_alignment)
+        ids, reps_list, mask_list = _load_reps_cache(reps_cache_pt)
+        id_to_idx = {pid: i for i, pid in enumerate(ids)}
 
-        if len(sup_ids) != len(reps_list) or len(sup_ids) != len(mask_list):
-            raise ValueError(
-                f"Alignment mismatch: supervised n={len(sup_ids)} reps n={len(reps_list)} mask n={len(mask_list)}"
-            )
-
-        sup_index = {pid: i for i, pid in enumerate(sup_ids)}
-        keep = [pid for pid in fasta_ids if pid in sup_index]
+        keep = [pid for pid in fasta_ids if pid in id_to_idx]
         if not keep:
-            raise ValueError("No FASTA ids matched supervised ids (used to align reps cache).")
+            raise ValueError("No FASTA ids matched reps cache ids.")
 
-        # infer embed dim
-        embed_dim = int(reps_list[sup_index[keep[0]]].shape[-1])
+        embed_dim = int(reps_list[id_to_idx[keep[0]]].shape[-1])
 
-        model = RepsHeadModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-        state = torch.load(head_checkpoint, map_location=device_t)
-
-        # you saved head.state_dict() from NADPHSeqModel.head, so load into model.head
+        model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+        state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
         model.head.load_state_dict(state, strict=True)
         model.eval()
 
@@ -314,20 +478,18 @@ def predict_nadph_from_fasta(
         with ctx():
             for j0 in tqdm(range(0, len(keep), batch_size), desc="Predict (reps)"):
                 batch_ids = keep[j0:j0 + batch_size]
-                idxs = [sup_index[pid] for pid in batch_ids]
+                idxs = [id_to_idx[pid] for pid in batch_ids]
 
-                reps_batch = [reps_list[i] for i in idxs]
-                mask_batch = [mask_list[i] for i in idxs]
+                reps_batch = [reps_list[i].float() for i in idxs]
+                mask_batch = [mask_list[i].bool() for i in idxs]
 
                 Lmax = max(int(r.shape[0]) for r in reps_batch)
                 D = embed_dim
+                B = len(batch_ids)
 
-                reps_pad = torch.zeros((len(batch_ids), Lmax, D), dtype=torch.float32)
-                mask_pad = torch.zeros((len(batch_ids), Lmax), dtype=torch.bool)
-
+                reps_pad = torch.zeros((B, Lmax, D), dtype=torch.float32)
+                mask_pad = torch.zeros((B, Lmax), dtype=torch.bool)
                 for i, (r, m) in enumerate(zip(reps_batch, mask_batch)):
-                    r = r.float()
-                    m = m.bool()
                     L = int(r.shape[0])
                     reps_pad[i, :L] = r
                     mask_pad[i, :L] = m
@@ -335,10 +497,7 @@ def predict_nadph_from_fasta(
                 reps_pad = reps_pad.to(device_t)
                 mask_pad = mask_pad.to(device_t)
 
-                if grad_enabled:
-                    reps_pad.requires_grad_(True)
-
-                logits = model(reps_pad, mask_pad)
+                logits = model(reps=reps_pad, mask=mask_pad)
 
                 if task == "classification":
                     probs = F.softmax(logits, dim=1)
@@ -348,29 +507,15 @@ def predict_nadph_from_fasta(
                 else:
                     preds_np = logits.detach().cpu().numpy()
 
-                # Explainability using your module functions (in reps-space)
                 sal_scores = None
                 ig_scores = None
-
                 if compute_saliency:
-                    # We need a NADPHSeqModel-like object for the helper, easiest is to wrap.
-                    # Instead, compute via your helpers by creating a dummy NADPHSeqModel with same head/pooler/norm.
-                    dummy = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-                    dummy.pooler = model.pooler
-                    dummy.norm = model.norm
-                    dummy.head = model.head
-                    dummy.eval()
-                    sal_scores = compute_residue_saliency_from_reps(dummy, reps_pad, mask_pad, target_class=target_class).detach().cpu()
-
+                    sal_scores = compute_residue_saliency_from_reps(model, reps_pad, mask_pad,
+                                                                    target_class=target_class).cpu()
                 if compute_ig:
-                    dummy = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-                    dummy.pooler = model.pooler
-                    dummy.norm = model.norm
-                    dummy.head = model.head
-                    dummy.eval()
                     ig_scores = compute_residue_integrated_gradients_from_reps(
-                        dummy, reps_pad, mask_pad, target_class=target_class, steps=ig_steps
-                    ).detach().cpu()
+                        model, reps_pad, mask_pad, target_class=target_class, steps=ig_steps
+                    ).cpu()
 
                 for i, pid in enumerate(batch_ids):
                     row = {"id": pid}
@@ -408,7 +553,7 @@ def predict_nadph_from_fasta(
 
     embed_dim = int(esm_model.embed_dim)
     head_model = RepsHeadModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-    state = torch.load(head_checkpoint, map_location=device_t)
+    state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
     head_model.head.load_state_dict(state, strict=True)
     head_model.eval()
 

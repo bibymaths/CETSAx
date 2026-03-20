@@ -1,5 +1,5 @@
 """
-seq_nadph.py
+esm_seq_nadph.py
 ------------
 
 Sequence-based modelling of NADPH responsiveness using protein language models (ESM2).
@@ -37,13 +37,14 @@ import copy
 import math
 import os
 import warnings
-
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import WeightedRandomSampler, Dataset, DataLoader
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import WeightedRandomSampler, Dataset, DataLoader, Subset
 from tqdm.auto import tqdm
 import esm
 
@@ -250,8 +251,9 @@ class NADPHSeqDataset(Dataset):
 class NADPHSeqDatasetTokenCached(Dataset):
     """Load tokenized sequences from token cache."""
     def __init__(self, token_cache_pt: str | Path, task="classification"):
-        obj = torch.load(token_cache_pt, map_location="cpu")
+        obj = _torch_load_compat(token_cache_pt, map_location="cpu")
         self.tokens = obj["tokens"]
+        self.ids = obj.get("ids", None)
         self.task = task
         self.labels = obj["label_cls"] if task == "classification" else obj["label_reg"]
 
@@ -268,7 +270,8 @@ class NADPHSeqDatasetTokenCached(Dataset):
 class NADPHPooledDataset(Dataset):
     """Load cached pooled embeddings (N, D)."""
     def __init__(self, pooled_pt: str | Path, task="classification"):
-        obj = torch.load(pooled_pt, map_location="cpu")
+        obj = _torch_load_compat(pooled_pt, map_location="cpu")
+        self.ids = obj.get("ids", None)
         self.x = obj["pooled"]
         self.task = task
         self.y = obj["label_cls"].long() if task == "classification" else obj["label_reg"].float()
@@ -286,7 +289,7 @@ class NADPHPooledDataset(Dataset):
 class NADPHRepsDataset(Dataset):
     """Load cached residue reps (list of (L,D)) + masks (list of (L,))."""
     def __init__(self, reps_pt: str | Path, task="classification"):
-        obj = torch.load(reps_pt, map_location="cpu")
+        obj = _torch_load_compat(reps_pt, map_location="cpu")
         self.reps = obj["reps"]
         self.mask = obj["mask"]
         self.task = task
@@ -362,7 +365,8 @@ class NADPHSeqModel(nn.Module):
         out_dim = num_classes if task == "classification" else 1
         self.head = nn.Sequential(
             nn.Linear(embed_dim, hidden),
-            nn.BatchNorm1d(hidden),
+            nn.BatchNorm1d(hidden), # Batch normalization
+            # nn.LayerNorm(hidden), # Token-mode - small batches
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden, out_dim),
@@ -506,6 +510,43 @@ def load_esm_model_and_alphabet(model_name: str):
     model.eval()
     return model, alphabet
 
+def _now_iso() -> str:
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+def _cache_meta(cfg: NADPHSeqConfig, extra: dict | None = None) -> dict:
+    d = {
+        "created_at": _now_iso(),
+        "model_name": cfg.model_name,
+        "repr_layer": int(cfg.repr_layer),
+        "max_len": int(cfg.max_len),
+        "cache_fp16": bool(cfg.cache_fp16),
+        "torch_version": getattr(torch, "__version__", "unknown"),
+    }
+    if extra:
+        d.update(extra)
+    return d
+
+def _atomic_torch_save(obj: dict, path: Path) -> None:
+    path = Path(path)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    torch.save(obj, tmp)
+    tmp.replace(path)
+
+def _torch_load_compat(path: str | Path, map_location="cpu", force_full_pickle: bool = True):
+    """
+    PyTorch 2.6+ defaults weights_only=True, which breaks loading non-weight cache dicts.
+    These cache files are created locally by this pipeline, so we load them as full pickles.
+    """
+    path = str(path)
+
+    # New torch: supports weights_only kwarg
+    try:
+        if force_full_pickle:
+            return torch.load(path, map_location=map_location, weights_only=False)
+        else:
+            return torch.load(path, map_location=map_location, weights_only=True)
+    except TypeError:
+        return torch.load(path, map_location=map_location)
 
 def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
     """
@@ -520,6 +561,7 @@ def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
     batch_converter = alphabet.get_batch_converter()
 
     df = pd.read_csv(csv_path)
+    ids = df["id"].tolist()
 
     tokens: list[torch.Tensor] = []
     for rid, seq in zip(df["id"].astype(str), df["seq"].astype(str)):
@@ -528,12 +570,24 @@ def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
         tokens.append(toks[0].cpu())
 
     labels_cls = torch.tensor(df["label_cls"].values, dtype=torch.long)
-    payload: dict[str, Any] = {"tokens": tokens, "label_cls": labels_cls}
+
+    # without ids
+    # payload: dict[str, Any] = {"tokens": tokens, "label_cls": labels_cls}
+
+    payload: dict[str, Any] = {
+        "ids": ids,
+        "tokens": tokens,
+        "label_cls": labels_cls,
+        "meta": _cache_meta(cfg, {"cache_type": "tokens", "num_items": len(ids)}),
+    }
+
 
     if "label_reg" in df.columns:
         payload["label_reg"] = torch.tensor(df["label_reg"].values, dtype=torch.float32)
 
-    torch.save(payload, out_pt)
+    # torch.save(payload, out_pt)
+    _atomic_torch_save(payload, out_pt)
+
     print(f"[cache] wrote token cache: {out_pt} (n={len(tokens)})")
     return out_pt
 
@@ -553,7 +607,10 @@ def build_pooled_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
     esm_model, _ = load_esm_model_and_alphabet(cfg.model_name)
     esm_model.to(device).eval()
 
-    obj = torch.load(token_cache_pt, map_location="cpu")
+    obj = _torch_load_compat(token_cache_pt, map_location="cpu")
+
+    ids = obj["ids"]
+
     tokens_list = obj["tokens"]
     y_cls = obj["label_cls"]
     y_reg = obj.get("label_reg", None)
@@ -598,11 +655,30 @@ def build_pooled_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
         pbar.update(pooled.size(0))
     pbar.close()
 
-    payload: dict[str, Any] = {"pooled": pooled_all, "label_cls": y_cls}
+    # without ids
+    # payload: dict[str, Any] = {"pooled": pooled_all, "label_cls": y_cls}
+
+    payload: dict[str, Any] = {
+        "ids": ids,
+        "pooled": pooled_all,
+        "label_cls": y_cls,
+        "meta": _cache_meta(
+            cfg,
+            {
+                "cache_type": "pooled",
+                "num_items": len(ids),
+                "embed_dim": embed_dim,
+                "dtype": str(pooled_all.dtype),
+            },
+        ),
+    }
+
     if y_reg is not None:
         payload["label_reg"] = y_reg
 
-    torch.save(payload, out_pt)
+    # torch.save(payload, out_pt)
+
+    _atomic_torch_save(payload, out_pt)
     print(f"[cache] wrote pooled cache: {out_pt} shape={tuple(pooled_all.shape)} dtype={pooled_all.dtype}")
     return out_pt
 
@@ -623,10 +699,15 @@ def build_reps_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
     esm_model, _ = load_esm_model_and_alphabet(cfg.model_name)
     esm_model.to(device).eval()
 
-    obj = torch.load(token_cache_pt, map_location="cpu")
+    obj = _torch_load_compat(token_cache_pt, map_location="cpu")
+
+    ids = obj["ids"]
+
     tokens_list = obj["tokens"]
     y_cls = obj["label_cls"]
     y_reg = obj.get("label_reg", None)
+
+    embed_dim = int(esm_model.embed_dim)
 
     dtype = torch.float16 if cfg.cache_fp16 else torch.float32
     reps_list: list[torch.Tensor] = []
@@ -657,7 +738,25 @@ def build_reps_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
         pbar.update(len(batch_tokens))
     pbar.close()
 
-    payload: dict[str, Any] = {"reps": reps_list, "mask": mask_list, "label_cls": y_cls}
+    # without ids
+    # payload: dict[str, Any] = {"reps": reps_list, "mask": mask_list, "label_cls": y_cls}
+
+    payload: dict[str, Any] = {
+        "ids": ids,
+        "reps": reps_list,
+        "mask": mask_list,
+        "label_cls": y_cls,
+        "meta": _cache_meta(
+            cfg,
+            {
+                "cache_type": "reps",
+                "num_items": len(ids),
+                "embed_dim": embed_dim,
+                "dtype": str(reps_list[0].dtype) if reps_list else "unknown",
+            },
+        ),
+    }
+
     if y_reg is not None:
         payload["label_reg"] = y_reg
 
@@ -687,13 +786,31 @@ def _get_head_module(model: nn.Module) -> nn.Module:
 
     raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
 
-def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
-    n = len(ds)
-    n_train = int(train_frac * n)
-    n_val = n - n_train
-    g = torch.Generator().manual_seed(seed)
-    return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
+# def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
+#     n = len(ds)
+#     n_train = int(train_frac * n)
+#     n_val = n - n_train
+#     g = torch.Generator().manual_seed(seed)
+#     return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
 
+def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8, stratify: bool = True):
+    n = len(ds)
+    idx = np.arange(n)
+
+    if (not stratify) or (not hasattr(ds, "y")):
+        # fallback to your original behavior
+        n_train = int(train_frac * n)
+        n_val = n - n_train
+        g = torch.Generator().manual_seed(seed)
+        return torch.utils.data.random_split(ds, [n_train, n_val], generator=g)
+
+    # ds.y must be the label vector (works for NADPHPooledDataset / NADPHRepsDataset)
+    y = ds.y.cpu().numpy() if torch.is_tensor(ds.y) else np.asarray(ds.y)
+
+    splitter = StratifiedShuffleSplit(n_splits=1, train_size=train_frac, random_state=seed)
+    train_idx, val_idx = next(splitter.split(idx, y))
+
+    return Subset(ds, train_idx.tolist()), Subset(ds, val_idx.tolist())
 
 def _get_labels_for_split(split_ds) -> List[int] | List[float]:
     """
@@ -841,19 +958,19 @@ def train_seq_model(
         num_workers=n_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
-        drop_last=True,
+        drop_last=False,
     )
 
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
-        sampler=sampler_val,
+        sampler=None,
         shuffle=False,
         collate_fn=collate,
         num_workers=n_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
-        drop_last=True,
+        drop_last=False,
     )
 
     # ---- run ----
@@ -889,6 +1006,10 @@ def train_seq_model(
         model.train()
         train_loss = 0.0
         n_train_batches = 0
+        train_correct = 0
+        train_total = 0
+        train_acc = None
+        val_acc = None
 
         for batch in train_loader:
             optimizer.zero_grad(set_to_none=True)
@@ -916,6 +1037,14 @@ def train_seq_model(
 
             train_loss += float(loss.item())
             n_train_batches += 1
+
+            if cfg.task == "classification":
+                preds = outputs.argmax(dim=1)
+                train_correct += int((preds == labels).sum().item())
+                train_total += int(labels.size(0))
+
+        if cfg.task == "classification":
+            train_acc = train_correct / max(1, train_total)
 
         train_loss /= max(1, n_train_batches)
 
@@ -961,17 +1090,21 @@ def train_seq_model(
 
         if cfg.task == "classification":
             val_acc = correct / max(1, total)
-            print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
+            print(
+                f"Epoch {epoch}: train_loss={train_loss:.4f} train_acc={train_acc:.4f} "
+                f"val_loss={val_loss:.4f} val_acc={val_acc:.4f}"
+            )
             best_val_acc = max(best_val_acc, val_acc)
         else:
             print(f"Epoch {epoch}: train_loss={train_loss:.4f} val_loss={val_loss:.4f}")
 
-            # ---- append epoch row (DataFrame) ----
+        # ---- append epoch row ----
         history_rows.append(
             {
                 **run_info,
                 "epoch": int(epoch),
                 "train_loss": float(train_loss),
+                "train_acc": (float(train_acc) if train_acc is not None else None),
                 "val_loss": float(val_loss),
                 "val_acc": (float(val_acc) if val_acc is not None else None),
                 "lr": float(lr_now),

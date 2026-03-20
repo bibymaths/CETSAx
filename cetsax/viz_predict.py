@@ -41,7 +41,6 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, auc
-from sklearn.preprocessing import label_binarize
 
 from pathlib import Path
 
@@ -90,6 +89,7 @@ def visualize_predictions(
     df = pd.merge(truth_df, preds_df, on='id', how='inner')
 
     print(f"Merged data: {len(df)} proteins found in both files.")
+    print(df['label_cls'].value_counts(dropna=False))
 
     # Set up plotting style
     sns.set(style="whitegrid")
@@ -116,8 +116,9 @@ def visualize_predictions(
     # -------------------------------------------------------
     # Binarize labels for multi-class ROC
     n_classes = 2
-    y_true = label_binarize(df['label_cls'], classes=[0, 1])
-    y_score = df[['p_class0', 'p_class1']].values
+    y = df['label_cls'].astype(int).to_numpy()
+    y_true = np.column_stack([1 - y, y])  # (N,2)
+    y_score = df[['p_class0', 'p_class1']].to_numpy()
     class_names = ['Weak', 'Strong']
 
     plt.figure(figsize=(10, 7))
