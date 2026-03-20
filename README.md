@@ -1,4 +1,4 @@
-<img src="logo.svg" alt="CETSAx Logo" width="400"/>  
+<img src="assets/logo.svg" alt="CETSAx Logo" width="800"/>  
 
 ![uv](https://img.shields.io/badge/uv-env-orange) 
 ![conda](https://img.shields.io/badge/Conda-Package%20Manager-green?logo=anaconda)

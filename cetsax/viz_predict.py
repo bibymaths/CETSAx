@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 viz_predict.py   
 ---------------------
@@ -44,6 +46,7 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 
 from pathlib import Path
 
+
 def _savefig(out_dir, name):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -51,11 +54,13 @@ def _savefig(out_dir, name):
     plt.savefig(out_dir / name, dpi=300)
     plt.close()
 
+
 def _placeholder(out_dir, name, msg):
     plt.figure(figsize=(10, 4))
     plt.axis("off")
     plt.text(0.01, 0.5, msg, fontsize=12)
     _savefig(out_dir, name)
+
 
 def visualize_predictions(
         pred_file,
@@ -152,7 +157,7 @@ def visualize_predictions(
 
     plt.figure(figsize=(12, 6))
     sns.boxplot(x='hit_class', y='Probability', hue='Pred_Class_Prob',
-                data=plot_df, order=['weak','strong'], palette="Set2")
+                data=plot_df, order=['weak', 'strong'], palette="Set2")
 
     plt.title('Model Confidence: Probabilities assigned to each class', fontsize=14)
     plt.xlabel('True Class (Ground Truth)', fontsize=12)
@@ -244,7 +249,7 @@ def visualize_predictions(
         x='delta_max',
         y='R2',  # <--- Changed from 'p_class2'
         hue='hit_class',
-        hue_order=['weak','strong'],  # Optional: Ensures consistent color order
+        hue_order=['weak', 'strong'],  # Optional: Ensures consistent color order
         palette={'weak': 'orange', 'strong': 'green'},
         alpha=0.6,
         s=60  # Increased dot size slightly
@@ -513,6 +518,7 @@ def generate_bio_insight(
     plt.title('Do Predicted Strong Binders have lower EC50?')
     plt.ylabel('Experimental EC50 (Log Scale)')
     _savefig(out_dir, 'plot_12_bio_ec50_validation.png')
+
 
 def plot_training_loop(
         history_file,

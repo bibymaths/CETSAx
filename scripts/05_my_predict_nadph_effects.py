@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+                   
+
+# !/usr/bin/env python
 """
 Predict NADPH responsiveness from protein sequences (Transformers Backend).
 ROBUST VERSION:

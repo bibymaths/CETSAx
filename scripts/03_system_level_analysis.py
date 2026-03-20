@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to perform system-level analysis of CETSA NADPH data.
 """
@@ -39,10 +39,9 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-
-from cetsax import compute_sensitivity_scores
 from cetsax import summarize_pathway_effects, enrich_overrepresentation
-from cetsax import build_redox_axes, summarize_redox_by_pathway
+
+from cetsax import ID_COL
 from cetsax import build_feature_matrix, fit_pca, fit_factor_analysis
 from cetsax import (
     build_mixture_features,
@@ -50,6 +49,7 @@ from cetsax import (
     assign_mixture_clusters,
     label_clusters_by_sensitivity,
 )
+from cetsax import compute_sensitivity_scores
 from cetsax import (
     plot_pathway_effects_bar,
     plot_pathway_enrichment_volcano,
@@ -59,7 +59,7 @@ from cetsax import (
     plot_mixture_clusters_in_pca,
     plot_cluster_size_bar,
 )
-from cetsax import ID_COL
+from cetsax.redox import build_redox_axes, summarize_redox_by_pathway
 
 
 def main() -> None:

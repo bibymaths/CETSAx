@@ -263,6 +263,7 @@ class AttentionPooling(nn.Module):
         weights = F.softmax(scores, dim=1)  # (B, L)
         return torch.bmm(weights.unsqueeze(1), x).squeeze(1)  # (B, D)
 
+
 class NADPHSeqModel(nn.Module):
     def __init__(self, hf_model: Optional[PreTrainedModel], embed_dim: int, cfg: NADPHSeqConfig):
         super().__init__()
@@ -390,6 +391,7 @@ def build_pooled_cache(token_path, cfg) -> Path:
     torch.save(payload, cache_path)
     return cache_path
 
+
 # -----------------------------------------------------------------------------
 # 6) Training Loop (With AMP + Gradient Accumulation)
 # -----------------------------------------------------------------------------
@@ -410,6 +412,7 @@ def _get_head_module(model: nn.Module) -> nn.Module:
         return base.net
 
     raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
+
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2.0):

@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+                   
+
+# !/usr/bin/env python
 """
 Script to build sequence-supervised table and train NADPH sequence model.
 
@@ -210,7 +212,8 @@ def main() -> None:
 
     # Print key result
     if "best_val_acc" in metrics:
-        print(f"Training finished. best_val_loss={metrics['best_val_loss']:.6f} best_val_acc={metrics['best_val_acc']:.6f}")
+        print(
+            f"Training finished. best_val_loss={metrics['best_val_loss']:.6f} best_val_acc={metrics['best_val_acc']:.6f}")
     else:
         print(f"Training finished. best_val_loss={metrics['best_val_loss']:.6f}")
 
@@ -259,6 +262,7 @@ def main() -> None:
     out_info.parent.mkdir(parents=True, exist_ok=True)
     run_info.to_csv(out_info, index=False)
     print(f"Saved training info to {out_info}")
+
 
 if __name__ == "__main__":
     main()

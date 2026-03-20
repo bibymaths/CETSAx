@@ -359,20 +359,77 @@ def main() -> None:
         species=args.species,
     )
 
-    # We want a protein-centric annotation table keyed by original id
-    # If original id == uniprot accession, we can keep that as 'id'
-    # Otherwise we still keep 'id' and add 'uniprot' column.
+    # -----------------------------------------------------------------
+    # Align annotation table so that every original id has a row. MyGene
+    # returns annotations keyed by the query (uniprot/symbol/entrezgene).
+    # However, our fits table may contain isoform suffixes (e.g. O00231-2).
+    # To avoid losing these IDs in downstream FASTA and annotation files,
+    # we reconstruct a DataFrame where each original id is preserved.
+    #
+    # Strategy:
+    # 1. Build a lookup by exact id from annot_df (from mygene).
+    # 2. Build a lookup by stripped Uniprot accession (remove isoform suffix)
+    #    for cases where the original id is an isoform of a known protein.
+    # 3. Iterate over the original ids list and, for each, pick the best
+    #    matching annotation (exact match first, otherwise isoform root).
+    # 4. Fill missing fields with None/empty strings.
+    #
+    # Note: we cannot assume all original ids map uniquely to a Uniprot
+    # accession; in such cases we still include the id with missing data.
+
+    # Build exact lookup
+    exact_lookup: Dict[str, Dict[str, Any]] = {
+        str(row['id']): row for _, row in annot_df.iterrows()
+    }
+
+    # Build isoform lookup keyed by stripped accession
+    iso_lookup: Dict[str, Dict[str, Any]] = {}
+    for _, row in annot_df.iterrows():
+        uni = row.get('uniprot')
+        if isinstance(uni, str):
+            root = strip_isoform_suffix(uni)
+            iso_lookup[root] = row
+
+    # Determine union of annotation columns
+    annot_cols = list(annot_df.columns)
+
+    aligned_records: List[Dict[str, Any]] = []
+    for orig_id in ids:
+        # Initialize base record with None/empty
+        record: Dict[str, Any] = {col: None for col in annot_cols}
+        record['id'] = orig_id
+        # Try exact match
+        match = exact_lookup.get(orig_id)
+        if match is None:
+            # Try isoform match: use stripped id as key
+            root = strip_isoform_suffix(orig_id)
+            match = iso_lookup.get(root)
+        if match is not None:
+            for col in annot_cols:
+                if col == 'id':
+                    # preserve original id
+                    continue
+                record[col] = match.get(col, None)
+        aligned_records.append(record)
+
+    aligned_df = pd.DataFrame(aligned_records)
+
+    # Ensure consistent order
+    aligned_df = aligned_df[annot_cols]
+
+    # Save aligned annotation
     out_annot_path = Path(args.out_annot)
     out_annot_path.parent.mkdir(parents=True, exist_ok=True)
-    annot_df.to_csv(out_annot_path, index=False)
-    print(f"Wrote annotations to {out_annot_path} (n={len(annot_df)})")
+    aligned_df.to_csv(out_annot_path, index=False)
+    print(f"Wrote annotations to {out_annot_path} (n={len(aligned_df)})")
 
     # 3) Parallel FASTA download from UniProt
-    # Priority: use uniprot column if present; otherwise original IDs.
-    if "uniprot" in annot_df.columns:
-        accs = annot_df["uniprot"].dropna().astype(str).tolist()
+    # Use the aligned_df to determine which accessions to download. If a
+    # row has a uniprot accession, use that; otherwise use the stripped id.
+    if "uniprot" in aligned_df.columns:
+        accs = aligned_df["uniprot"].dropna().astype(str).tolist()
     else:
-        accs = annot_df["id"].dropna().astype(str).tolist()
+        accs = aligned_df["id"].dropna().astype(str).tolist()
 
     acc_to_fasta = fetch_fastas_parallel(
         accessions=accs,
@@ -380,7 +437,7 @@ def main() -> None:
     )
 
     write_fastas_with_ids(
-        annot_df=annot_df,
+        annot_df=aligned_df,
         acc_to_fasta=acc_to_fasta,
         out_fasta=args.out_fasta,
         id_col="id",

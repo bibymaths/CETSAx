@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+                   
+
+# !/usr/bin/env python
 """
 Predict NADPH responsiveness from protein sequences using a trained head.
 
@@ -72,6 +74,7 @@ class HeadOnlyModel(nn.Module):
     Minimal head-only wrapper for pooled embeddings.
     Matches NADPHSeqModel.head output behavior.
     """
+
     def __init__(self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3):
         super().__init__()
         self.task = task
@@ -99,6 +102,7 @@ class RepsHeadModel(nn.Module):
     Uses cached residue reps (B,L,D) + mask (B,L) and applies
     AttentionPooling + LayerNorm + MLP head.
     """
+
     def __init__(self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3):
         super().__init__()
         self.task = task
@@ -174,30 +178,30 @@ def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[str], List[torch.Tensor]
 # Main prediction function
 # -----------------------------
 def predict_nadph_from_fasta(
-    fasta_path: str | Path,
-    head_checkpoint: str | Path,
-    mode: str = "pooled",  # pooled | reps | tokens
-    model_name: str = "esm2_t33_650M_UR50D",
-    task: str = "classification",
-    num_classes: int = 2,
-    max_len: int = 1022,
-    repr_layer: int = 33,
-    device: str = "auto",
+        fasta_path: str | Path,
+        head_checkpoint: str | Path,
+        mode: str = "pooled",  # pooled | reps | tokens
+        model_name: str = "esm2_t33_650M_UR50D",
+        task: str = "classification",
+        num_classes: int = 2,
+        max_len: int = 1022,
+        repr_layer: int = 33,
+        device: str = "auto",
 
-    # batching
-    batch_size: int = 256,      # for head-only (pooled/reps)
-    esm_batch_size: int = 8,    # tokens-mode (auto-clamped on cuda)
+        # batching
+        batch_size: int = 256,  # for head-only (pooled/reps)
+        esm_batch_size: int = 8,  # tokens-mode (auto-clamped on cuda)
 
-    # caches + alignment
-    pooled_cache_pt: Optional[str | Path] = None,
-    reps_cache_pt: Optional[str | Path] = None,
-    supervised_csv_for_alignment: Optional[str | Path] = None,
+        # caches + alignment
+        pooled_cache_pt: Optional[str | Path] = None,
+        reps_cache_pt: Optional[str | Path] = None,
+        supervised_csv_for_alignment: Optional[str | Path] = None,
 
-    # interpretability
-    compute_saliency: bool = False,
-    compute_ig: bool = False,
-    target_class: Optional[int] = None,
-    ig_steps: int = 50,
+        # interpretability
+        compute_saliency: bool = False,
+        compute_ig: bool = False,
+        target_class: Optional[int] = None,
+        ig_steps: int = 50,
 ) -> pd.DataFrame:
     fasta_path = Path(fasta_path)
     head_checkpoint = Path(head_checkpoint)
@@ -301,7 +305,7 @@ def predict_nadph_from_fasta(
         embed_dim = int(X_sel.shape[1])
         model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
 
-        state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
+        state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
         model.head.load_state_dict(state, strict=True)
         model.eval()
 
@@ -467,7 +471,7 @@ def predict_nadph_from_fasta(
         embed_dim = int(reps_list[id_to_idx[keep[0]]].shape[-1])
 
         model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-        state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
+        state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
         model.head.load_state_dict(state, strict=True)
         model.eval()
 
@@ -553,7 +557,7 @@ def predict_nadph_from_fasta(
 
     embed_dim = int(esm_model.embed_dim)
     head_model = RepsHeadModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
-    state = torch.load(head_checkpoint, map_location=device_t, weights_only = False)
+    state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
     head_model.head.load_state_dict(state, strict=True)
     head_model.eval()
 

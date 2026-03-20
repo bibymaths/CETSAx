@@ -71,9 +71,9 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bibymaths/cetsax"
-Source = "https://github.com/bibymaths/cetsax"
-Issues = "https://github.com/bibymaths/cetsax-nadph/issues"
+Homepage = "https://github.com/bibymaths/CETSAx"
+Source = "https://github.com/bibymaths/CETSAx"
+Issues = "https://github.com/bibymaths/CETSAx/issues"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]

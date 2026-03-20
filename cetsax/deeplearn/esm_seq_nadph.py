@@ -101,10 +101,10 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
 # 2) Build supervised table from fits + FASTA
 # -----------------------------------------------------------------------------
 def classify_hit_row(
-    row: pd.Series,
-    ec50_strong: float = 0.01,
-    delta_strong: float = 0.10,
-    r2_strong: float = 0.70,
+        row: pd.Series,
+        ec50_strong: float = 0.01,
+        delta_strong: float = 0.10,
+        r2_strong: float = 0.70,
 ) -> str:
     ec50 = float(row["EC50"])
     dm = float(row["delta_max"])
@@ -113,11 +113,11 @@ def classify_hit_row(
 
 
 def build_sequence_supervised_table(
-    fits_df: pd.DataFrame,
-    fasta_path: str | Path,
-    out_csv: str | Path,
-    id_col: str = "id",
-    use_nss: bool = False,
+        fits_df: pd.DataFrame,
+        fasta_path: str | Path,
+        out_csv: str | Path,
+        id_col: str = "id",
+        use_nss: bool = False,
 ) -> pd.DataFrame:
     agg = (
         fits_df.groupby(id_col)
@@ -228,6 +228,7 @@ def collate_fn_reps(batch):
 
 class NADPHSeqDataset(Dataset):
     """Tokenize from CSV on-the-fly (slowest); kept for completeness."""
+
     def __init__(self, csv_path: str | Path, alphabet, task="classification", max_len=1022):
         self.df = pd.read_csv(csv_path)
         self.batch_converter = alphabet.get_batch_converter()
@@ -250,6 +251,7 @@ class NADPHSeqDataset(Dataset):
 
 class NADPHSeqDatasetTokenCached(Dataset):
     """Load tokenized sequences from token cache."""
+
     def __init__(self, token_cache_pt: str | Path, task="classification"):
         obj = _torch_load_compat(token_cache_pt, map_location="cpu")
         self.tokens = obj["tokens"]
@@ -269,6 +271,7 @@ class NADPHSeqDatasetTokenCached(Dataset):
 
 class NADPHPooledDataset(Dataset):
     """Load cached pooled embeddings (N, D)."""
+
     def __init__(self, pooled_pt: str | Path, task="classification"):
         obj = _torch_load_compat(pooled_pt, map_location="cpu")
         self.ids = obj.get("ids", None)
@@ -288,6 +291,7 @@ class NADPHPooledDataset(Dataset):
 
 class NADPHRepsDataset(Dataset):
     """Load cached residue reps (list of (L,D)) + masks (list of (L,))."""
+
     def __init__(self, reps_pt: str | Path, task="classification"):
         obj = _torch_load_compat(reps_pt, map_location="cpu")
         self.reps = obj["reps"]
@@ -311,6 +315,7 @@ class NADPHRepsDataset(Dataset):
 # -----------------------------------------------------------------------------
 class FocalLoss(nn.Module):
     """Focal loss for multi-class classification."""
+
     def __init__(self, alpha=None, gamma=2.0, reduction="mean"):
         super().__init__()
         self.alpha = alpha
@@ -349,6 +354,7 @@ class NADPHSeqModel(nn.Module):
       - reps path (cached per-residue reps)
       - pooled path (cached pooled embeddings)
     """
+
     def __init__(self, esm_model, embed_dim: int, task="classification", num_classes=2, dropout=0.3):
         super().__init__()
         self.esm = esm_model
@@ -365,7 +371,7 @@ class NADPHSeqModel(nn.Module):
         out_dim = num_classes if task == "classification" else 1
         self.head = nn.Sequential(
             nn.Linear(embed_dim, hidden),
-            nn.BatchNorm1d(hidden), # Batch normalization
+            nn.BatchNorm1d(hidden),  # Batch normalization
             # nn.LayerNorm(hidden), # Token-mode - small batches
             nn.ReLU(),
             nn.Dropout(dropout),
@@ -373,13 +379,13 @@ class NADPHSeqModel(nn.Module):
         )
 
     def forward(
-        self,
-        tokens: torch.Tensor | None = None,
-        reps: torch.Tensor | None = None,
-        mask: torch.Tensor | None = None,
-        pooled: torch.Tensor | None = None,
-        return_reps: bool = False,
-        repr_layer: int = 33,
+            self,
+            tokens: torch.Tensor | None = None,
+            reps: torch.Tensor | None = None,
+            mask: torch.Tensor | None = None,
+            pooled: torch.Tensor | None = None,
+            return_reps: bool = False,
+            repr_layer: int = 33,
     ):
         # (A) pooled path
         if pooled is not None:
@@ -417,10 +423,10 @@ class NADPHSeqModel(nn.Module):
 # 6) Explainability (works from cached reps or from tokens)
 # -----------------------------------------------------------------------------
 def compute_residue_saliency_from_reps(
-    model: NADPHSeqModel,
-    reps: torch.Tensor,
-    mask: torch.Tensor,
-    target_class: int | None = None,
+        model: NADPHSeqModel,
+        reps: torch.Tensor,
+        mask: torch.Tensor,
+        target_class: int | None = None,
 ) -> torch.Tensor:
     """
     reps: (B,L,D) float32 requires_grad
@@ -447,11 +453,11 @@ def compute_residue_saliency_from_reps(
 
 
 def compute_residue_integrated_gradients_from_reps(
-    model: NADPHSeqModel,
-    reps: torch.Tensor,
-    mask: torch.Tensor,
-    target_class: int | None = None,
-    steps: int = 50,
+        model: NADPHSeqModel,
+        reps: torch.Tensor,
+        mask: torch.Tensor,
+        target_class: int | None = None,
+        steps: int = 50,
 ) -> torch.Tensor:
     """
     Integrated gradients in representation space.
@@ -510,8 +516,10 @@ def load_esm_model_and_alphabet(model_name: str):
     model.eval()
     return model, alphabet
 
+
 def _now_iso() -> str:
     return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
 
 def _cache_meta(cfg: NADPHSeqConfig, extra: dict | None = None) -> dict:
     d = {
@@ -526,11 +534,13 @@ def _cache_meta(cfg: NADPHSeqConfig, extra: dict | None = None) -> dict:
         d.update(extra)
     return d
 
+
 def _atomic_torch_save(obj: dict, path: Path) -> None:
     path = Path(path)
     tmp = path.with_suffix(path.suffix + ".tmp")
     torch.save(obj, tmp)
     tmp.replace(path)
+
 
 def _torch_load_compat(path: str | Path, map_location="cpu", force_full_pickle: bool = True):
     """
@@ -547,6 +557,7 @@ def _torch_load_compat(path: str | Path, map_location="cpu", force_full_pickle: 
             return torch.load(path, map_location=map_location, weights_only=True)
     except TypeError:
         return torch.load(path, map_location=map_location)
+
 
 def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
     """
@@ -580,7 +591,6 @@ def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
         "label_cls": labels_cls,
         "meta": _cache_meta(cfg, {"cache_type": "tokens", "num_items": len(ids)}),
     }
-
 
     if "label_reg" in df.columns:
         payload["label_reg"] = torch.tensor(df["label_reg"].values, dtype=torch.float32)
@@ -637,7 +647,7 @@ def build_pooled_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
     pbar = tqdm(total=len(tokens_list), desc="Caching pooled embeddings")
     while i < len(tokens_list):
         b = min(bs, len(tokens_list) - i)
-        batch_tokens = tokens_list[i : i + b]
+        batch_tokens = tokens_list[i: i + b]
         toks = collate_fn_esm([(t, 0) for t in batch_tokens])[0].to(device)
         try:
             pooled = _run_batch(toks).to("cpu")
@@ -650,7 +660,7 @@ def build_pooled_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
 
         if dtype == torch.float16:
             pooled = pooled.half()
-        pooled_all[i : i + pooled.size(0)] = pooled
+        pooled_all[i: i + pooled.size(0)] = pooled
         i += pooled.size(0)
         pbar.update(pooled.size(0))
     pbar.close()
@@ -718,7 +728,7 @@ def build_reps_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
 
     pbar = tqdm(total=len(tokens_list), desc="Caching residue reps")
     for i in range(0, len(tokens_list), bs):
-        batch_tokens = tokens_list[i : i + bs]
+        batch_tokens = tokens_list[i: i + bs]
         toks = collate_fn_esm([(t, 0) for t in batch_tokens])[0].to(device)
         mask = (toks != 1)
 
@@ -733,8 +743,8 @@ def build_reps_cache(token_cache_pt: str | Path, cfg: NADPHSeqConfig) -> Path:
 
         for b in range(reps.size(0)):
             L = int(mask[b].sum().item())
-            reps_list.append(reps[b, :L].contiguous())      # (L,D)
-            mask_list.append(mask[b, :L].contiguous())      # (L,)
+            reps_list.append(reps[b, :L].contiguous())  # (L,D)
+            mask_list.append(mask[b, :L].contiguous())  # (L,)
         pbar.update(len(batch_tokens))
     pbar.close()
 
@@ -786,6 +796,7 @@ def _get_head_module(model: nn.Module) -> nn.Module:
 
     raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
 
+
 # def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8):
 #     n = len(ds)
 #     n_train = int(train_frac * n)
@@ -811,6 +822,7 @@ def _split_train_val(ds: Dataset, seed: int = 0, train_frac: float = 0.8, strati
     train_idx, val_idx = next(splitter.split(idx, y))
 
     return Subset(ds, train_idx.tolist()), Subset(ds, val_idx.tolist())
+
 
 def _get_labels_for_split(split_ds) -> List[int] | List[float]:
     """
@@ -839,9 +851,9 @@ def _get_labels_for_split(split_ds) -> List[int] | List[float]:
 
 
 def train_seq_model(
-    csv_path: str | Path,
-    cfg: NADPHSeqConfig,
-    patience: bool = True,
+        csv_path: str | Path,
+        cfg: NADPHSeqConfig,
+        patience: bool = True,
 ) -> Tuple[nn.Module, Dict[str, float], Dict[str, Path], pd.DataFrame]:
     """
     Returns:

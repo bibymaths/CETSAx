@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+                   
+
+# !/usr/bin/env python
 """
 Script to build sequence-supervised table and train NADPH sequence model.
 UPDATED: Compatible with cetsax.deeplearn.seq_nadph (Transformers backend).
@@ -15,8 +17,13 @@ import json
 import pandas as pd
 import torch
 
-from cetsax import build_sequence_supervised_table
-from cetsax.deeplearn.my_seq_nadph import NADPHSeqConfig, train_seq_model
+from cetsax import (
+    build_sequence_supervised_table,
+    NADPHSeqConfig,
+    train_seq_model,
+)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Build seq-supervised table and train NADPH seq model (HF Backend).")
 
