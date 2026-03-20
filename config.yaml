@@ -15,7 +15,7 @@ seq_model:
   # - esm2_t30_150M_UR50D: 30 layers, ~150M parameters
   # - esm2_t12_35M_UR50D : 12 layers, ~35M parameters
   # - esm2_t6_8M_UR50D   : 6 layers, ~8M parameters
-  model_name: "facebook/esm2_t12_35M_UR50D"
+  model_name: "esm2_t12_35M_UR50D"
   max_len: 1022
   num_classes: 2
   task: "classification"     # classification | regression
