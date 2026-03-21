@@ -1,84 +1,53 @@
 repo_name: bibymaths/CETSAx
 repo_url: https://github.com/bibymaths/CETSAx
+
 site_name: CETSAx
 site_description: CETSA-MS modelling toolkit for dose–response analysis, binder classification, Bayesian inference, ML curve typing, and proteome-wide stability networks.
 site_author: Abhinav Mishra
 
 theme:
-  name: material
-  palette:
-    # Palette toggle for light mode
-    - scheme: default
-      primary: indigo # Feel free to change this to your brand color
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-
-    # Palette toggle for dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
-    - search.highlight
-    - search.share
-    - content.code.copy
-
-  icon:
-    repo: fontawesome/brands/github
-
-  font:
-    text: Roboto
-    code: Roboto Mono
+  name: shadcn
+  katex_options: {}
+  # optional:
+  # icon: assets/logo.svg
+  # favicon: assets/favicon.ico
 
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
-          paths: [ ./cetsax ]
+          paths: [./cetsax]
           options:
             docstring_style: numpy
+            show_source: false
+
 extra:
   social:
-    - icon: fontawesome/brands/github
+    - icon: simple/github
       link: https://github.com/bibymaths
 
 copyright: "© 2026 Abhinav Mishra"
 
 nav:
   - Home: index.md
-
+  - Design Principles: design_principles.md
   - Scientific Model:
       - Curve Fitting: curve_fitting.md
       - Sensitivity Scoring: sensitivity_scoring.md
       - Equations: equations.md
-
   - Systems Analysis:
       - Pathway Enrichment: pathway_enrichment.md
       - Network Analysis: network_analysis.md
       - Latent Analysis: latent_analysis.md
-
   - Sequence Modeling:
       - Overview: sequence_modeling.md
       - Explainability: explainability.md
-
   - Visualization: visualization.md
-
   - Usage: usage.md
-
   - API Reference: api.md
-
   - Limitations: limitations.md
-
   - Contributing: contributing.md
-
   - Citation: citation.md
 
 markdown_extensions:
@@ -94,9 +63,7 @@ markdown_extensions:
       generic: true
 
 extra_javascript:
+  - javascripts/katex.js
   - javascripts/mathjax.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-
-extra_css:
-  - stylesheets/custom.css
