@@ -1,10 +1,10 @@
 <img src="assets/logo.svg" alt="CETSAx Logo" width="800"/>  
 
-![uv](https://img.shields.io/badge/uv-env-orange)
+![uv](https://img.shields.io/badge/uv-env-orange) 
 ![conda](https://img.shields.io/badge/Conda-Package%20Manager-green?logo=anaconda)
 ![Snakemake](https://img.shields.io/badge/Snakemake-Workflow-blue?logo=snakemake)
 ![Python](https://img.shields.io/badge/Python-3.11.13-blue?logo=python)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?logo=pytorch)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?logo=pytorch) 
 
 ![ESM-2](https://img.shields.io/badge/ESM--2-Protein%20LM-green)
 ![License](https://img.shields.io/badge/License-BSD%203--Clause-lightgrey)
@@ -18,17 +18,18 @@ It combines dose–response modeling, system-level analysis, and sequence-based 
 
 ## Documentation
 
-Full documentation is available at:
+Full documentation:
 
-👉 https://bibymaths.github.io/CETSAx
+https://bibymaths.github.io/CETSAx/
 
-Start here:
+Key sections:
 
-- Overview → https://bibymaths.github.io/cetsax/
-- Usage → https://bibymaths.github.io/cetsax/usage/
-- Scientific model → https://bibymaths.github.io/cetsax/curve_fitting/
-- API reference → https://bibymaths.github.io/cetsax/api/
-- Limitations → https://bibymaths.github.io/cetsax/limitations/
+- Overview: https://bibymaths.github.io/CETSAx/
+- Usage: https://bibymaths.github.io/CETSAx/usage/
+- Scientific model (curve fitting): https://bibymaths.github.io/CETSAx/curve_fitting/
+- Sensitivity scoring: https://bibymaths.github.io/CETSAx/sensitivity_scoring/
+- API reference: https://bibymaths.github.io/CETSAx/api/
+- Limitations: https://bibymaths.github.io/CETSAx/limitations/
 
 ---
 
@@ -38,9 +39,9 @@ Start here:
 - Identifies responsive proteins (hit calling)
 - Extracts system-level patterns (PCA, clustering, networks)
 - Learns sequence determinants of response (ESM-2)
-- Provides residue-level interpretability (saliency, IG)
+- Provides residue-level interpretability (saliency, integrated gradients)
 
-This is designed as a **hypothesis-generation framework**, not just a fitting tool.
+This is designed as a hypothesis-generation framework rather than a standalone fitting tool.
 
 ---
 
@@ -74,8 +75,9 @@ snakemake --cores 8
 * CETSA dose–response dataset (`.csv`)
 * Configuration via `config.yaml`
 
-See details:
-👉 [https://bibymaths.github.io/cetsax/usage/](https://bibymaths.github.io/cetsax/usage/)
+Details:
+
+[https://bibymaths.github.io/CETSAx/usage/](https://bibymaths.github.io/CETSAx/usage/)
 
 ---
 
@@ -89,7 +91,8 @@ See details:
 * Co-stabilization networks
 
 Interpretation guide:
-👉 [https://bibymaths.github.io/cetsax/usage/#how-to-work-with-results](https://bibymaths.github.io/cetsax/usage/#how-to-work-with-results)
+
+[https://bibymaths.github.io/CETSAx/usage/#how-to-work-with-results](https://bibymaths.github.io/CETSAx/usage/#how-to-work-with-results)
 
 ---
 
@@ -108,17 +111,13 @@ config.yaml    # configuration
 
 ## Contributing
 
-See contribution guidelines:
-
-👉 [https://bibymaths.github.io/cetsax/contributing/](https://bibymaths.github.io/cetsax/contributing/)
+[https://bibymaths.github.io/CETSAx/contributing/](https://bibymaths.github.io/CETSAx/contributing/)
 
 ---
 
 ## Citation
 
-If you use this project, please cite:
-
-👉 [https://bibymaths.github.io/cetsax/citation/](https://bibymaths.github.io/cetsax/citation/)
+[https://bibymaths.github.io/CETSAx/citation/](https://bibymaths.github.io/CETSAx/citation/)
 
 ---
 

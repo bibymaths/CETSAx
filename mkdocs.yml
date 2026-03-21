@@ -1,5 +1,5 @@
-repo_name: bibymaths/cetsax
-repo_url: https://github.com/bibymaths/cetsax
+repo_name: bibymaths/CETSAx
+repo_url: https://github.com/bibymaths/CETSAx
 
 site_name: CETSAx
 site_description: CETSA-MS modelling toolkit for dose–response analysis, binder classification, Bayesian inference, ML curve typing, and proteome-wide stability networks.
@@ -8,12 +8,9 @@ site_author: Abhinav Mishra
 theme:
   name: shadcn
   katex_options: {}
-  # optional:
-  # icon: assets/logo.svg
-  # favicon: assets/favicon.ico
+  icon: assets/logo.svg
 
 plugins:
-  - search
   - mkdocstrings:
       handlers:
         python:
@@ -21,6 +18,7 @@ plugins:
           options:
             docstring_style: numpy
             show_source: false
+  - search
 
 extra:
   social:
