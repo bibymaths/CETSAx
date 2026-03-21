@@ -62,7 +62,6 @@ dependencies = [
     "mkdocs-material>=9.7.6",
     "mkdocstrings[python]>=1.0.3",
     "transformers>=5.3.0",
-    "mkdocs-shadcn>=0.10.2",
 ]
 
 [project.optional-dependencies]
