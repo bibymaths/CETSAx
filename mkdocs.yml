@@ -17,7 +17,6 @@ plugins:
           options:
             docstring_style: numpy
             show_source: false
-  - search
 
 extra:
   social:
