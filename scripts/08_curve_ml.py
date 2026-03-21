@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to perform machine learning analyses on CETSA melting curves.
 """
@@ -67,7 +67,7 @@ def main():
     outliers = detect_outliers(features)
     outliers.to_csv(out_dir / "curve_outliers.csv")
 
-    n_out = outliers['outlier'].sum()
+    n_out = outliers["outlier"].sum()
     print(f"Found {n_out} outlier curves.")
 
 

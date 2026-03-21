@@ -2,7 +2,8 @@ import pandas as pd
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from pathlib import Path
 
-base_dir = Path(__file__).resolve().parent.parent/"results"
+base_dir = Path(__file__).resolve().parent.parent / "results"
+
 
 def analyze_results():
     # 1. Load the specific files
@@ -19,12 +20,12 @@ def analyze_results():
 
     # 2. Merge on 'id' to sync rows
     # suffix _true for ground truth, _pred for predictions
-    merged = pd.merge(truth, preds, on="id", suffixes=('_true', '_pred'))
+    merged = pd.merge(truth, preds, on="id", suffixes=("_true", "_pred"))
     print(f"Matched {len(merged)} proteins for analysis.\n")
 
     # 3. Define the specific columns based on your headers
-    y_true = merged['label_cls']  # 0, 1 from supervised file
-    y_pred = merged['pred_class_idx']  # 0, 1  from predictions
+    y_true = merged["label_cls"]  # 0, 1 from supervised file
+    y_pred = merged["pred_class_idx"]  # 0, 1  from predictions
 
     # 4. Calculate & Print Metrics
     acc = accuracy_score(y_true, y_pred)
@@ -32,7 +33,7 @@ def analyze_results():
 
     # Target names map to 0, 1 (Weak, Strong)
     print("--- Detailed Classification Report ---")
-    print(classification_report(y_true, y_pred, target_names=['Weak', 'Strong']))
+    print(classification_report(y_true, y_pred, target_names=["Weak", "Strong"]))
 
     print("--- Confusion Matrix (Row=Actual, Col=Predicted) ---")
     cm = confusion_matrix(y_true, y_pred)
@@ -41,12 +42,14 @@ def analyze_results():
 
     # 5. DIAGNOSTICS: Find the Missed "Strong" Hits
     # We want to know which Strong binders (2) were predicted as Weak (0)
-    missed_hits = merged[(merged['label_cls'] == 1) & (merged['pred_class_idx'] == 0)]
+    missed_hits = merged[(merged["label_cls"] == 1) & (merged["pred_class_idx"] == 0)]
 
     if not missed_hits.empty:
-        print(f"WARNING: The model completely missed {len(missed_hits)} Strong hits (predicted as Weak).")
+        print(
+            f"WARNING: The model completely missed {len(missed_hits)} Strong hits (predicted as Weak)."
+        )
         print("Top 5 Missed IDs:")
-        print(missed_hits['id'].head(5).tolist())
+        print(missed_hits["id"].head(5).tolist())
 
         # Save them for inspection
         missed_hits.to_csv(f"{base_dir}/missed_strong_hits.csv", index=False)

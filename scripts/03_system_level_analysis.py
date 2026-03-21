@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to perform system-level analysis of CETSA NADPH data.
 """
@@ -39,10 +39,9 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-
-from cetsax import compute_sensitivity_scores
 from cetsax import summarize_pathway_effects, enrich_overrepresentation
-from cetsax import build_redox_axes, summarize_redox_by_pathway
+
+from cetsax import ID_COL
 from cetsax import build_feature_matrix, fit_pca, fit_factor_analysis
 from cetsax import (
     build_mixture_features,
@@ -50,16 +49,14 @@ from cetsax import (
     assign_mixture_clusters,
     label_clusters_by_sensitivity,
 )
+from cetsax import compute_sensitivity_scores
 from cetsax import (
-    plot_pathway_effects_bar,
-    plot_pathway_enrichment_volcano,
     plot_redox_axes_scatter,
-    plot_redox_role_composition,
     plot_pca_scores,
     plot_mixture_clusters_in_pca,
     plot_cluster_size_bar,
 )
-from cetsax import ID_COL
+from cetsax.redox import build_redox_axes, summarize_redox_by_pathway
 
 
 def main() -> None:
@@ -68,13 +65,13 @@ def main() -> None:
         "--fits-csv",
         # required=True,
         default="../results/ec50_fits.csv",
-        help="Path to ec50_fits.csv"
+        help="Path to ec50_fits.csv",
     )
     p.add_argument(
         "--hits-csv",
         # required=True,
         default="../results/hit_results/cetsa_hits_ranked.csv",
-        help="Path to cetsa_hits_ranked.csv"
+        help="Path to cetsa_hits_ranked.csv",
     )
     p.add_argument(
         "--annot-csv",
@@ -172,7 +169,9 @@ def main() -> None:
     )
     path_redox_path = out_dir / "redox_by_pathway.csv"
     path_redox.to_csv(path_redox_path, index=False)
-    print(f"[J] Saved redox axes + pathway summaries to {redox_path}, {path_redox_path}")
+    print(
+        f"[J] Saved redox axes + pathway summaries to {redox_path}, {path_redox_path}"
+    )
 
     # Plots: redox scatter + role composition
     fig, ax = plot_redox_axes_scatter(
@@ -181,7 +180,9 @@ def main() -> None:
         y_axis="axis_indirect",
         color_by="redox_role",
     )
-    fig.savefig(out_dir / "redox_axes_direct_vs_indirect.png", dpi=300, bbox_inches="tight")
+    fig.savefig(
+        out_dir / "redox_axes_direct_vs_indirect.png", dpi=300, bbox_inches="tight"
+    )
 
     # fig, ax = plot_redox_role_composition(path_redox, top_n=20)
     # fig.savefig(out_dir / "redox_role_composition_top20_pathways.png", dpi=300, bbox_inches="tight")
@@ -257,7 +258,9 @@ def main() -> None:
     )
     cluster_labels_path = out_dir / "mixture_cluster_labels.csv"
     cluster_labels.to_csv(cluster_labels_path, index=False)
-    print(f"[L] Saved mixture clusters + labels to {clusters_path}, {cluster_labels_path}")
+    print(
+        f"[L] Saved mixture clusters + labels to {clusters_path}, {cluster_labels_path}"
+    )
 
     # Plots: mixture clusters in PCA space + cluster sizes
     fig, ax = plot_mixture_clusters_in_pca(

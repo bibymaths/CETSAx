@@ -70,10 +70,21 @@ except Exception as e:
 # We use .get() with defaults to prevent crashes if yaml keys are missing
 
 # Dose columns
-DOSE_COLS = _exp.get("dose_columns", [
-    "3.81e-06", "1.526e-05", "6.104e-05", "0.00024414",
-    "0.00097656", "0.00390625", "0.015625", "0.0625", "0.25", "1"
-])
+DOSE_COLS = _exp.get(
+    "dose_columns",
+    [
+        "3.81e-06",
+        "1.526e-05",
+        "6.104e-05",
+        "0.00024414",
+        "0.00097656",
+        "0.00390625",
+        "0.015625",
+        "0.0625",
+        "0.25",
+        "1",
+    ],
+)
 
 # QC thresholds
 _qc = _exp.get("qc_thresholds", {})

@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 fit.py
 -------------
@@ -21,11 +23,11 @@ from .config import DOSE_COLS, ID_COL, COND_COL
 
 
 def _itdr_model_log(
-        logc: np.ndarray,
-        E0: float,
-        Emax: float,
-        logEC50: float,
-        h: float,
+    logc: np.ndarray,
+    E0: float,
+    Emax: float,
+    logEC50: float,
+    h: float,
 ) -> np.ndarray:
     """
     ITDR model parameterized in log10(concentration) space:
@@ -175,7 +177,7 @@ def _fit_single_curve(doses: np.ndarray, y: np.ndarray) -> Dict[str, Any] | None
         return None
 
     E0, Emax, logEC50, h = map(float, res.x)
-    EC50 = float(10.0 ** logEC50)
+    EC50 = float(10.0**logEC50)
 
     # ------------------------------------------------------------------
     # 5) Diagnostics on original (unsmoothed) data
@@ -269,5 +271,15 @@ def fit_all_proteins(df: pd.DataFrame) -> pd.DataFrame:
 
     res_df = pd.DataFrame(results)
     return res_df[
-        [ID_COL, COND_COL, "E0", "Emax", "EC50", "log10_EC50", "Hill", "R2", "delta_max"]
+        [
+            ID_COL,
+            COND_COL,
+            "E0",
+            "Emax",
+            "EC50",
+            "log10_EC50",
+            "Hill",
+            "R2",
+            "delta_max",
+        ]
     ]

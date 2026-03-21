@@ -37,7 +37,13 @@ import torch.nn.functional as F
 from sklearn.model_selection import StratifiedShuffleSplit
 from torch.utils.data import Dataset, DataLoader, Subset
 from tqdm.auto import tqdm
-from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, get_linear_schedule_with_warmup
+from transformers import (
+    AutoModel,
+    AutoTokenizer,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+    get_linear_schedule_with_warmup,
+)
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 
@@ -58,7 +64,9 @@ class NADPHSeqConfig:
 
     # Training Hyperparams
     batch_size: int = 2  # Actual GPU batch size (keep small for 15GB GPU)
-    accum_steps: int = 4  # Gradient accumulation steps (Simulated BS = batch_size * accum_steps)
+    accum_steps: int = (
+        4  # Gradient accumulation steps (Simulated BS = batch_size * accum_steps)
+    )
     head_batch_size: int = 256  # For pooled/reps modes (cheap)
 
     lr: float = 1e-4
@@ -114,7 +122,9 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
     return {k: "".join(v) for k, v in seqs.items()}
 
 
-def load_model_and_tokenizer(model_name: str) -> Tuple[PreTrainedModel, PreTrainedTokenizer]:
+def load_model_and_tokenizer(
+    model_name: str,
+) -> Tuple[PreTrainedModel, PreTrainedTokenizer]:
     """Load HF model and tokenizer."""
     print(f"[Transformers] Loading {model_name}...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -128,22 +138,28 @@ def load_model_and_tokenizer(model_name: str) -> Tuple[PreTrainedModel, PreTrain
 # -----------------------------------------------------------------------------
 def classify_hit_row(row: pd.Series) -> str:
     # Adjusted thresholds slightly for robustness
-    is_hit = (float(row["EC50"]) < 0.01) and \
-             (float(row["delta_max"]) > 0.10) and \
-             (float(row["R2"]) > 0.70)
+    is_hit = (
+        (float(row["EC50"]) < 0.01)
+        and (float(row["delta_max"]) > 0.10)
+        and (float(row["R2"]) > 0.70)
+    )
     return "strong" if is_hit else "weak"
 
 
 def build_sequence_supervised_table(
-        fits_df: pd.DataFrame,
-        fasta_path: str | Path,
-        out_csv: str | Path,
-        id_col: str = "id",
-        use_nss: bool = False,
+    fits_df: pd.DataFrame,
+    fasta_path: str | Path,
+    out_csv: str | Path,
+    id_col: str = "id",
+    use_nss: bool = False,
 ) -> pd.DataFrame:
     agg = (
         fits_df.groupby(id_col)
-        .agg(EC50=("EC50", "median"), delta_max=("delta_max", "median"), R2=("R2", "median"))
+        .agg(
+            EC50=("EC50", "median"),
+            delta_max=("delta_max", "median"),
+            R2=("R2", "median"),
+        )
         .reset_index()
     )
 
@@ -166,7 +182,9 @@ def build_sequence_supervised_table(
     # Simple rescue for UniProt IDs (e.g., P12345-1 -> P12345)
     missing = agg["seq"].isna()
     if missing.any():
-        agg.loc[missing, "seq"] = agg.loc[missing, id_col].apply(lambda x: x.split("-")[0]).map(seq_dict)
+        agg.loc[missing, "seq"] = (
+            agg.loc[missing, id_col].apply(lambda x: x.split("-")[0]).map(seq_dict)
+        )
 
     agg = agg.dropna(subset=["seq"])
 
@@ -194,7 +212,12 @@ class NADPHBaseDataset(Dataset):
 class NADPHPooledDataset(NADPHBaseDataset):
     def __init__(self, pt_path, task):
         obj = torch.load(pt_path, map_location="cpu")
-        data = {"x": obj["pooled"], "labels": obj["label_cls"] if task == "classification" else obj["label_reg"]}
+        data = {
+            "x": obj["pooled"],
+            "labels": obj["label_cls"]
+            if task == "classification"
+            else obj["label_reg"],
+        }
         super().__init__(data, task)
 
     def __getitem__(self, idx):
@@ -206,15 +229,22 @@ class NADPHPooledDataset(NADPHBaseDataset):
 class NADPHRepsDataset(NADPHBaseDataset):
     def __init__(self, pt_path, task):
         obj = torch.load(pt_path, map_location="cpu")
-        data = {"reps": obj["reps"], "mask": obj["mask"],
-                "labels": obj["label_cls"] if task == "classification" else obj["label_reg"]}
+        data = {
+            "reps": obj["reps"],
+            "mask": obj["mask"],
+            "labels": obj["label_cls"]
+            if task == "classification"
+            else obj["label_reg"],
+        }
         super().__init__(data, task)
 
     def __getitem__(self, idx):
         return (
             self.data["reps"][idx].float(),
             self.data["mask"][idx].bool(),
-            int(self.data["labels"][idx]) if self.task == "classification" else float(self.data["labels"][idx])
+            int(self.data["labels"][idx])
+            if self.task == "classification"
+            else float(self.data["labels"][idx]),
         )
 
 
@@ -237,9 +267,13 @@ class NADPHSeqDataset(Dataset):
             truncation=True,
             max_length=self.max_len,
             padding=False,  # Pad in collator
-            return_tensors=None  # Return lists
+            return_tensors=None,  # Return lists
         )
-        label = int(row["label_cls"]) if self.task == "classification" else float(row["label_reg"])
+        label = (
+            int(row["label_cls"])
+            if self.task == "classification"
+            else float(row["label_reg"])
+        )
         return enc["input_ids"], enc["attention_mask"], label
 
 
@@ -252,7 +286,7 @@ class AttentionPooling(nn.Module):
         self.attention = nn.Sequential(
             nn.Linear(embed_dim, embed_dim // 2),
             nn.Tanh(),
-            nn.Linear(embed_dim // 2, 1)
+            nn.Linear(embed_dim // 2, 1),
         )
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -263,8 +297,11 @@ class AttentionPooling(nn.Module):
         weights = F.softmax(scores, dim=1)  # (B, L)
         return torch.bmm(weights.unsqueeze(1), x).squeeze(1)  # (B, D)
 
+
 class NADPHSeqModel(nn.Module):
-    def __init__(self, hf_model: Optional[PreTrainedModel], embed_dim: int, cfg: NADPHSeqConfig):
+    def __init__(
+        self, hf_model: Optional[PreTrainedModel], embed_dim: int, cfg: NADPHSeqConfig
+    ):
         super().__init__()
         self.backbone = hf_model
         self.task = cfg.task
@@ -290,7 +327,7 @@ class NADPHSeqModel(nn.Module):
             nn.BatchNorm1d(hidden),
             nn.GELU(),
             nn.Dropout(0.5),
-            nn.Linear(hidden, out_dim)
+            nn.Linear(hidden, out_dim),
         )
 
     def forward(self, input_ids=None, attention_mask=None, reps=None, pooled=None):
@@ -325,7 +362,8 @@ class NADPHSeqModel(nn.Module):
 # -----------------------------------------------------------------------------
 def build_token_cache(csv_path, cfg) -> Path:
     out = Path(cfg.cache_dir) / f"tokens_{Path(csv_path).stem}.pt"
-    if out.exists(): return out
+    if out.exists():
+        return out
 
     print("[Cache] Tokenizing sequences...")
     df = pd.read_csv(csv_path)
@@ -338,8 +376,14 @@ def build_token_cache(csv_path, cfg) -> Path:
     # Batch tokenize for speed
     batch_size = 1000
     for i in range(0, len(df), batch_size):
-        batch = df["seq"].iloc[i:i + batch_size].astype(str).tolist()
-        enc = tokenizer(batch, truncation=True, max_length=cfg.max_len, padding="max_length", return_tensors="pt")
+        batch = df["seq"].iloc[i : i + batch_size].astype(str).tolist()
+        enc = tokenizer(
+            batch,
+            truncation=True,
+            max_length=cfg.max_len,
+            padding="max_length",
+            return_tensors="pt",
+        )
         # We store as lists to save specific logic later or save raw tensor
         # Here saving raw CPU tensors is fine for cache
         tokens.append(enc["input_ids"])
@@ -349,7 +393,9 @@ def build_token_cache(csv_path, cfg) -> Path:
         "input_ids": torch.cat(tokens),
         "attention_mask": torch.cat(masks),
         "label_cls": torch.tensor(df["label_cls"].values),
-        "label_reg": torch.tensor(df["label_reg"].values) if "label_reg" in df else None
+        "label_reg": torch.tensor(df["label_reg"].values)
+        if "label_reg" in df
+        else None,
     }
     torch.save(payload, out)
     return out
@@ -358,7 +404,8 @@ def build_token_cache(csv_path, cfg) -> Path:
 def build_pooled_cache(token_path, cfg) -> Path:
     # 1. Rename 'out' to 'cache_path' to avoid ambiguity
     cache_path = Path(cfg.cache_dir) / f"pooled_{cfg.model_name.replace('/', '_')}.pt"
-    if cache_path.exists(): return cache_path
+    if cache_path.exists():
+        return cache_path
 
     print("[Cache] Building pooled embeddings (Transformers)...")
     data = torch.load(token_path)
@@ -383,16 +430,18 @@ def build_pooled_cache(token_path, cfg) -> Path:
     payload = {
         "pooled": torch.cat(pooled_list),
         "label_cls": data["label_cls"],
-        "label_reg": data["label_reg"]
+        "label_reg": data["label_reg"],
     }
 
     # 3. Save using the correct path variable
     torch.save(payload, cache_path)
     return cache_path
 
+
 # -----------------------------------------------------------------------------
 # 6) Training Loop (With AMP + Gradient Accumulation)
 # -----------------------------------------------------------------------------
+
 
 def _get_head_module(model: nn.Module) -> nn.Module:
     """
@@ -409,7 +458,10 @@ def _get_head_module(model: nn.Module) -> nn.Module:
     if hasattr(base, "net") and isinstance(getattr(base, "net"), nn.Module):
         return base.net
 
-    raise AttributeError(f"Could not find head on model type={type(base)} (expected .head or .net)")
+    raise AttributeError(
+        f"Could not find head on model type={type(base)} (expected .head or .net)"
+    )
+
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2.0):
@@ -424,9 +476,9 @@ class FocalLoss(nn.Module):
 
 
 def train_seq_model(
-        csv_path: str | Path,
-        cfg: NADPHSeqConfig,
-        patience: bool = True,
+    csv_path: str | Path,
+    cfg: NADPHSeqConfig,
+    patience: bool = True,
 ) -> Tuple[nn.Module, Dict, Dict, pd.DataFrame]:
     Path(cfg.cache_dir).mkdir(exist_ok=True)
     device = torch.device(cfg.device)
@@ -447,6 +499,7 @@ def train_seq_model(
         embed_dim = model_backbone.config.hidden_size
         ds = NADPHSeqDataset(csv_path, tokenizer, cfg.max_len, cfg.task)
         from transformers import DataCollatorWithPadding
+
         collate_hf = DataCollatorWithPadding(tokenizer, padding=True)
 
         def collate_wrapper(batch):
@@ -461,11 +514,26 @@ def train_seq_model(
         raise ValueError("Mode not implemented in this snippet: " + cfg.train_mode)
 
     train_idx, val_idx = next(
-        StratifiedShuffleSplit(n_splits=1, test_size=0.2).split(np.zeros(len(ds)), [ds[i][-1] for i in range(len(ds))]))
+        StratifiedShuffleSplit(n_splits=1, test_size=0.2).split(
+            np.zeros(len(ds)), [ds[i][-1] for i in range(len(ds))]
+        )
+    )
     train_ds, val_ds = Subset(ds, train_idx), Subset(ds, val_idx)
 
-    train_loader = DataLoader(train_ds, batch_size=bs, shuffle=True, collate_fn=collate, num_workers=cfg.num_workers)
-    val_loader = DataLoader(val_ds, batch_size=bs, shuffle=False, collate_fn=collate, num_workers=cfg.num_workers)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=bs,
+        shuffle=True,
+        collate_fn=collate,
+        num_workers=cfg.num_workers,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=bs,
+        shuffle=False,
+        collate_fn=collate,
+        num_workers=cfg.num_workers,
+    )
     # -----------------------------------------------------------
 
     # 2. Model
@@ -478,7 +546,9 @@ def train_seq_model(
     if cfg.task == "classification":
         ys = [ds[i][-1] for i in train_idx]
         counts = np.bincount(ys)
-        weights = torch.tensor(counts.sum() / (len(counts) * counts), dtype=torch.float32).to(device)
+        weights = torch.tensor(
+            counts.sum() / (len(counts) * counts), dtype=torch.float32
+        ).to(device)
         criterion = FocalLoss(alpha=weights, gamma=cfg.gamma_focal)
     else:
         criterion = nn.MSELoss()
@@ -488,9 +558,7 @@ def train_seq_model(
     num_warmup_steps = int(0.1 * max_train_steps)
 
     scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=max_train_steps
+        optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=max_train_steps
     )
 
     scaler = torch.amp.GradScaler(cfg.device, enabled=cfg.fp16)
@@ -502,7 +570,9 @@ def train_seq_model(
 
     # Removed patience_counter initialization
 
-    print(f"Starting training (Mode: {cfg.train_mode}, AccumSteps: {cfg.accum_steps}, AMP: {cfg.fp16})")
+    print(
+        f"Starting training (Mode: {cfg.train_mode}, AccumSteps: {cfg.accum_steps}, AMP: {cfg.fp16})"
+    )
 
     for epoch in range(cfg.epochs):
         model.train()
@@ -526,7 +596,9 @@ def train_seq_model(
             loss = loss / cfg.accum_steps
             scaler.scale(loss).backward()
 
-            is_update_step = ((step + 1) % cfg.accum_steps == 0) or ((step + 1) == len(train_loader))
+            is_update_step = ((step + 1) % cfg.accum_steps == 0) or (
+                (step + 1) == len(train_loader)
+            )
 
             if is_update_step:
                 scaler.step(optimizer)
@@ -565,17 +637,30 @@ def train_seq_model(
         val_acc = correct / total if total > 0 else 0
 
         # scheduler.step(val_loss)
-        lr_curr = optimizer.param_groups[0]['lr']
+        lr_curr = optimizer.param_groups[0]["lr"]
 
-        print(f"  Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f} | LR: {lr_curr:.1e}")
+        print(
+            f"  Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f} | LR: {lr_curr:.1e}"
+        )
 
-        history.append({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_acc": val_acc})
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+            }
+        )
 
         # --- MODIFIED BLOCK ---
         # We still track the best model, but we NEVER break the loop early.
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            state = model.state_dict() if not cfg.freeze_backbone else model.head.state_dict()
+            state = (
+                model.state_dict()
+                if not cfg.freeze_backbone
+                else model.head.state_dict()
+            )
             best_model_state = copy.deepcopy(state)
         # ----------------------
 
@@ -586,7 +671,7 @@ def train_seq_model(
         else:
             try:
                 model.load_state_dict(best_model_state)
-            except:
+            except RuntimeError:
                 model.head.load_state_dict(best_model_state)
 
     return model, {"best_val_loss": best_val_loss}, {}, pd.DataFrame(history)

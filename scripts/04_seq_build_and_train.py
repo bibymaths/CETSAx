@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to build sequence-supervised table and train NADPH sequence model.
 
@@ -58,79 +58,131 @@ from cetsax.deeplearn.esm_seq_nadph import _get_head_module
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Build seq-supervised table and train NADPH seq model.")
+    p = argparse.ArgumentParser(
+        description="Build seq-supervised table and train NADPH seq model."
+    )
 
     # Inputs/outputs
-    p.add_argument("--fits-csv", default="results/ec50_fits.csv", help="Path to ec50_fits.csv")
-    p.add_argument("--fasta", default="results/protein_sequences.fasta",
-                   help="Path to FASTA with IDs in headers (>P12345 ... or >sp|P12345|...).")
-    p.add_argument("--out-supervised", default="results/nadph_seq_supervised.csv",
-                   help="Output CSV with merged EC50 + sequences + labels.")
-    p.add_argument("--out-head", default="results/nadph_seq_head.pt",
-                   help="Output path for trained model.head state_dict.")
-    p.add_argument("--out-meta", default="results/nadph_seq_train_meta.json",
-                   help="Output JSON for config/metrics/cache paths.")
-    p.add_argument("--out-info", default="results/nadph_seq_train_info.csv",
-                   help="Output CSV for per-epoch training info.")
+    p.add_argument(
+        "--fits-csv", default="results/ec50_fits.csv", help="Path to ec50_fits.csv"
+    )
+    p.add_argument(
+        "--fasta",
+        default="results/protein_sequences.fasta",
+        help="Path to FASTA with IDs in headers (>P12345 ... or >sp|P12345|...).",
+    )
+    p.add_argument(
+        "--out-supervised",
+        default="results/nadph_seq_supervised.csv",
+        help="Output CSV with merged EC50 + sequences + labels.",
+    )
+    p.add_argument(
+        "--out-head",
+        default="results/nadph_seq_head.pt",
+        help="Output path for trained model.head state_dict.",
+    )
+    p.add_argument(
+        "--out-meta",
+        default="results/nadph_seq_train_meta.json",
+        help="Output JSON for config/metrics/cache paths.",
+    )
+    p.add_argument(
+        "--out-info",
+        default="results/nadph_seq_train_info.csv",
+        help="Output CSV for per-epoch training info.",
+    )
 
     # Task
-    p.add_argument("--task", choices=["classification", "regression"], default="classification",
-                   help="Train for classification (strong/weak) or regression (-log10 EC50).")
-    p.add_argument("--use-nss", action="store_true", default=False,
-                   help="If set, use NSS column for regression label_reg (requires NSS in fits table).")
+    p.add_argument(
+        "--task",
+        choices=["classification", "regression"],
+        default="classification",
+        help="Train for classification (strong/weak) or regression (-log10 EC50).",
+    )
+    p.add_argument(
+        "--use-nss",
+        action="store_true",
+        default=False,
+        help="If set, use NSS column for regression label_reg (requires NSS in fits table).",
+    )
 
     # Training
     p.add_argument("--epochs", type=int, default=10, help="Number of training epochs.")
     p.add_argument("--device", default="cuda", help="Device: cuda or cpu.")
-    p.add_argument("--batch-size", type=int, default=8,
-                   help="ESM token-mode batch size (also used as base for caching batches).")
-    p.add_argument("--head-batch-size", type=int, default=256,
-                   help="Batch size for pooled/reps head-only training.")
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=8,
+        help="ESM token-mode batch size (also used as base for caching batches).",
+    )
+    p.add_argument(
+        "--head-batch-size",
+        type=int,
+        default=256,
+        help="Batch size for pooled/reps head-only training.",
+    )
     p.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
-    p.add_argument("--patience", dest="patience", action=argparse.BooleanOptionalAction, default=True,
-                   help="Enable/disable early stopping.")
+    p.add_argument(
+        "--patience",
+        dest="patience",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable/disable early stopping.",
+    )
 
     # Caching / mode
-    p.add_argument("--train-mode", choices=["pooled", "reps", "tokens"], default="pooled",
-                   help="Training mode: pooled (fast), reps (fast-ish + explain), tokens (slow).")
-    p.add_argument("--cache-dir", default="results/cache_seq_nadph",
-                   help="Directory to store caches (tokens/pooled/reps).")
-    p.add_argument("--cache-fp16", dest="cache_fp16", action=argparse.BooleanOptionalAction, default=True,
-                   help="Store caches in float16 where applicable.")
+    p.add_argument(
+        "--train-mode",
+        choices=["pooled", "reps", "tokens"],
+        default="pooled",
+        help="Training mode: pooled (fast), reps (fast-ish + explain), tokens (slow).",
+    )
+    p.add_argument(
+        "--cache-dir",
+        default="results/cache_seq_nadph",
+        help="Directory to store caches (tokens/pooled/reps).",
+    )
+    p.add_argument(
+        "--cache-fp16",
+        dest="cache_fp16",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Store caches in float16 where applicable.",
+    )
 
     # --- Model / ESM control ---
     p.add_argument(
         "--model-name",
         default="esm2_t33_650M_UR50D",
-        help="ESM model name (must match training/inference)."
+        help="ESM model name (must match training/inference).",
     )
 
     p.add_argument(
         "--num-classes",
         type=int,
         default=2,
-        help="Number of classes for classification."
+        help="Number of classes for classification.",
     )
 
     p.add_argument(
         "--max-len",
         type=int,
         default=1022,
-        help="Maximum sequence length (longer sequences are truncated)."
+        help="Maximum sequence length (longer sequences are truncated).",
     )
 
     p.add_argument(
         "--repr-layer",
         type=int,
         default=33,
-        help="ESM representation layer to use for pooled/reps features."
+        help="ESM representation layer to use for pooled/reps features.",
     )
     # --- ESM execution control (IMPORTANT for 1x15GB GPU) ---
     p.add_argument(
         "--esm-batch-size",
         type=int,
         default=2,
-        help="Batch size for ESM forward pass / embedding cache (GPU-safe)."
+        help="Batch size for ESM forward pass / embedding cache (GPU-safe).",
     )
 
     # --- Cache toggles---
@@ -183,17 +235,13 @@ def main() -> None:
         num_classes=args.num_classes,
         epochs=args.epochs,
         device=args.device,
-
         # batching
         batch_size=args.esm_batch_size,  # ESM / cache batch
         head_batch_size=args.head_batch_size,
-
         lr=args.lr,
         max_len=args.max_len,
-
         # training mode
         train_mode=args.train_mode,
-
         # caching
         cache_dir=args.cache_dir,
         cache_fp16=bool(args.cache_fp16),
@@ -210,7 +258,9 @@ def main() -> None:
 
     # Print key result
     if "best_val_acc" in metrics:
-        print(f"Training finished. best_val_loss={metrics['best_val_loss']:.6f} best_val_acc={metrics['best_val_acc']:.6f}")
+        print(
+            f"Training finished. best_val_loss={metrics['best_val_loss']:.6f} best_val_acc={metrics['best_val_acc']:.6f}"
+        )
     else:
         print(f"Training finished. best_val_loss={metrics['best_val_loss']:.6f}")
 
@@ -259,6 +309,7 @@ def main() -> None:
     out_info.parent.mkdir(parents=True, exist_ok=True)
     run_info.to_csv(out_info, index=False)
     print(f"Saved training info to {out_info}")
+
 
 if __name__ == "__main__":
     main()

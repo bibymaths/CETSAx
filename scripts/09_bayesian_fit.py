@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to run Bayesian EC50 inference in parallel using joblib.
 """
@@ -59,8 +59,8 @@ def _fit_single_protein(df: pd.DataFrame, prot_id: str) -> Optional[pd.DataFrame
         # independently in each process.
         res = bayesian_fit_ec50(df, prot_id)
 
-        summary = res['summary']
-        summary['id'] = prot_id
+        summary = res["summary"]
+        summary["id"] = prot_id
         return summary
 
     except Exception as e:
@@ -70,13 +70,20 @@ def _fit_single_protein(df: pd.DataFrame, prot_id: str) -> Optional[pd.DataFrame
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run Bayesian EC50 inference in parallel.")
+    parser = argparse.ArgumentParser(
+        description="Run Bayesian EC50 inference in parallel."
+    )
     parser.add_argument("--input-csv", required=True, help="Path to raw CETSA data")
     parser.add_argument("--hits-csv", required=True, help="Path to ranked hits file")
     parser.add_argument("--out-dir", required=True, help="Directory to save results")
 
     # New argument for core control
-    parser.add_argument("--n-jobs", type=int, default=-1, help="Number of parallel jobs (-1 for all cores)")
+    parser.add_argument(
+        "--n-jobs",
+        type=int,
+        default=-1,
+        help="Number of parallel jobs (-1 for all cores)",
+    )
 
     args = parser.parse_args()
 
@@ -91,9 +98,11 @@ def main():
 
     # 2. Select targets
     hits = pd.read_csv(args.hits_csv)
-    top_targets = hits['id'].tolist()
+    top_targets = hits["id"].tolist()
 
-    print(f"Running Bayesian inference for ({len(top_targets)}) targets using {args.n_jobs} cores...")
+    print(
+        f"Running Bayesian inference for ({len(top_targets)}) targets using {args.n_jobs} cores..."
+    )
 
     # 3. Run Parallel Inference
     # Parallel() creates the pool. delayed() wraps the function call.
@@ -111,12 +120,14 @@ def main():
         final_df = pd.concat(summaries)
 
         # Move 'id' column to the front for better readability
-        cols = ['id'] + [c for c in final_df.columns if c != 'id']
+        cols = ["id"] + [c for c in final_df.columns if c != "id"]
         final_df = final_df[cols]
 
         out_file = out_dir / "bayesian_ec50_summaries.csv"
         final_df.to_csv(out_file)
-        print(f"Successfully saved Bayesian summaries for {len(summaries)} proteins to:")
+        print(
+            f"Successfully saved Bayesian summaries for {len(summaries)} proteins to:"
+        )
         print(f"  {out_file}")
     else:
         print("No successful fits were generated.")

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to build CETSA co-stabilization network from processed data.
 """
@@ -47,7 +47,12 @@ def main():
     parser = argparse.ArgumentParser(description="Build CETSA co-stabilization network")
     parser.add_argument("--input-csv", required=True, help="Raw CETSA data")
     parser.add_argument("--out-dir", required=True, help="Output directory")
-    parser.add_argument("--corr-cutoff", type=float, default=0.85, help="Correlation threshold for edges")
+    parser.add_argument(
+        "--corr-cutoff",
+        type=float,
+        default=0.85,
+        help="Correlation threshold for edges",
+    )
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -64,8 +69,8 @@ def main():
 
     # Plot heat-map of co-stabilization matrix
     plt.figure(figsize=(16, 16))
-    sns.heatmap(corr_matrix, cmap='viridis')
-    plt.title('Co-stabilization Matrix Heatmap')
+    sns.heatmap(corr_matrix, cmap="viridis")
+    plt.title("Co-stabilization Matrix Heatmap")
     plt.savefig(out_dir / "costab_matrix_heatmap.png", dpi=300)
     plt.close()
 
@@ -73,12 +78,14 @@ def main():
     print(f"Building graph (cutoff={args.corr_cutoff})...")
     G = make_network_from_matrix(corr_matrix, cutoff=args.corr_cutoff)
     nx.write_gexf(G, out_dir / "network_graph.gexf")
-    print(f"Graph saved with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges.")
+    print(
+        f"Graph saved with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges."
+    )
 
     # 3. Detect Modules
     print("Detecting communities...")
     modules = detect_modules(G)
-    mod_df = pd.DataFrame(list(modules.items()), columns=['id', 'module_id'])
+    mod_df = pd.DataFrame(list(modules.items()), columns=["id", "module_id"])
     mod_df.to_csv(out_dir / "network_modules.csv", index=False)
     print("Done.")
 

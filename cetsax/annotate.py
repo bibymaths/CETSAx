@@ -59,9 +59,10 @@ import mygene
 # 1. Get unique IDs from fits table
 # ---------------------------------------------------------------------
 
+
 def get_unique_ids(
-        fits_csv: str | Path,
-        id_col: str = "id",
+    fits_csv: str | Path,
+    id_col: str = "id",
 ) -> List[str]:
     df = pd.read_csv(fits_csv)
     if id_col not in df.columns:
@@ -81,8 +82,8 @@ def strip_isoform_suffix(acc: str) -> str:
     if not isinstance(acc, str):
         return acc
     # Only strip final -number pattern
-    if acc.count('-') == 1 and acc.split('-')[1].isdigit():
-        return acc.split('-')[0]
+    if acc.count("-") == 1 and acc.split("-")[1].isdigit():
+        return acc.split("-")[0]
     return acc
 
 
@@ -90,10 +91,11 @@ def strip_isoform_suffix(acc: str) -> str:
 # 2. Annotation via mygene
 # ---------------------------------------------------------------------
 
+
 def fetch_annotations_with_mygene(
-        ids: List[str],
-        species: str = "human",
-        chunk_size: int = 1000,
+    ids: List[str],
+    species: str = "human",
+    chunk_size: int = 1000,
 ) -> pd.DataFrame:
     """
     Use mygene to get basic annotations.
@@ -108,7 +110,7 @@ def fetch_annotations_with_mygene(
 
     # mygene is already "batch-parallelized" internally, so we just chunk
     for i in tqdm(range(0, len(ids), chunk_size), desc="mygene annotations"):
-        batch = ids[i: i + chunk_size]
+        batch = ids[i : i + chunk_size]
 
         res = mg.querymany(
             batch,
@@ -205,10 +207,8 @@ def fetch_annotations_with_mygene(
     annot_df = pd.DataFrame(all_records)
 
     # Deduplicate by query_id, keep the first best hit
-    annot_df = (
-        annot_df
-        .drop_duplicates(subset=["query_id"])
-        .rename(columns={"query_id": "id"})
+    annot_df = annot_df.drop_duplicates(subset=["query_id"]).rename(
+        columns={"query_id": "id"}
     )
 
     return annot_df
@@ -217,6 +217,7 @@ def fetch_annotations_with_mygene(
 # ---------------------------------------------------------------------
 # 3. Parallel UniProt FASTA download
 # ---------------------------------------------------------------------
+
 
 def fetch_uniprot_fasta(acc: str, timeout: float = 10.0) -> Optional[str]:
     """
@@ -238,8 +239,8 @@ def fetch_uniprot_fasta(acc: str, timeout: float = 10.0) -> Optional[str]:
 
 
 def fetch_fastas_parallel(
-        accessions: List[str],
-        max_workers: int = 8,
+    accessions: List[str],
+    max_workers: int = 8,
 ) -> Dict[str, str]:
     """
     Parallel UniProt FASTA retrieval for a list of accessions.
@@ -251,7 +252,9 @@ def fetch_fastas_parallel(
     results: Dict[str, str] = {}
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(fetch_uniprot_fasta, a): a for a in accs}
-        for fut in tqdm(as_completed(futures), total=len(futures), desc="UniProt FASTA"):
+        for fut in tqdm(
+            as_completed(futures), total=len(futures), desc="UniProt FASTA"
+        ):
             acc = futures[fut]
             fasta = fut.result()
             if fasta:
@@ -261,11 +264,11 @@ def fetch_fastas_parallel(
 
 
 def write_fastas_with_ids(
-        annot_df: pd.DataFrame,
-        acc_to_fasta: Dict[str, str],
-        out_fasta: str | Path,
-        id_col: str = "id",
-        uniprot_col: str = "uniprot",
+    annot_df: pd.DataFrame,
+    acc_to_fasta: Dict[str, str],
+    out_fasta: str | Path,
+    id_col: str = "id",
+    uniprot_col: str = "uniprot",
 ) -> None:
     """
     Write FASTA where header is your own id (from id_col),
@@ -293,7 +296,10 @@ def write_fastas_with_ids(
 
             lines = fasta.strip().splitlines()
             # drop original header line(s)
-            seq_lines = [l for l in lines if not l.startswith(">")]
+
+            # remove ambiguous variable name
+
+            seq_lines = [line for line in lines if not line.startswith(">")]
             if not seq_lines:
                 continue
 
@@ -307,6 +313,7 @@ def write_fastas_with_ids(
 # ---------------------------------------------------------------------
 # 4. Main: glue everything together
 # ---------------------------------------------------------------------
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(
@@ -359,20 +366,77 @@ def main() -> None:
         species=args.species,
     )
 
-    # We want a protein-centric annotation table keyed by original id
-    # If original id == uniprot accession, we can keep that as 'id'
-    # Otherwise we still keep 'id' and add 'uniprot' column.
+    # -----------------------------------------------------------------
+    # Align annotation table so that every original id has a row. MyGene
+    # returns annotations keyed by the query (uniprot/symbol/entrezgene).
+    # However, our fits table may contain isoform suffixes (e.g. O00231-2).
+    # To avoid losing these IDs in downstream FASTA and annotation files,
+    # we reconstruct a DataFrame where each original id is preserved.
+    #
+    # Strategy:
+    # 1. Build a lookup by exact id from annot_df (from mygene).
+    # 2. Build a lookup by stripped Uniprot accession (remove isoform suffix)
+    #    for cases where the original id is an isoform of a known protein.
+    # 3. Iterate over the original ids list and, for each, pick the best
+    #    matching annotation (exact match first, otherwise isoform root).
+    # 4. Fill missing fields with None/empty strings.
+    #
+    # Note: we cannot assume all original ids map uniquely to a Uniprot
+    # accession; in such cases we still include the id with missing data.
+
+    # Build exact lookup
+    exact_lookup: Dict[str, Dict[str, Any]] = {
+        str(row["id"]): row for _, row in annot_df.iterrows()
+    }
+
+    # Build isoform lookup keyed by stripped accession
+    iso_lookup: Dict[str, Dict[str, Any]] = {}
+    for _, row in annot_df.iterrows():
+        uni = row.get("uniprot")
+        if isinstance(uni, str):
+            root = strip_isoform_suffix(uni)
+            iso_lookup[root] = row
+
+    # Determine union of annotation columns
+    annot_cols = list(annot_df.columns)
+
+    aligned_records: List[Dict[str, Any]] = []
+    for orig_id in ids:
+        # Initialize base record with None/empty
+        record: Dict[str, Any] = {col: None for col in annot_cols}
+        record["id"] = orig_id
+        # Try exact match
+        match = exact_lookup.get(orig_id)
+        if match is None:
+            # Try isoform match: use stripped id as key
+            root = strip_isoform_suffix(orig_id)
+            match = iso_lookup.get(root)
+        if match is not None:
+            for col in annot_cols:
+                if col == "id":
+                    # preserve original id
+                    continue
+                record[col] = match.get(col, None)
+        aligned_records.append(record)
+
+    aligned_df = pd.DataFrame(aligned_records)
+
+    # Ensure consistent order
+    aligned_df = aligned_df[annot_cols]
+
+    # Save aligned annotation
     out_annot_path = Path(args.out_annot)
     out_annot_path.parent.mkdir(parents=True, exist_ok=True)
-    annot_df.to_csv(out_annot_path, index=False)
-    print(f"Wrote annotations to {out_annot_path} (n={len(annot_df)})")
+    aligned_df.to_csv(out_annot_path, index=False)
+    print(f"Wrote annotations to {out_annot_path} (n={len(aligned_df)})")
 
     # 3) Parallel FASTA download from UniProt
-    # Priority: use uniprot column if present; otherwise original IDs.
-    if "uniprot" in annot_df.columns:
-        accs = annot_df["uniprot"].dropna().astype(str).tolist()
+    # Use the aligned_df to determine which accessions to download. If a
+    # row has a uniprot accession, use that; otherwise use the stripped id.
+    if "uniprot" in aligned_df.columns:
+        accs = aligned_df["uniprot"].dropna().astype(str).tolist()
     else:
-        accs = annot_df["id"].dropna().astype(str).tolist()
+        accs = aligned_df["id"].dropna().astype(str).tolist()
 
     acc_to_fasta = fetch_fastas_parallel(
         accessions=accs,
@@ -380,7 +444,7 @@ def main() -> None:
     )
 
     write_fastas_with_ids(
-        annot_df=annot_df,
+        annot_df=aligned_df,
         acc_to_fasta=acc_to_fasta,
         out_fasta=args.out_fasta,
         id_col="id",

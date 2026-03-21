@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 latent.py
 ---------
@@ -54,12 +56,13 @@ from sklearn.preprocessing import StandardScaler
 # 1. FEATURE MATRIX CONSTRUCTION
 # ------------------------------------------------------------
 
+
 def build_feature_matrix(
-        sens_df: pd.DataFrame,
-        redox_df: Optional[pd.DataFrame] = None,
-        id_col: str = "id",
-        base_features: Optional[List[str]] = None,
-        include_redox_axes: bool = True,
+    sens_df: pd.DataFrame,
+    redox_df: Optional[pd.DataFrame] = None,
+    id_col: str = "id",
+    base_features: Optional[List[str]] = None,
+    include_redox_axes: bool = True,
 ) -> pd.DataFrame:
     """
     Build a standardized feature matrix per protein.
@@ -112,11 +115,15 @@ def build_feature_matrix(
     if not available:
         raise ValueError("No valid base_features found in sens_df.")
 
-    feat = sens_df[[id_col] + available].drop_duplicates(subset=[id_col]).set_index(id_col)
+    feat = (
+        sens_df[[id_col] + available].drop_duplicates(subset=[id_col]).set_index(id_col)
+    )
 
     # Attach redox axes if requested
     if include_redox_axes and redox_df is not None:
-        red = redox_df[[id_col, "axis_direct", "axis_indirect", "axis_network"]].drop_duplicates(subset=[id_col])
+        red = redox_df[
+            [id_col, "axis_direct", "axis_indirect", "axis_network"]
+        ].drop_duplicates(subset=[id_col])
         red = red.set_index(id_col)
         feat = feat.join(red, how="left")
 
@@ -135,9 +142,10 @@ def build_feature_matrix(
 # 2. PCA
 # ------------------------------------------------------------
 
+
 def fit_pca(
-        feat_df: pd.DataFrame,
-        n_components: int = 3,
+    feat_df: pd.DataFrame,
+    n_components: int = 3,
 ) -> Dict[str, Any]:
     """
     Fit PCA on the standardized feature matrix.
@@ -183,9 +191,10 @@ def fit_pca(
 # 3. FACTOR ANALYSIS
 # ------------------------------------------------------------
 
+
 def fit_factor_analysis(
-        feat_df: pd.DataFrame,
-        n_components: int = 3,
+    feat_df: pd.DataFrame,
+    n_components: int = 3,
 ) -> Dict[str, Any]:
     """
     Fit Factor Analysis (FA) on the standardized feature matrix.
@@ -232,10 +241,11 @@ def fit_factor_analysis(
 # 4. ATTACH LATENT COORDS BACK TO METADATA
 # ------------------------------------------------------------
 
+
 def attach_latent_to_metadata(
-        meta_df: pd.DataFrame,
-        latent_df: pd.DataFrame,
-        id_col: str = "id",
+    meta_df: pd.DataFrame,
+    latent_df: pd.DataFrame,
+    id_col: str = "id",
 ) -> pd.DataFrame:
     """
     Merge latent coordinates back to a per-protein metadata table.

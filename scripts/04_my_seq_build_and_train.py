@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to build sequence-supervised table and train NADPH sequence model.
 UPDATED: Compatible with cetsax.deeplearn.seq_nadph (Transformers backend).
@@ -15,57 +15,111 @@ import json
 import pandas as pd
 import torch
 
-from cetsax import build_sequence_supervised_table
-from cetsax.deeplearn.my_seq_nadph import NADPHSeqConfig, train_seq_model
+from cetsax import (
+    build_sequence_supervised_table,
+    NADPHSeqConfig,
+    train_seq_model,
+)
+
+
 def main() -> None:
-    p = argparse.ArgumentParser(description="Build seq-supervised table and train NADPH seq model (HF Backend).")
+    p = argparse.ArgumentParser(
+        description="Build seq-supervised table and train NADPH seq model (HF Backend)."
+    )
 
     # Inputs/outputs
-    p.add_argument("--fits-csv", default="results/ec50_fits.csv", help="Path to ec50_fits.csv")
-    p.add_argument("--fasta", default="results/protein_sequences.fasta",
-                   help="Path to FASTA.")
-    p.add_argument("--out-supervised", default="results/nadph_seq_supervised.csv",
-                   help="Output CSV with merged EC50 + sequences + labels.")
-    p.add_argument("--out-head", default="results/nadph_seq_head.pt",
-                   help="Output path for trained model.head state_dict.")
-    p.add_argument("--out-meta", default="results/nadph_seq_train_meta.json",
-                   help="Output JSON for config/metrics/cache paths.")
-    p.add_argument("--out-info", default="results/nadph_seq_train_info.csv",
-                   help="Output CSV for per-epoch training info.")
+    p.add_argument(
+        "--fits-csv", default="results/ec50_fits.csv", help="Path to ec50_fits.csv"
+    )
+    p.add_argument(
+        "--fasta", default="results/protein_sequences.fasta", help="Path to FASTA."
+    )
+    p.add_argument(
+        "--out-supervised",
+        default="results/nadph_seq_supervised.csv",
+        help="Output CSV with merged EC50 + sequences + labels.",
+    )
+    p.add_argument(
+        "--out-head",
+        default="results/nadph_seq_head.pt",
+        help="Output path for trained model.head state_dict.",
+    )
+    p.add_argument(
+        "--out-meta",
+        default="results/nadph_seq_train_meta.json",
+        help="Output JSON for config/metrics/cache paths.",
+    )
+    p.add_argument(
+        "--out-info",
+        default="results/nadph_seq_train_info.csv",
+        help="Output CSV for per-epoch training info.",
+    )
 
     # Task
-    p.add_argument("--task", choices=["classification", "regression"], default="classification")
+    p.add_argument(
+        "--task", choices=["classification", "regression"], default="classification"
+    )
     p.add_argument("--use-nss", action="store_true", default=False)
 
     # Training
     p.add_argument("--epochs", type=int, default=10)
     p.add_argument("--device", default="cuda")
     p.add_argument("--lr", type=float, default=1e-4)
-    p.add_argument("--patience", dest="patience", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument(
+        "--patience",
+        dest="patience",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
 
     # Batching & Accumulation (New for 15GB GPU optimization)
-    p.add_argument("--batch-size", type=int, default=2,
-                   help="Actual GPU batch size (keep small for ESM-650M).")
-    p.add_argument("--accum-steps", type=int, default=4,
-                   help="Gradient accumulation steps (Simulated Batch Size = batch_size * accum_steps).")
-    p.add_argument("--head-batch-size", type=int, default=256,
-                   help="Batch size when training head-only (pooled/reps mode).")
+    p.add_argument(
+        "--batch-size",
+        type=int,
+        default=2,
+        help="Actual GPU batch size (keep small for ESM-650M).",
+    )
+    p.add_argument(
+        "--accum-steps",
+        type=int,
+        default=4,
+        help="Gradient accumulation steps (Simulated Batch Size = batch_size * accum_steps).",
+    )
+    p.add_argument(
+        "--head-batch-size",
+        type=int,
+        default=256,
+        help="Batch size when training head-only (pooled/reps mode).",
+    )
 
     # Fine-tuning
-    p.add_argument("--freeze-backbone", action=argparse.BooleanOptionalAction, default=True,
-                   help="If False, fine-tunes the ESM backbone (only in 'tokens' mode).")
+    p.add_argument(
+        "--freeze-backbone",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If False, fine-tunes the ESM backbone (only in 'tokens' mode).",
+    )
 
     # Caching / mode
-    p.add_argument("--train-mode", choices=["pooled", "reps", "tokens"], default="pooled",
-                   help="pooled=Fastest, reps=Explainable, tokens=Fine-tuning.")
+    p.add_argument(
+        "--train-mode",
+        choices=["pooled", "reps", "tokens"],
+        default="pooled",
+        help="pooled=Fastest, reps=Explainable, tokens=Fine-tuning.",
+    )
     p.add_argument("--cache-dir", default="results/cache_seq_nadph")
-    p.add_argument("--cache-fp16", dest="cache_fp16", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument(
+        "--cache-fp16",
+        dest="cache_fp16",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
 
     # Model (HF format)
     p.add_argument(
         "--model-name",
         default="facebook/esm2_t33_650M_UR50D",
-        help="Hugging Face model ID."
+        help="Hugging Face model ID.",
     )
     p.add_argument("--num-classes", type=int, default=2)
     p.add_argument("--max-len", type=int, default=1022)
@@ -118,16 +172,13 @@ def main() -> None:
         num_classes=args.num_classes,
         epochs=args.epochs,
         device=args.device,
-
         # New Batching Logic
         batch_size=args.batch_size,  # GPU BS
         accum_steps=args.accum_steps,  # Grad Accumulation
         head_batch_size=args.head_batch_size,
-
         lr=args.lr,
         max_len=args.max_len,
         freeze_backbone=args.freeze_backbone,
-
         train_mode=args.train_mode,
         cache_dir=args.cache_dir,
         cache_fp16=bool(args.cache_fp16),
@@ -143,7 +194,9 @@ def main() -> None:
     )
 
     if "best_val_acc" in metrics:
-        print(f"Finished. Best Val Loss={metrics['best_val_loss']:.4f}, Acc={metrics['best_val_acc']:.4f}")
+        print(
+            f"Finished. Best Val Loss={metrics['best_val_loss']:.4f}, Acc={metrics['best_val_acc']:.4f}"
+        )
     else:
         print(f"Finished. Best Val Loss={metrics['best_val_loss']:.4f}")
 
@@ -157,8 +210,12 @@ def main() -> None:
     # to reproduce results without the fine-tuned backbone.
     # We warn the user if that's the case.
     if args.train_mode == "tokens" and not args.freeze_backbone:
-        print("[WARNING] You fine-tuned the backbone. Saving only head.pt is insufficient for full inference.")
-        print("[WARNING] Consider modifying script to save full model for fine-tuning scenarios.")
+        print(
+            "[WARNING] You fine-tuned the backbone. Saving only head.pt is insufficient for full inference."
+        )
+        print(
+            "[WARNING] Consider modifying script to save full model for fine-tuning scenarios."
+        )
 
     if hasattr(model, "head"):
         torch.save(model.head.state_dict(), out_head)

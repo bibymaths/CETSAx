@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 plotting.py
 ----------------
@@ -47,11 +49,11 @@ from .models import itdr_model
 
 
 def plot_protein_curve(
-        df: pd.DataFrame,
-        fit_df: pd.DataFrame,
-        protein_id: str,
-        condition: Optional[str] = None,
-        ax: Optional[plt.Axes] = None,
+    df: pd.DataFrame,
+    fit_df: pd.DataFrame,
+    protein_id: str,
+    condition: Optional[str] = None,
+    ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
     """
     Plot raw ITDR data and fitted curve for a given protein (and condition).
@@ -81,7 +83,12 @@ def plot_protein_curve(
 
     if not fsub.empty:
         pars = fsub.iloc[0]
-        E0, Emax, logEC50, h = pars["E0"], pars["Emax"], pars["log10_EC50"], pars["Hill"]
+        E0, Emax, logEC50, h = (
+            pars["E0"],
+            pars["Emax"],
+            pars["log10_EC50"],
+            pars["Hill"],
+        )
         x_grid = np.logspace(np.log10(doses.min()), np.log10(doses.max()), 200)
         y_grid = itdr_model(x_grid, E0, Emax, logEC50, h)
         ax.plot(x_grid, y_grid, label="Fit", linestyle="-")
@@ -95,9 +102,9 @@ def plot_protein_curve(
 
 
 def plot_goodness_of_fit(
-        df: pd.DataFrame,
-        fit_df: pd.DataFrame,
-        ax: Optional[plt.Axes] = None,
+    df: pd.DataFrame,
+    fit_df: pd.DataFrame,
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Global goodness-of-fit plot: observed vs predicted values for all proteins,
@@ -151,14 +158,10 @@ def plot_goodness_of_fit(
 
     # Condition colors
     unique_conds = pd.unique(cond_labels)
-    colors = {cond: f"C{i}" for i, cond in enumerate(unique_conds)}
 
     for cond in unique_conds:
         m = cond_labels == cond
-        ax.scatter(
-            pred_vals[m], obs_vals[m],
-            alpha=0.5, s=10, label=str(cond)
-        )
+        ax.scatter(pred_vals[m], obs_vals[m], alpha=0.5, s=10, label=str(cond))
 
     # 1:1 diagonal
     lo = min(obs_vals.min(), pred_vals.min())

@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 viz.py
 ------
@@ -48,11 +50,12 @@ import matplotlib.pyplot as plt
 # I. PATHWAY EFFECTS & ENRICHMENT
 # ============================================================
 
+
 def plot_pathway_effects_bar(
-        path_df: pd.DataFrame,
-        metric: str = "NSS_mean",
-        top_n: int = 20,
-        ax: Optional[plt.Axes] = None,
+    path_df: pd.DataFrame,
+    metric: str = "NSS_mean",
+    top_n: int = 20,
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Horizontal barplot of pathway-level effects.
@@ -94,9 +97,9 @@ def plot_pathway_effects_bar(
 
 
 def plot_pathway_enrichment_volcano(
-        enr_df: pd.DataFrame,
-        ax: Optional[plt.Axes] = None,
-        label_top_n: int = 10,
+    enr_df: pd.DataFrame,
+    ax: Optional[plt.Axes] = None,
+    label_top_n: int = 10,
 ):
     """
     Plot volcano plot of pathway over-representation analysis.
@@ -146,12 +149,13 @@ def plot_pathway_enrichment_volcano(
 # J. REDOX AXES & ROLES
 # ============================================================
 
+
 def plot_redox_axes_scatter(
-        redox_df: pd.DataFrame,
-        x_axis: str = "axis_direct",
-        y_axis: str = "axis_indirect",
-        color_by: str = "redox_role",
-        ax: Optional[plt.Axes] = None,
+    redox_df: pd.DataFrame,
+    x_axis: str = "axis_direct",
+    y_axis: str = "axis_indirect",
+    color_by: str = "redox_role",
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Scatter of redox axes (e.g. direct vs indirect), colored by role.
@@ -195,9 +199,9 @@ def plot_redox_axes_scatter(
 
 
 def plot_redox_role_composition(
-        path_redox_df: pd.DataFrame,
-        top_n: int = 20,
-        ax: Optional[plt.Axes] = None,
+    path_redox_df: pd.DataFrame,
+    top_n: int = 20,
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Stacked barplot of redox role composition per pathway.
@@ -252,14 +256,15 @@ def plot_redox_role_composition(
 # K. LATENT FACTORS (PCA / FA)
 # ============================================================
 
+
 def plot_pca_scores(
-        scores_df: pd.DataFrame,
-        meta_df: Optional[pd.DataFrame] = None,
-        id_col: str = "id",
-        color_by: Optional[str] = None,
-        pc_x: str = "PC1",
-        pc_y: str = "PC2",
-        ax: Optional[plt.Axes] = None,
+    scores_df: pd.DataFrame,
+    meta_df: Optional[pd.DataFrame] = None,
+    id_col: str = "id",
+    color_by: Optional[str] = None,
+    pc_x: str = "PC1",
+    pc_y: str = "PC2",
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Scatter of PCA scores (PC1 vs PC2), optionally colored by a metadata column.
@@ -309,13 +314,13 @@ def plot_pca_scores(
 
 
 def plot_factor_scores(
-        scores_df: pd.DataFrame,
-        meta_df: Optional[pd.DataFrame] = None,
-        id_col: str = "id",
-        color_by: Optional[str] = None,
-        f_x: str = "F1",
-        f_y: str = "F2",
-        ax: Optional[plt.Axes] = None,
+    scores_df: pd.DataFrame,
+    meta_df: Optional[pd.DataFrame] = None,
+    id_col: str = "id",
+    color_by: Optional[str] = None,
+    f_x: str = "F1",
+    f_y: str = "F2",
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Scatter of factor analysis scores (F1 vs F2), optionally colored by a metadata column.
@@ -352,13 +357,14 @@ def plot_factor_scores(
 # L. MIXTURE CLUSTERS
 # ============================================================
 
+
 def plot_mixture_clusters_in_pca(
-        pca_scores: pd.DataFrame,
-        cluster_df: pd.DataFrame,
-        id_col: str = "id",
-        pc_x: str = "PC1",
-        pc_y: str = "PC2",
-        ax: Optional[plt.Axes] = None,
+    pca_scores: pd.DataFrame,
+    cluster_df: pd.DataFrame,
+    id_col: str = "id",
+    pc_x: str = "PC1",
+    pc_y: str = "PC2",
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Plot mixture clusters in PCA space (PC1 vs PC2).
@@ -404,8 +410,8 @@ def plot_mixture_clusters_in_pca(
 
 
 def plot_cluster_size_bar(
-        cluster_df: pd.DataFrame,
-        ax: Optional[plt.Axes] = None,
+    cluster_df: pd.DataFrame,
+    ax: Optional[plt.Axes] = None,
 ):
     """
     Barplot of mixture cluster sizes.

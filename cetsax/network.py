@@ -1,3 +1,5 @@
+# ================================================================================
+
 """
 network.py
 ----------
@@ -62,8 +64,7 @@ def compute_costab_matrix(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_network_from_matrix(
-        corr_matrix: pd.DataFrame,
-        cutoff: float = 0.7
+    corr_matrix: pd.DataFrame, cutoff: float = 0.7
 ) -> nx.Graph:
     """
     Convert correlation matrix into a network graph.

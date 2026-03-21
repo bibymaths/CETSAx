@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 """
 Script to fit ITDR EC50 curves for all proteins in a CETSA dataset.
 """
