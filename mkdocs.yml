@@ -8,7 +8,6 @@ site_author: Abhinav Mishra
 theme:
   name: shadcn
   katex_options: {}
-  icon: assets/logo.svg
 
 plugins:
   - mkdocstrings:
