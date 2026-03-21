@@ -125,5 +125,3 @@ If you use this project, please cite:
 ## License
 
 BSD 3-Clause
-
-```
