@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to build sequence-supervised table and train NADPH sequence model.

@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to run Bayesian EC50 inference in parallel using joblib.

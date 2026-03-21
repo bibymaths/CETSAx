@@ -29,8 +29,8 @@ jobs:
 
       - name: Run Ruff (Linter & Formatter)
         run: |
-          uv run ruff check src/ tests/
-          uv run ruff format --check src/ tests/
+          uv run ruff check cetsax/ scripts/
+          uv run ruff format --check cetsax/ scripts/
 
       - name: Run MyPy (Type Checker)
-        run: uv run mypy src/ --ignore-missing-imports
+        run: uv run mypy cetsax/ --ignore-missing-imports

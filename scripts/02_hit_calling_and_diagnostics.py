@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to perform hit calling and generate diagnostic plots for CETSA EC50 fits.

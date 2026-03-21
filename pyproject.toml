@@ -88,3 +88,15 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["cetsax"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pandas-stubs>=2.3.3.260113",
+    "scipy-stubs>=1.15.3.0",
+    "types-networkx>=3.6.1.20260303",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-requests>=2.32.4.20260107",
+    "types-seaborn>=0.13.2.20251221",
+    "types-tqdm>=4.67.3.20260303",
+]

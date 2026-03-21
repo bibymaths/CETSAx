@@ -42,7 +42,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [ ./src ]
+          paths: [ ./cetsax ]
           options:
             docstring_style: numpy
 extra:
@@ -51,14 +51,35 @@ extra:
       link: https://github.com/bibymaths
 
 copyright: "© 2026 Abhinav Mishra"
+
 nav:
   - Home: index.md
-  - Scientific Model: model.md
+
+  - Scientific Model:
+      - Curve Fitting: curve_fitting.md
+      - Sensitivity Scoring: sensitivity_scoring.md
+      - Equations: equations.md
+
+  - Systems Analysis:
+      - Pathway Enrichment: pathway_enrichment.md
+      - Network Analysis: network_analysis.md
+      - Latent Analysis: latent_analysis.md
+
+  - Sequence Modeling:
+      - Overview: sequence_modeling.md
+      - Explainability: explainability.md
+
+  - Visualization: visualization.md
+
   - Usage: usage.md
+
   - API Reference: api.md
+
   - Limitations: limitations.md
-  - Citation: citation.md
+
   - Contributing: contributing.md
+
+  - Citation: citation.md
 
 markdown_extensions:
   - admonition

@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to build CETSA co-stabilization network from processed data.

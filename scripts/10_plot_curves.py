@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to plot individual protein CETSA curves and global goodness-of-fit.

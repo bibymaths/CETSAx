@@ -1,5 +1,3 @@
-                   
-
 # !/usr/bin/env python
 """
 Script to perform machine learning analyses on CETSA melting curves.
