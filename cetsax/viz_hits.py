@@ -114,9 +114,7 @@ def build_hits_table(
     def dominant_class(d):
         if not isinstance(d, dict):
             return "weak"
-        strong = d.get("strong", 0)
-        weak = d.get("weak", 0)
-        if strong > 0:
+        if d.get("strong", 0) > 0:
             return "strong"
         return "weak"
 

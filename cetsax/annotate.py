@@ -293,7 +293,10 @@ def write_fastas_with_ids(
 
             lines = fasta.strip().splitlines()
             # drop original header line(s)
-            seq_lines = [l for l in lines if not l.startswith(">")]
+
+            # remove ambiguous variable name
+
+            seq_lines = [line for line in lines if not line.startswith(">")]
             if not seq_lines:
                 continue
 

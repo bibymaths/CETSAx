@@ -153,7 +153,6 @@ def plot_goodness_of_fit(
 
     # Condition colors
     unique_conds = pd.unique(cond_labels)
-    colors = {cond: f"C{i}" for i, cond in enumerate(unique_conds)}
 
     for cond in unique_conds:
         m = cond_labels == cond

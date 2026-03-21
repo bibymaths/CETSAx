@@ -51,10 +51,7 @@ from cetsax import (
 )
 from cetsax import compute_sensitivity_scores
 from cetsax import (
-    plot_pathway_effects_bar,
-    plot_pathway_enrichment_volcano,
     plot_redox_axes_scatter,
-    plot_redox_role_composition,
     plot_pca_scores,
     plot_mixture_clusters_in_pca,
     plot_cluster_size_bar,

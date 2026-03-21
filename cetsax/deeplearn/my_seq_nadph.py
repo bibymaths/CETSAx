@@ -326,7 +326,8 @@ class NADPHSeqModel(nn.Module):
 # -----------------------------------------------------------------------------
 def build_token_cache(csv_path, cfg) -> Path:
     out = Path(cfg.cache_dir) / f"tokens_{Path(csv_path).stem}.pt"
-    if out.exists(): return out
+    if out.exists():
+        return out
 
     print("[Cache] Tokenizing sequences...")
     df = pd.read_csv(csv_path)
@@ -359,7 +360,8 @@ def build_token_cache(csv_path, cfg) -> Path:
 def build_pooled_cache(token_path, cfg) -> Path:
     # 1. Rename 'out' to 'cache_path' to avoid ambiguity
     cache_path = Path(cfg.cache_dir) / f"pooled_{cfg.model_name.replace('/', '_')}.pt"
-    if cache_path.exists(): return cache_path
+    if cache_path.exists():
+        return cache_path
 
     print("[Cache] Building pooled embeddings (Transformers)...")
     data = torch.load(token_path)
@@ -589,7 +591,7 @@ def train_seq_model(
         else:
             try:
                 model.load_state_dict(best_model_state)
-            except:
+            except RuntimeError:
                 model.head.load_state_dict(best_model_state)
 
     return model, {"best_val_loss": best_val_loss}, {}, pd.DataFrame(history)

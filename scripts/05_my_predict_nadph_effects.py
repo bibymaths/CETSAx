@@ -43,7 +43,8 @@ def read_fasta_robust(fasta_path: str | Path) -> Dict[str, str]:
     with fasta_path.open() as fh:
         for line in fh:
             line = line.strip()
-            if not line: continue
+            if not line:
+                continue
             if line.startswith(">"):
                 current_id = line[1:].split()[0]
                 # Clean leading > if present in split (rare but possible)
@@ -63,7 +64,8 @@ def clean_id(pid: str, method: str) -> str:
         # >sp|P12345|NAME -> P12345
         if "|" in pid:
             parts = pid.split("|")
-            if len(parts) >= 2: return parts[1]
+            if len(parts) >= 2:
+                return parts[1]
         return pid
     elif method == "remove_suffix":
         # P12345_1 -> P12345
@@ -315,7 +317,6 @@ def _load_checkpoint_robust(model, path, device):
     state = torch.load(path, map_location=device)
 
     # Check for norm layer mismatch
-    model_keys = set(model.head.state_dict().keys())
     ckpt_keys = set(state.keys())
 
     # If checkpoint keys don't start with "head.", they might be the head module directly
@@ -386,7 +387,8 @@ def main():
             artifacts = meta.get("artifacts", {})
 
             # Fill defaults from Meta
-            if not args.model_name: args.model_name = meta_cfg.get("model_name", args.model_name)
+            if not args.model_name:
+                args.model_name = meta_cfg.get("model_name", args.model_name)
             if not args.supervised_csv and "supervised_csv" in artifacts:
                 args.supervised_csv = artifacts["supervised_csv"]
         except Exception as e:

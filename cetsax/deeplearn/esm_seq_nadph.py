@@ -927,11 +927,9 @@ def train_seq_model(
 
     # ---- loss + sampler ----
     sampler_train = None
-    sampler_val = None
 
     if cfg.task == "classification":
         train_labels = _get_labels_for_split(train_ds)
-        val_labels = _get_labels_for_split(val_ds)
 
         class_counts = torch.bincount(torch.tensor(train_labels, dtype=torch.long)).float()
         class_counts[class_counts == 0] = 1.0
@@ -944,10 +942,8 @@ def train_seq_model(
         criterion = FocalLoss(alpha=weights_dev, gamma=cfg.gamma_focal)
 
         sample_weights_train = [float(weights_cpu[int(lbl)]) for lbl in train_labels]
-        sample_weights_val = [float(weights_cpu[int(lbl)]) for lbl in val_labels]
 
         sampler_train = WeightedRandomSampler(sample_weights_train, num_samples=len(train_ds), replacement=True)
-        sampler_val = WeightedRandomSampler(sample_weights_val, num_samples=len(val_ds), replacement=True)
     else:
         criterion = nn.MSELoss()
 

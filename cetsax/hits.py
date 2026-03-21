@@ -42,14 +42,14 @@ def call_hits(
         return fit_df.copy()
 
     doses = np.array(DOSE_COLS, dtype=float)
-    ec50_min, ec50_max = doses.min(), doses.max()
 
     hits = (
         fit_df
         .query("R2 >= @r2_min and delta_max >= @delta_min")
-        .query("EC50 >= @ec50_min and EC50 <= @ec50_max")
+        .loc[lambda df: df["EC50"].between(doses.min(), doses.max())]
         .copy()
     )
+
     return hits
 
 

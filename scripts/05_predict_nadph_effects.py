@@ -695,7 +695,6 @@ def main() -> None:
     if args.meta is not None:
         meta = json.loads(Path(args.meta).read_text())
         cfg = meta.get("config", {})
-        cache_dir = cfg.get("cache_dir")
         artifacts = meta.get("artifacts", {})
 
         # task / model defaults

@@ -200,7 +200,7 @@ def visualize_predictions(
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            _savefig(out_dir, f'plot_4_saliency_map.png')
+            _savefig(out_dir, 'plot_4_saliency_map.png')
         else:
             print("No IG/Saliency scores found in predictions file.")
     else:
@@ -217,7 +217,7 @@ def visualize_predictions(
     # Adjust '10' based on your specific data range
     plot_df = df[(df['EC50'] < 10) & (df['EC50'] > 0)].copy()
 
-    scatter = sns.scatterplot(
+    sns.scatterplot(
         data=plot_df,
         x='EC50',
         y='p_class1',
@@ -483,7 +483,8 @@ def generate_bio_insight(
     def get_terms(series):
         all_terms = []
         for item in series:
-            if pd.isna(item): continue
+            if pd.isna(item):
+                continue
             # Split "reactome:R-HSA-123:Name" -> "Name"
             terms = str(item).split(';')
             for t in terms:
@@ -491,7 +492,8 @@ def generate_bio_insight(
                     all_terms.append(t.split(':')[-1])
                 elif t.startswith('GO'):
                     parts = t.split(':')
-                    if len(parts) > 2: all_terms.append(parts[-1])
+                    if len(parts) > 2:
+                        all_terms.append(parts[-1])
                 else:
                     all_terms.append(t)
         return all_terms

@@ -17,10 +17,7 @@ from .config import (
     COND_COL,
     SUM_UNIPEPS_COL,
     SUM_PSMS_COL,
-    COUNTNUM_COL,
-    QC_MIN_UNIQUE_PEPTIDES,
-    QC_MIN_PSMS,
-    QC_MIN_COUNTNUM,
+    COUNTNUM_COL
 )
 
 

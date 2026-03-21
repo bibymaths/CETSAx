@@ -104,8 +104,6 @@ def bayesian_fit_ec50(
         E0 = pm.Normal("E0", mu=1, sigma=0.1)
         Emax = pm.Normal("Emax", mu=1, sigma=0.5)
 
-        EC50 = pm.Deterministic("EC50", 10 ** logEC50)
-
         # Likelihood
         def itdr(c, E0, Emax, logEC50, Hill):
             return E0 + (Emax - E0) / (1 + (10 ** logEC50 / c) ** Hill)
