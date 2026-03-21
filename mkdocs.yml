@@ -3,7 +3,6 @@ repo_url: https://github.com/bibymaths/CETSAx
 
 site_name: CETSAx
 site_description: CETSA-MS modelling toolkit for dose–response analysis, binder classification, Bayesian inference, ML curve typing, and proteome-wide stability networks.
-site_author: Abhinav Mishra
 
 theme:
   name: shadcn
