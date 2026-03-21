@@ -68,7 +68,9 @@ def main() -> None:
         cond_col="condition",
     )
 
-    print(f"Hit calling completed. Ranked hits table at: {out_dir / 'cetsa_hits_ranked.csv'}")
+    print(
+        f"Hit calling completed. Ranked hits table at: {out_dir / 'cetsa_hits_ranked.csv'}"
+    )
     print("Generated artifacts:")
     for k, v in paths.items():
         if k == "hits_table":

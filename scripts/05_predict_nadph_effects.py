@@ -7,6 +7,7 @@ Modes:
 - reps:   uses cached residue reps + mask (fast, supports saliency/IG without ESM)
 - tokens: runs ESM forward (slow, supports saliency/IG)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,7 +34,7 @@ from cetsax.deeplearn.esm_seq_nadph import (
 # Helpers
 # -----------------------------
 def chunk_list(xs: List, size: int) -> List[List]:
-    return [xs[i:i + size] for i in range(0, len(xs), size)]
+    return [xs[i : i + size] for i in range(0, len(xs), size)]
 
 
 def _auto_device(device: str) -> torch.device:
@@ -73,7 +74,9 @@ class HeadOnlyModel(nn.Module):
     Matches NADPHSeqModel.head output behavior.
     """
 
-    def __init__(self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3):
+    def __init__(
+        self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3
+    ):
         super().__init__()
         self.task = task
         self.norm = nn.LayerNorm(embed_dim)
@@ -101,7 +104,9 @@ class RepsHeadModel(nn.Module):
     AttentionPooling + LayerNorm + MLP head.
     """
 
-    def __init__(self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3):
+    def __init__(
+        self, embed_dim: int, task: str, num_classes: int = 2, dropout: float = 0.3
+    ):
         super().__init__()
         self.task = task
         self.pooler = AttentionPooling(embed_dim)
@@ -129,14 +134,19 @@ class RepsHeadModel(nn.Module):
 # Cache readers
 # -----------------------------
 
+
 def _load_pooled_cache(pooled_pt: str | Path) -> Tuple[List[str], torch.Tensor]:
     obj = torch.load(pooled_pt, map_location="cpu", weights_only=False)
     if "ids" not in obj or "pooled" not in obj:
-        raise ValueError(f"{pooled_pt} must contain keys 'ids' and 'pooled'. Keys={list(obj.keys())}")
+        raise ValueError(
+            f"{pooled_pt} must contain keys 'ids' and 'pooled'. Keys={list(obj.keys())}"
+        )
     return [str(x) for x in obj["ids"]], obj["pooled"]
 
 
-def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[str], List[torch.Tensor], List[torch.Tensor]]:
+def _load_reps_cache(
+    reps_pt: str | Path,
+) -> Tuple[List[str], List[torch.Tensor], List[torch.Tensor]]:
     obj = torch.load(reps_pt, map_location="cpu", weights_only=False)
     for k in ("ids", "reps", "mask"):
         if k not in obj:
@@ -176,30 +186,27 @@ def _load_reps_cache(reps_pt: str | Path) -> Tuple[List[str], List[torch.Tensor]
 # Main prediction function
 # -----------------------------
 def predict_nadph_from_fasta(
-        fasta_path: str | Path,
-        head_checkpoint: str | Path,
-        mode: str = "pooled",  # pooled | reps | tokens
-        model_name: str = "esm2_t33_650M_UR50D",
-        task: str = "classification",
-        num_classes: int = 2,
-        max_len: int = 1022,
-        repr_layer: int = 33,
-        device: str = "auto",
-
-        # batching
-        batch_size: int = 256,  # for head-only (pooled/reps)
-        esm_batch_size: int = 8,  # tokens-mode (auto-clamped on cuda)
-
-        # caches + alignment
-        pooled_cache_pt: Optional[str | Path] = None,
-        reps_cache_pt: Optional[str | Path] = None,
-        supervised_csv_for_alignment: Optional[str | Path] = None,
-
-        # interpretability
-        compute_saliency: bool = False,
-        compute_ig: bool = False,
-        target_class: Optional[int] = None,
-        ig_steps: int = 50,
+    fasta_path: str | Path,
+    head_checkpoint: str | Path,
+    mode: str = "pooled",  # pooled | reps | tokens
+    model_name: str = "esm2_t33_650M_UR50D",
+    task: str = "classification",
+    num_classes: int = 2,
+    max_len: int = 1022,
+    repr_layer: int = 33,
+    device: str = "auto",
+    # batching
+    batch_size: int = 256,  # for head-only (pooled/reps)
+    esm_batch_size: int = 8,  # tokens-mode (auto-clamped on cuda)
+    # caches + alignment
+    pooled_cache_pt: Optional[str | Path] = None,
+    reps_cache_pt: Optional[str | Path] = None,
+    supervised_csv_for_alignment: Optional[str | Path] = None,
+    # interpretability
+    compute_saliency: bool = False,
+    compute_ig: bool = False,
+    target_class: Optional[int] = None,
+    ig_steps: int = 50,
 ) -> pd.DataFrame:
     fasta_path = Path(fasta_path)
     head_checkpoint = Path(head_checkpoint)
@@ -209,7 +216,9 @@ def predict_nadph_from_fasta(
         raise ValueError("mode must be one of: pooled, reps, tokens")
 
     if (compute_saliency or compute_ig) and mode == "pooled":
-        raise ValueError("Saliency/IG requires residue-level reps. Use mode=reps or mode=tokens.")
+        raise ValueError(
+            "Saliency/IG requires residue-level reps. Use mode=reps or mode=tokens."
+        )
 
     # 1) Load sequences
     seq_dict: Dict[str, str] = read_fasta_to_dict(fasta_path)
@@ -288,7 +297,9 @@ def predict_nadph_from_fasta(
 
     if mode == "pooled":
         if pooled_cache_pt is None:
-            raise ValueError("mode=pooled requires pooled_cache_pt (use --pooled-cache or --meta).")
+            raise ValueError(
+                "mode=pooled requires pooled_cache_pt (use --pooled-cache or --meta)."
+            )
 
         ids, X = _load_pooled_cache(pooled_cache_pt)
         id_to_idx = {pid: i for i, pid in enumerate(ids)}
@@ -301,7 +312,9 @@ def predict_nadph_from_fasta(
         X_sel = X[idxs].float()  # fp32 for stable inference
 
         embed_dim = int(X_sel.shape[1])
-        model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+        model = NADPHSeqModel(
+            esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes
+        ).to(device_t)
 
         state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
         model.head.load_state_dict(state, strict=True)
@@ -319,7 +332,11 @@ def predict_nadph_from_fasta(
                     preds = probs.argmax(axis=1)
                     for k, pid in enumerate(keep[j0:j1]):
                         pc = int(preds[k])
-                        row = {"id": pid, "pred_class_idx": pc, "pred_class": int_to_class.get(pc, f"class_{pc}")}
+                        row = {
+                            "id": pid,
+                            "pred_class_idx": pc,
+                            "pred_class": int_to_class.get(pc, f"class_{pc}"),
+                        }
                         for c in range(probs.shape[1]):
                             row[f"p_class{c}"] = float(probs[k, c])
                         rows.append(row)
@@ -457,7 +474,9 @@ def predict_nadph_from_fasta(
 
     if mode == "reps":
         if reps_cache_pt is None:
-            raise ValueError("mode=reps requires reps_cache_pt (use --reps-cache or --meta).")
+            raise ValueError(
+                "mode=reps requires reps_cache_pt (use --reps-cache or --meta)."
+            )
 
         ids, reps_list, mask_list = _load_reps_cache(reps_cache_pt)
         id_to_idx = {pid: i for i, pid in enumerate(ids)}
@@ -468,18 +487,20 @@ def predict_nadph_from_fasta(
 
         embed_dim = int(reps_list[id_to_idx[keep[0]]].shape[-1])
 
-        model = NADPHSeqModel(esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+        model = NADPHSeqModel(
+            esm_model=None, embed_dim=embed_dim, task=task, num_classes=num_classes
+        ).to(device_t)
         state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
         model.head.load_state_dict(state, strict=True)
         model.eval()
 
         rows = []
-        grad_enabled = (compute_saliency or compute_ig)
+        grad_enabled = compute_saliency or compute_ig
         ctx = torch.enable_grad if grad_enabled else torch.no_grad
 
         with ctx():
             for j0 in tqdm(range(0, len(keep), batch_size), desc="Predict (reps)"):
-                batch_ids = keep[j0:j0 + batch_size]
+                batch_ids = keep[j0 : j0 + batch_size]
                 idxs = [id_to_idx[pid] for pid in batch_ids]
 
                 reps_batch = [reps_list[i].float() for i in idxs]
@@ -512,11 +533,16 @@ def predict_nadph_from_fasta(
                 sal_scores = None
                 ig_scores = None
                 if compute_saliency:
-                    sal_scores = compute_residue_saliency_from_reps(model, reps_pad, mask_pad,
-                                                                    target_class=target_class).cpu()
+                    sal_scores = compute_residue_saliency_from_reps(
+                        model, reps_pad, mask_pad, target_class=target_class
+                    ).cpu()
                 if compute_ig:
                     ig_scores = compute_residue_integrated_gradients_from_reps(
-                        model, reps_pad, mask_pad, target_class=target_class, steps=ig_steps
+                        model,
+                        reps_pad,
+                        mask_pad,
+                        target_class=target_class,
+                        steps=ig_steps,
                     ).cpu()
 
                 for i, pid in enumerate(batch_ids):
@@ -554,13 +580,15 @@ def predict_nadph_from_fasta(
     batch_converter = alphabet.get_batch_converter()
 
     embed_dim = int(esm_model.embed_dim)
-    head_model = RepsHeadModel(embed_dim=embed_dim, task=task, num_classes=num_classes).to(device_t)
+    head_model = RepsHeadModel(
+        embed_dim=embed_dim, task=task, num_classes=num_classes
+    ).to(device_t)
     state = torch.load(head_checkpoint, map_location=device_t, weights_only=False)
     head_model.head.load_state_dict(state, strict=True)
     head_model.eval()
 
     rows = []
-    grad_enabled = (compute_saliency or compute_ig)
+    grad_enabled = compute_saliency or compute_ig
     ctx = torch.enable_grad if grad_enabled else torch.no_grad
 
     id_chunks = chunk_list(fasta_ids, esm_bs)
@@ -577,7 +605,7 @@ def predict_nadph_from_fasta(
 
             _, _, toks = batch_converter(seq_chunk)
             toks = toks.to(device_t)
-            mask = (toks != 1)
+            mask = toks != 1
 
             out = esm_model(toks, repr_layers=[repr_layer], return_contacts=False)
             reps = out["representations"][repr_layer]  # (B,L,D)
@@ -647,10 +675,10 @@ def predict_nadph_from_fasta(
 
                 seq_len = len(seq_chunk[i][1])
                 if compute_saliency and sal_scores is not None:
-                    s = sal_scores[i, 1: seq_len + 1].numpy()
+                    s = sal_scores[i, 1 : seq_len + 1].numpy()
                     row["saliency"] = ";".join(f"{x:.6f}" for x in s)
                 if compute_ig and ig_scores is not None:
-                    g = ig_scores[i, 1: seq_len + 1].numpy()
+                    g = ig_scores[i, 1 : seq_len + 1].numpy()
                     row["ig"] = ";".join(f"{x:.6f}" for x in g)
 
                 rows.append(row)
@@ -659,20 +687,34 @@ def predict_nadph_from_fasta(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Predict NADPH responsiveness from sequences using trained head.")
+    parser = argparse.ArgumentParser(
+        description="Predict NADPH responsiveness from sequences using trained head."
+    )
 
     parser.add_argument("--fasta", default="../results/protein_sequences.fasta")
-    parser.add_argument("--head", dest="head_checkpoint", default="../results/nadph_seq_head.pt")
-    parser.add_argument("--mode", choices=["pooled", "reps", "tokens"], default="pooled")
-    parser.add_argument("--meta", default=None, help="Training meta JSON (recommended).")
+    parser.add_argument(
+        "--head", dest="head_checkpoint", default="../results/nadph_seq_head.pt"
+    )
+    parser.add_argument(
+        "--mode", choices=["pooled", "reps", "tokens"], default="pooled"
+    )
+    parser.add_argument(
+        "--meta", default=None, help="Training meta JSON (recommended)."
+    )
 
     parser.add_argument("--pooled-cache", default=None)
     parser.add_argument("--reps-cache", default=None)
-    parser.add_argument("--supervised-csv", default=None, help="Needed to align caches if caches do not include ids.")
+    parser.add_argument(
+        "--supervised-csv",
+        default=None,
+        help="Needed to align caches if caches do not include ids.",
+    )
 
     parser.add_argument("--model-name", default="esm2_t33_650M_UR50D")
     parser.add_argument("--repr-layer", type=int, default=33)
-    parser.add_argument("--task", choices=["classification", "regression"], default="classification")
+    parser.add_argument(
+        "--task", choices=["classification", "regression"], default="classification"
+    )
     parser.add_argument("--num-classes", type=int, default=2)
     parser.add_argument("--max-len", type=int, default=1022)
     parser.add_argument("--device", default="auto")

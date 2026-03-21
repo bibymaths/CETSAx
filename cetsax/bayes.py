@@ -45,13 +45,13 @@ import arviz as az
 
 
 def bayesian_fit_ec50(
-        df: pd.DataFrame,
-        protein_id: str,
-        draws: int = 1000,
-        tune: int = 1000,
-        chains: int = 4,
-        cores: int = 1,
-        progressbar: bool = True
+    df: pd.DataFrame,
+    protein_id: str,
+    draws: int = 1000,
+    tune: int = 1000,
+    chains: int = 4,
+    cores: int = 1,
+    progressbar: bool = True,
 ) -> Dict[str, Any]:
     """
     Fit a hierarchical Bayesian EC50 model for a single protein
@@ -106,7 +106,7 @@ def bayesian_fit_ec50(
 
         # Likelihood
         def itdr(c, E0, Emax, logEC50, Hill):
-            return E0 + (Emax - E0) / (1 + (10 ** logEC50 / c) ** Hill)
+            return E0 + (Emax - E0) / (1 + (10**logEC50 / c) ** Hill)
 
         # Use numerical doses here
         mu = itdr(doses_val.values, E0, Emax, logEC50, Hill)
@@ -121,7 +121,7 @@ def bayesian_fit_ec50(
             chains=chains,
             cores=cores,
             target_accept=0.95,
-            progressbar=progressbar
+            progressbar=progressbar,
         )
 
     return {

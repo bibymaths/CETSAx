@@ -15,9 +15,9 @@ from .config import ID_COL, COND_COL, DOSE_COLS
 
 
 def call_hits(
-        fit_df: pd.DataFrame,
-        r2_min: float = 0.8,
-        delta_min: float = 0.1,
+    fit_df: pd.DataFrame,
+    r2_min: float = 0.8,
+    delta_min: float = 0.1,
 ) -> pd.DataFrame:
     """
     Filter fitted curves to keep only high-confidence hits.
@@ -44,8 +44,7 @@ def call_hits(
     doses = np.array(DOSE_COLS, dtype=float)
 
     hits = (
-        fit_df
-        .query("R2 >= @r2_min and delta_max >= @delta_min")
+        fit_df.query("R2 >= @r2_min and delta_max >= @delta_min")
         .loc[lambda df: df["EC50"].between(doses.min(), doses.max())]
         .copy()
     )
@@ -85,8 +84,7 @@ def summarize_hits(hits_df: pd.DataFrame, min_reps: int = 2) -> pd.DataFrame:
         )
 
     summary = (
-        hits_df
-        .groupby(ID_COL, dropna=False)
+        hits_df.groupby(ID_COL, dropna=False)
         .agg(
             n_reps=(COND_COL, "nunique"),
             EC50_median=("EC50", "median"),

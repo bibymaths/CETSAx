@@ -54,6 +54,7 @@ from sklearn.preprocessing import RobustScaler
 # 0. HELPER: robust scaling to [0, 1]
 # ------------------------------------------------------------
 
+
 def _robust_scale_01(series: pd.Series) -> pd.Series:
     """
     Robustly scale a 1D series to [0, 1] using median/IQR + logistic squash.
@@ -102,15 +103,16 @@ def _inv_scale_01(series: pd.Series) -> pd.Series:
 # 1. CORE: build redox axes per protein
 # ------------------------------------------------------------
 
+
 def build_redox_axes(
-        fits_df: pd.DataFrame,
-        sens_df: pd.DataFrame,
-        hits_df: pd.DataFrame,
-        net_df: Optional[pd.DataFrame] = None,
-        id_col: str = "id",
-        hit_col: str = "dominant_class",
-        degree_col: str = "degree",
-        betweenness_col: str = "betweenness",
+    fits_df: pd.DataFrame,
+    sens_df: pd.DataFrame,
+    hits_df: pd.DataFrame,
+    net_df: Optional[pd.DataFrame] = None,
+    id_col: str = "id",
+    hit_col: str = "dominant_class",
+    degree_col: str = "degree",
+    betweenness_col: str = "betweenness",
 ) -> pd.DataFrame:
     """
     Build redox axes for each protein.
@@ -161,7 +163,9 @@ def build_redox_axes(
 
     # Attach network centrality if provided
     if net_df is not None:
-        net_cols = [c for c in [id_col, degree_col, betweenness_col] if c in net_df.columns]
+        net_cols = [
+            c for c in [id_col, degree_col, betweenness_col] if c in net_df.columns
+        ]
         base = pd.merge(base, net_df[net_cols], on=id_col, how="left")
     else:
         base[degree_col] = np.nan
@@ -200,10 +204,7 @@ def build_redox_axes(
     # Axis 1: direct NADPH core
     #   - High when: EC50 low, delta_max high, R2 good, NSS high, hit strong.
     axis_direct = (
-            0.35 * ec50_inv +
-            0.25 * dm_scaled +
-            0.15 * r2_scaled +
-            0.25 * nss_scaled
+        0.35 * ec50_inv + 0.25 * dm_scaled + 0.15 * r2_scaled + 0.25 * nss_scaled
     )
     # Boost for "strong" hits, dampen for weak
     axis_direct = axis_direct * (1.0 + 0.5 * w_strong - 0.2 * w_weak)
@@ -216,19 +217,12 @@ def build_redox_axes(
     ec50_mid = np.minimum(ec50_mid, 1.0 - ec50_mid)  # highest in midrange
 
     axis_indirect = (
-            0.30 * ec50_mid +
-            0.30 * dm_scaled +
-            0.20 * nss_scaled +
-            0.20 * r2_scaled
+        0.30 * ec50_mid + 0.30 * dm_scaled + 0.20 * nss_scaled + 0.20 * r2_scaled
     )
 
     # Axis 3: network mediator
     #   - High when: centrality high, NSS moderate, not extremely strong direct.
-    axis_network = (
-            0.6 * centrality +
-            0.25 * nss_scaled +
-            0.15 * r2_scaled
-    )
+    axis_network = 0.6 * centrality + 0.25 * nss_scaled + 0.15 * r2_scaled
 
     # Normalize axes to [0,1] for interpretability
     def _norm01(s: pd.Series) -> pd.Series:
@@ -288,11 +282,12 @@ def build_redox_axes(
 # 2. PATHWAY-LEVEL REDOX SUMMARIES
 # ------------------------------------------------------------
 
+
 def summarize_redox_by_pathway(
-        redox_df: pd.DataFrame,
-        annot_df: pd.DataFrame,
-        id_col: str = "id",
-        path_col: str = "pathway",
+    redox_df: pd.DataFrame,
+    annot_df: pd.DataFrame,
+    id_col: str = "id",
+    path_col: str = "pathway",
 ) -> pd.DataFrame:
     """
     Summarize redox axes and roles per pathway/module.

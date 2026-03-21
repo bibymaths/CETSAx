@@ -55,13 +55,14 @@ from sklearn.preprocessing import StandardScaler
 # 1. FEATURE MATRIX FOR MIXTURE MODELLING
 # ------------------------------------------------------------
 
+
 def build_mixture_features(
-        sens_df: pd.DataFrame,
-        redox_df: Optional[pd.DataFrame] = None,
-        id_col: str = "id",
-        feature_cols: Optional[List[str]] = None,
-        include_redox_axes: bool = True,
-        log_transform_ec50: bool = True,
+    sens_df: pd.DataFrame,
+    redox_df: Optional[pd.DataFrame] = None,
+    id_col: str = "id",
+    feature_cols: Optional[List[str]] = None,
+    include_redox_axes: bool = True,
+    log_transform_ec50: bool = True,
 ) -> pd.DataFrame:
     """
     Build feature matrix for mixture modelling.
@@ -112,7 +113,9 @@ def build_mixture_features(
 
     # Attach redox axes if requested
     if include_redox_axes and redox_df is not None:
-        red = redox_df[[id_col, "axis_direct", "axis_indirect", "axis_network"]].drop_duplicates(subset=[id_col])
+        red = redox_df[
+            [id_col, "axis_direct", "axis_indirect", "axis_network"]
+        ].drop_duplicates(subset=[id_col])
         red = red.set_index(id_col)
         feat = feat.join(red, how="left")
 
@@ -131,11 +134,12 @@ def build_mixture_features(
 # 2. GMM WITH BIC-BASED MODEL SELECTION
 # ------------------------------------------------------------
 
+
 def fit_gmm_bic_grid(
-        feat_df: pd.DataFrame,
-        n_components_grid: List[int] = None,
-        covariance_type: str = "full",
-        random_state: int = 0,
+    feat_df: pd.DataFrame,
+    n_components_grid: List[int] = None,
+    covariance_type: str = "full",
+    random_state: int = 0,
 ) -> Dict[str, Any]:
     """
     Fit Gaussian Mixture Models for a grid of component numbers
@@ -194,10 +198,11 @@ def fit_gmm_bic_grid(
 # 3. CLUSTER ASSIGNMENT & SOFT RESPONSIBILITIES
 # ------------------------------------------------------------
 
+
 def assign_mixture_clusters(
-        feat_df: pd.DataFrame,
-        gmm: GaussianMixture,
-        id_col: str = "id",
+    feat_df: pd.DataFrame,
+    gmm: GaussianMixture,
+    id_col: str = "id",
 ) -> pd.DataFrame:
     """
     Assign mixture clusters and posterior responsibilities for each protein.
@@ -237,11 +242,12 @@ def assign_mixture_clusters(
 # 4. OPTIONAL: SEMANTIC LABELING OF CLUSTERS
 # ------------------------------------------------------------
 
+
 def label_clusters_by_sensitivity(
-        sens_df: pd.DataFrame,
-        cluster_df: pd.DataFrame,
-        id_col: str = "id",
-        score_col: str = "NSS",
+    sens_df: pd.DataFrame,
+    cluster_df: pd.DataFrame,
+    id_col: str = "id",
+    score_col: str = "NSS",
 ) -> pd.DataFrame:
     """
     Assign human-readable labels ("high", "medium", "low") to mixture clusters

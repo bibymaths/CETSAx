@@ -24,6 +24,7 @@ from scipy.stats import fisher_exact, mannwhitneyu
 # 0. BASIC HELPERS
 # ------------------------------------------------------------
 
+
 def _benjamini_hochberg(pvals: pd.Series) -> pd.Series:
     """
     Benjamini–Hochberg FDR correction.
@@ -54,12 +55,13 @@ def _benjamini_hochberg(pvals: pd.Series) -> pd.Series:
 # 1. PATHWAY-LEVEL EFFECT SIZE INTEGRATION
 # ------------------------------------------------------------
 
+
 def summarize_pathway_effects(
-        metric_df: pd.DataFrame,
-        annot_df: pd.DataFrame,
-        id_col: str = "id",
-        path_col: str = "pathway",
-        metrics: Iterable[str] = ("NSS", "EC50", "delta_max", "R2"),
+    metric_df: pd.DataFrame,
+    annot_df: pd.DataFrame,
+    id_col: str = "id",
+    path_col: str = "pathway",
+    metrics: Iterable[str] = ("NSS", "EC50", "delta_max", "R2"),
 ) -> pd.DataFrame:
     """
     Summarize NADPH responsiveness per pathway/module.
@@ -106,14 +108,15 @@ def summarize_pathway_effects(
 # 2. OVER-REPRESENTATION ENRICHMENT (BINARY HIT SETS)
 # ------------------------------------------------------------
 
+
 def enrich_overrepresentation(
-        hits_df: pd.DataFrame,
-        annot_df: pd.DataFrame,
-        id_col: str = "id",
-        path_col: str = "pathway",
-        hit_col: str = "hit_class",
-        strong_labels: Iterable[str] = ("strong",),
-        min_genes: int = 3,
+    hits_df: pd.DataFrame,
+    annot_df: pd.DataFrame,
+    id_col: str = "id",
+    path_col: str = "pathway",
+    hit_col: str = "hit_class",
+    strong_labels: Iterable[str] = ("strong",),
+    min_genes: int = 3,
 ) -> pd.DataFrame:
     """
     Perform over-representation analysis for pathways using a binary hit set.
@@ -139,8 +142,9 @@ def enrich_overrepresentation(
         path_col | n_path | n_hits | n_bg | odds_ratio | pval | qval
     """
     # Merge annotations
-    df = pd.merge(hits_df[[id_col, hit_col]], annot_df[[id_col, path_col]],
-                  on=id_col, how="inner")
+    df = pd.merge(
+        hits_df[[id_col, hit_col]], annot_df[[id_col, path_col]], on=id_col, how="inner"
+    )
 
     # Define hit set
     df["is_hit"] = df[hit_col].isin(strong_labels)
@@ -206,13 +210,14 @@ def enrich_overrepresentation(
 # 3. CONTINUOUS ENRICHMENT (MANN–WHITNEY ON NSS / EFFECT SIZE)
 # ------------------------------------------------------------
 
+
 def enrich_continuous_mannwhitney(
-        sens_df: pd.DataFrame,
-        annot_df: pd.DataFrame,
-        score_col: str = "NSS",
-        id_col: str = "id",
-        path_col: str = "pathway",
-        min_genes: int = 3,
+    sens_df: pd.DataFrame,
+    annot_df: pd.DataFrame,
+    score_col: str = "NSS",
+    id_col: str = "id",
+    path_col: str = "pathway",
+    min_genes: int = 3,
 ) -> pd.DataFrame:
     """
     Continuous enrichment per pathway using Mann–Whitney U tests.
@@ -241,8 +246,12 @@ def enrich_continuous_mannwhitney(
     DataFrame
         pathway | n_path | score_mean | score_median | U_stat | pval | qval
     """
-    merged = pd.merge(sens_df[[id_col, score_col]], annot_df[[id_col, path_col]],
-                      on=id_col, how="inner")
+    merged = pd.merge(
+        sens_df[[id_col, score_col]],
+        annot_df[[id_col, path_col]],
+        on=id_col,
+        how="inner",
+    )
 
     all_scores = merged[[id_col, score_col]].drop_duplicates()
     background = all_scores.set_index(id_col)[score_col]

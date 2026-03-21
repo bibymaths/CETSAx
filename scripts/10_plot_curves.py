@@ -66,18 +66,18 @@ def main():
 
     # 2. Individual Hit Curves
     # Plot Top 50 Strong hits
-    top_hits = hits[hits['dominant_class'].isin(['strong'])].head(50)
+    top_hits = hits[hits["dominant_class"].isin(["strong"])].head(50)
 
     curves_dir = out_dir / "individual_curves"
     curves_dir.mkdir(exist_ok=True)
 
     print(f"Plotting {len(top_hits)} individual curves...")
     for _, row in top_hits.iterrows():
-        prot_id = row['id']
+        prot_id = row["id"]
         try:
             # Plot per condition if multiple exist
             # Assuming fits file has 'condition' column
-            conditions = fits[fits['id'] == prot_id]['condition'].unique()
+            conditions = fits[fits["id"] == prot_id]["condition"].unique()
 
             for cond in conditions:
                 fig, ax = plt.subplots()

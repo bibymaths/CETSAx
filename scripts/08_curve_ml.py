@@ -67,7 +67,7 @@ def main():
     outliers = detect_outliers(features)
     outliers.to_csv(out_dir / "curve_outliers.csv")
 
-    n_out = outliers['outlier'].sum()
+    n_out = outliers["outlier"].sum()
     print(f"Found {n_out} outlier curves.")
 
 

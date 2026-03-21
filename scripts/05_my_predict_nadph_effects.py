@@ -6,6 +6,7 @@ ROBUST VERSION:
 - Aligns Model Architecture (Dropout 0.5, LayerNorm) with seq_nadph.py.
 - Auto-detects ID formats to fix mismatches.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -67,12 +68,13 @@ def clean_id(pid: str, method: str) -> str:
         return pid
     elif method == "remove_suffix":
         # P12345_1 -> P12345
-        return re.split(r'[_-]', pid)[0]
+        return re.split(r"[_-]", pid)[0]
     return pid
 
 
-def align_ids(source_ids: List[str], target_ids: List[str], source_name="FASTA", target_name="CSV") -> Tuple[
-    Dict[str, str], List[str]]:
+def align_ids(
+    source_ids: List[str], target_ids: List[str], source_name="FASTA", target_name="CSV"
+) -> Tuple[Dict[str, str], List[str]]:
     """
     Finds mapping from Target (CSV) -> Source (FASTA/Cache).
     Returns:
@@ -89,7 +91,9 @@ def align_ids(source_ids: List[str], target_ids: List[str], source_name="FASTA",
     best_count = 0
     best_mapping = {}
 
-    print(f"\n--- Aligning {target_name} ({len(target_ids)}) to {source_name} ({len(source_ids)}) ---")
+    print(
+        f"\n--- Aligning {target_name} ({len(target_ids)}) to {source_name} ({len(source_ids)}) ---"
+    )
 
     for strat in strategies:
         current_map = {}
@@ -111,7 +115,9 @@ def align_ids(source_ids: List[str], target_ids: List[str], source_name="FASTA",
     print(f"Selected Strategy: '{best_strat}' (Matches: {best_count})")
 
     if best_count == 0:
-        print(f"[CRITICAL WARNING] Zero overlaps found between {source_name} and {target_name}.")
+        print(
+            f"[CRITICAL WARNING] Zero overlaps found between {source_name} and {target_name}."
+        )
         print(f"{source_name} Example: {source_ids[:3]}")
         print(f"{target_name} Example: {target_ids[:3]}")
 
@@ -127,7 +133,7 @@ class AttentionPooling(nn.Module):
         self.attention = nn.Sequential(
             nn.Linear(embed_dim, embed_dim // 2),
             nn.Tanh(),
-            nn.Linear(embed_dim // 2, 1)
+            nn.Linear(embed_dim // 2, 1),
         )
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -152,7 +158,7 @@ class HeadOnlyModel(nn.Module):
             nn.BatchNorm1d(hidden),
             nn.GELU(),
             nn.Dropout(0.5),  # UPDATED: Matches seq_nadph.py
-            nn.Linear(hidden, out_dim)
+            nn.Linear(hidden, out_dim),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -175,7 +181,7 @@ class RepsHeadModel(nn.Module):
             nn.BatchNorm1d(hidden),
             nn.GELU(),
             nn.Dropout(0.5),  # UPDATED: Matches seq_nadph.py
-            nn.Linear(hidden, out_dim)
+            nn.Linear(hidden, out_dim),
         )
 
     def forward(self, reps: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -221,14 +227,18 @@ def predict(args):
         # No intricate alignment needed for pooled mode, we assume 1:1 mapping with cache
         # because the cache was built FROM this CSV.
 
-        model = HeadOnlyModel(embed_dim=X.shape[1], task=args.task, num_classes=args.num_classes).to(device)
+        model = HeadOnlyModel(
+            embed_dim=X.shape[1], task=args.task, num_classes=args.num_classes
+        ).to(device)
         _load_checkpoint_robust(model, args.head, device)
         model.eval()
 
         with torch.no_grad():
-            for i in tqdm(range(0, len(X), args.batch_size), desc="Predicting (Pooled)"):
-                batch_x = X[i:i + args.batch_size].to(device).float()
-                batch_ids = sup_ids[i:i + args.batch_size]
+            for i in tqdm(
+                range(0, len(X), args.batch_size), desc="Predicting (Pooled)"
+            ):
+                batch_x = X[i : i + args.batch_size].to(device).float()
+                batch_ids = sup_ids[i : i + args.batch_size]
                 out = model(batch_x)
                 _store_results(rows, out, batch_ids, args.task)
 
@@ -278,17 +288,28 @@ def predict(args):
         head_model.eval()
 
         def chunker(seq, size):
-            return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+            return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
-        for chunk_ids in tqdm(chunker(fasta_ids, args.esm_batch_size), total=len(fasta_ids) // args.esm_batch_size):
-            seqs = [seq_dict_raw[pid][:args.max_len] for pid in chunk_ids]
+        for chunk_ids in tqdm(
+            chunker(fasta_ids, args.esm_batch_size),
+            total=len(fasta_ids) // args.esm_batch_size,
+        ):
+            seqs = [seq_dict_raw[pid][: args.max_len] for pid in chunk_ids]
 
-            inputs = tokenizer(seqs, return_tensors="pt", padding=True, truncation=True, max_length=args.max_len)
+            inputs = tokenizer(
+                seqs,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=args.max_len,
+            )
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             with torch.no_grad():
                 out_base = base_model(**inputs)
-                logits = head_model(out_base.last_hidden_state, inputs["attention_mask"])
+                logits = head_model(
+                    out_base.last_hidden_state, inputs["attention_mask"]
+                )
 
             _store_results(rows, logits, chunk_ids, args.task)
 
@@ -302,8 +323,11 @@ def predict(args):
         print("Columns:", out_df.columns.tolist())
     else:
         print("[WARNING] No predictions generated. Creating empty CSV with headers.")
-        cols = ["id", "pred_class_idx", "p_class0", "p_class1"] if args.task == "classification" else ["id",
-                                                                                                       "pred_value"]
+        cols = (
+            ["id", "pred_class_idx", "p_class0", "p_class1"]
+            if args.task == "classification"
+            else ["id", "pred_value"]
+        )
         pd.DataFrame(columns=cols).to_csv(args.out, index=False)
 
 
@@ -329,8 +353,12 @@ def _load_checkpoint_robust(model, path, device):
     if missing:
         print(f"[INFO] Missing keys in checkpoint: {missing}")
         if any("norm" in k for k in missing):
-            print("[WARNING] LayerNorm weights were missing. Using initialized weights.")
-            print("          This is expected if training script only saved `model.head`.")
+            print(
+                "[WARNING] LayerNorm weights were missing. Using initialized weights."
+            )
+            print(
+                "          This is expected if training script only saved `model.head`."
+            )
 
 
 def _store_results(rows, logits, batch_ids, task):

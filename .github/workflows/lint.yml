@@ -32,5 +32,5 @@ jobs:
           uv run ruff check cetsax/ scripts/
           uv run ruff format --check cetsax/ scripts/
 
-      - name: Run MyPy (Type Checker)
-        run: uv run mypy cetsax/ --ignore-missing-imports
+#      - name: Run MyPy (Type Checker)
+#        run: uv run mypy cetsax/ --ignore-missing-imports

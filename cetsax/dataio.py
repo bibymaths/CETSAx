@@ -17,7 +17,7 @@ from .config import (
     COND_COL,
     SUM_UNIPEPS_COL,
     SUM_PSMS_COL,
-    COUNTNUM_COL
+    COUNTNUM_COL,
 )
 
 
@@ -66,4 +66,6 @@ def apply_basic_qc(df: pd.DataFrame) -> type[NoneType[Any]]:
         f"{SUM_PSMS_COL} >= @QC_MIN_PSMS and "
         f"{COUNTNUM_COL} >= @QC_MIN_COUNTNUM"
     ).copy()
-    return qc_df[[ID_COL, COND_COL] + DOSE_COLS + [SUM_UNIPEPS_COL, SUM_PSMS_COL, COUNTNUM_COL]]
+    return qc_df[
+        [ID_COL, COND_COL] + DOSE_COLS + [SUM_UNIPEPS_COL, SUM_PSMS_COL, COUNTNUM_COL]
+    ]
