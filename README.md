@@ -24,11 +24,11 @@ Full documentation is available at:
 
 Start here:
 
-- Overview → https://bibymaths.github.io/CETSAx/
-- Usage → https://bibymaths.github.io/CETSAx/usage/
-- Scientific model → https://bibymaths.github.io/CETSAx/curve_fitting/
-- API reference → https://bibymaths.github.io/CETSAx/api/
-- Limitations → https://bibymaths.github.io/CETSAx/limitations/
+- Overview → https://bibymaths.github.io/cetsax/
+- Usage → https://bibymaths.github.io/cetsax/usage/
+- Scientific model → https://bibymaths.github.io/cetsax/curve_fitting/
+- API reference → https://bibymaths.github.io/cetsax/api/
+- Limitations → https://bibymaths.github.io/cetsax/limitations/
 
 ---
 
@@ -75,7 +75,7 @@ snakemake --cores 8
 * Configuration via `config.yaml`
 
 See details:
-👉 [https://bibymaths.github.io/CETSAx/usage/](https://bibymaths.github.io/CETSAx/usage/)
+👉 [https://bibymaths.github.io/cetsax/usage/](https://bibymaths.github.io/cetsax/usage/)
 
 ---
 
@@ -89,7 +89,7 @@ See details:
 * Co-stabilization networks
 
 Interpretation guide:
-👉 [https://bibymaths.github.io/CETSAx/usage/#how-to-work-with-results](https://bibymaths.github.io/CETSAx/usage/#how-to-work-with-results)
+👉 [https://bibymaths.github.io/cetsax/usage/#how-to-work-with-results](https://bibymaths.github.io/cetsax/usage/#how-to-work-with-results)
 
 ---
 
@@ -110,7 +110,7 @@ config.yaml    # configuration
 
 See contribution guidelines:
 
-👉 [https://bibymaths.github.io/CETSAx/contributing/](https://bibymaths.github.io/CETSAx/contributing/)
+👉 [https://bibymaths.github.io/cetsax/contributing/](https://bibymaths.github.io/cetsax/contributing/)
 
 ---
 
@@ -118,7 +118,7 @@ See contribution guidelines:
 
 If you use this project, please cite:
 
-👉 [https://bibymaths.github.io/CETSAx/citation/](https://bibymaths.github.io/CETSAx/citation/)
+👉 [https://bibymaths.github.io/cetsax/citation/](https://bibymaths.github.io/cetsax/citation/)
 
 ---
 

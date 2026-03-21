@@ -1,5 +1,5 @@
-repo_name: bibymaths/CETSAx
-repo_url: https://github.com/bibymaths/CETSAx
+repo_name: bibymaths/cetsax
+repo_url: https://github.com/bibymaths/cetsax
 
 site_name: CETSAx
 site_description: CETSA-MS modelling toolkit for dose–response analysis, binder classification, Bayesian inference, ML curve typing, and proteome-wide stability networks.
