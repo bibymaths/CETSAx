@@ -65,7 +65,7 @@ rule fit_curves:
         fits=f"{RES}/ec50_fits.csv"
     resources:
         mem_mb=8000,
-        runtime="2h",
+        runtime="02:00:00",
         partition="cpu"
     shell:
         r"""
@@ -81,7 +81,7 @@ rule hit_calling:
         fits=rules.fit_curves.output.fits
     resources:
         mem_mb=4000,
-        runtime="1h",
+        runtime="01:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/hit_calling"),
@@ -106,7 +106,7 @@ rule annotate:
         _wait_for_hits=rules.hit_calling.output.hits_csv
     resources:
         mem_mb=4000,
-        runtime="1h",
+        runtime="01:00:00",
         partition="cpu"
     output:
         annot=f"{RES}/protein_annotations.csv",
@@ -128,7 +128,7 @@ rule system_analysis:
         annot=rules.annotate.output.annot
     resources:
         mem_mb=8000,
-        runtime="2h",
+        runtime="02:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/system_analysis"),
@@ -160,7 +160,7 @@ rule train_model:
         _wait_for_sys=rules.system_analysis.output.cluster_labels
     resources:
         mem_mb=16000,
-        runtime="12h",
+        runtime="12:00:00",
         partition="gpu"
     output:
         supervised=f"{RES}/nadph_seq_supervised.csv",
@@ -224,7 +224,7 @@ rule predict:
         meta=rules.train_model.output.meta
     resources:
         mem_mb=16000,
-        runtime="4h",
+        runtime="04:00:00",
         partition="gpu"
     output:
         preds=f"{RES}/predictions_nadph_seq.csv"
@@ -265,7 +265,7 @@ rule visualize:
         hist=rules.train_model.output.history
     resources:
         mem_mb=8000,
-        runtime="2h",
+        runtime="02:00:00",
         partition="cpu"
     output:
         expand(f"{RES}/plots/{{plot}}",plot=[
@@ -307,7 +307,7 @@ rule network_analysis:
         _wait_for_viz="results/plots/plot_1_confusion_matrix.png"
     resources:
         mem_mb=8000,
-        runtime="2h",
+        runtime="02:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/network"),
@@ -330,7 +330,7 @@ rule curve_ml:
         _wait_for_net=rules.network_analysis.output.modules
     resources:
         mem_mb=4000,
-        runtime="1h",
+        runtime="01:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/curve_ml"),
@@ -353,7 +353,7 @@ rule bayesian_fit:
         _wait_for_ml=rules.curve_ml.output.clusters
     resources:
         mem_mb=8000,
-        runtime="4h",
+        runtime="04:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/bayesian"),
@@ -376,7 +376,7 @@ rule detailed_plots:
         _wait_for_bayes=rules.bayesian_fit.output.summary
     resources:
         mem_mb=8000,
-        runtime="2h",
+        runtime="02:00:00",
         partition="cpu"
     output:
         outdir=directory(f"{RES}/detailed_plots"),
@@ -399,7 +399,7 @@ rule model_performance:
         preds=f"{RES}/predictions_nadph_seq.csv"
     resources:
         mem_mb=4000,
-        runtime="30m",
+        runtime="00:30:00",
         partition="cpu"
     output:
         report=f"{RES}/model_performance_report.txt"

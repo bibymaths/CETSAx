@@ -2,8 +2,8 @@ executor: cluster-generic
 cluster-generic-submit-cmd: >
   sbatch
   --job-name={rule}
-  --output=logs/slurm/{rule}_{wildcards}.out
-  --error=logs/slurm/{rule}_{wildcards}.err
+  --output=logs/slurm/{rule}_{jobid}.out
+  --error=logs/slurm/{rule}_{jobid}.err
   --time={resources.runtime}
   --mem={resources.mem_mb}M
   --cpus-per-task={threads}
