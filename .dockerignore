@@ -19,8 +19,7 @@ build/
 # docs / dev artefacts
 docs/
 mkdocs.yml
-*.md
-*.html
+report.html
 *.cff
 .zenodo.json
 tests/
