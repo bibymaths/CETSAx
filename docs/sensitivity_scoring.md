@@ -32,6 +32,11 @@ This reflects biological priorities, where affinity-like behavior (EC50) is most
 - Replicates are aggregated per protein using median or mean.
 - This reduces noise and stabilizes downstream analysis.
 
+![Replicate Consistency](assets/figures/replicate_consistency.png)
+/// caption
+Figure 1: Replicate consistency plot showing EC50 agreement across replicates for all fitted proteins.
+///
+
 ## Output
 
 - NSS (continuous score per protein)

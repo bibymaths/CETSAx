@@ -91,6 +91,25 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["cetsax"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cetsax"]
+
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",

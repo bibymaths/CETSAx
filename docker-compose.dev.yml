@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  cetsax:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEVELOPMENT=1

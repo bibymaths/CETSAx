@@ -63,6 +63,10 @@ rule fit_curves:
         csv=config["input_csv"]
     output:
         fits=f"{RES}/ec50_fits.csv"
+    resources:
+        mem_mb=8000,
+        runtime="2h",
+        partition="cpu"
     shell:
         r"""
         {PY} {SCRIPTS}/01_fit_itdr_curves.py \
@@ -75,6 +79,10 @@ rule fit_curves:
 rule hit_calling:
     input:
         fits=rules.fit_curves.output.fits
+    resources:
+        mem_mb=4000,
+        runtime="1h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/hit_calling"),
         hits_csv=f"{RES}/hit_calling/cetsa_hits_ranked.csv",
@@ -96,6 +104,10 @@ rule annotate:
     input:
         fits=rules.fit_curves.output.fits,
         _wait_for_hits=rules.hit_calling.output.hits_csv
+    resources:
+        mem_mb=4000,
+        runtime="1h",
+        partition="cpu"
     output:
         annot=f"{RES}/protein_annotations.csv",
         fasta=f"{RES}/protein_sequences.fasta"
@@ -114,6 +126,10 @@ rule system_analysis:
         fits=rules.fit_curves.output.fits,
         hits=rules.hit_calling.output.hits_csv,
         annot=rules.annotate.output.annot
+    resources:
+        mem_mb=8000,
+        runtime="2h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/system_analysis"),
         cluster_labels=f"{RES}/system_analysis/mixture_cluster_labels.csv",
@@ -142,6 +158,10 @@ rule train_model:
         fits=rules.fit_curves.output.fits,
         fasta=rules.annotate.output.fasta,
         _wait_for_sys=rules.system_analysis.output.cluster_labels
+    resources:
+        mem_mb=16000,
+        runtime="12h",
+        partition="gpu"
     output:
         supervised=f"{RES}/nadph_seq_supervised.csv",
         head_ckpt=f"{RES}/nadph_seq_head.pt",
@@ -202,6 +222,10 @@ rule predict:
         fasta=rules.annotate.output.fasta,
         head_ckpt=rules.train_model.output.head_ckpt,
         meta=rules.train_model.output.meta
+    resources:
+        mem_mb=16000,
+        runtime="4h",
+        partition="gpu"
     output:
         preds=f"{RES}/predictions_nadph_seq.csv"
     params:
@@ -239,6 +263,10 @@ rule visualize:
         fits=rules.fit_curves.output.fits,
         annot=rules.annotate.output.annot,
         hist=rules.train_model.output.history
+    resources:
+        mem_mb=8000,
+        runtime="2h",
+        partition="cpu"
     output:
         expand(f"{RES}/plots/{{plot}}",plot=[
             "plot_1_confusion_matrix.png",
@@ -277,6 +305,10 @@ rule network_analysis:
     input:
         csv=config["input_csv"],
         _wait_for_viz="results/plots/plot_1_confusion_matrix.png"
+    resources:
+        mem_mb=8000,
+        runtime="2h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/network"),
         modules=f"{RES}/network/network_modules.csv",
@@ -296,6 +328,10 @@ rule curve_ml:
     input:
         csv=config["input_csv"],
         _wait_for_net=rules.network_analysis.output.modules
+    resources:
+        mem_mb=4000,
+        runtime="1h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/curve_ml"),
         clusters=f"{RES}/curve_ml/curve_clusters.csv",
@@ -315,6 +351,10 @@ rule bayesian_fit:
         csv=config["input_csv"],
         hits=rules.hit_calling.output.hits_csv,
         _wait_for_ml=rules.curve_ml.output.clusters
+    resources:
+        mem_mb=8000,
+        runtime="4h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/bayesian"),
         summary=f"{RES}/bayesian/bayesian_ec50_summaries.csv"
@@ -334,6 +374,10 @@ rule detailed_plots:
         fits=rules.fit_curves.output.fits,
         hits=rules.hit_calling.output.hits_csv,
         _wait_for_bayes=rules.bayesian_fit.output.summary
+    resources:
+        mem_mb=8000,
+        runtime="2h",
+        partition="cpu"
     output:
         outdir=directory(f"{RES}/detailed_plots"),
         gof=f"{RES}/detailed_plots/global_goodness_of_fit.png",
@@ -353,6 +397,10 @@ rule model_performance:
     input:
         supervised=f"{RES}/nadph_seq_supervised.csv",
         preds=f"{RES}/predictions_nadph_seq.csv"
+    resources:
+        mem_mb=4000,
+        runtime="30m",
+        partition="cpu"
     output:
         report=f"{RES}/model_performance_report.txt"
     shell:

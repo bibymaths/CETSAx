@@ -34,3 +34,8 @@ These often correspond to:
 - Network structure reveals system-level organization
 
 This layer converts CETSA data into a functional interaction landscape.
+
+![Network Graph](assets/figures/network_graph.png)
+/// caption
+Figure 1: Co-stabilization network of NADPH-responsive proteins. Node colour reflects module membership; edge thickness represents correlation strength.
+///

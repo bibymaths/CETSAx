@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-ROOT = Path('/mnt/data')
+ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

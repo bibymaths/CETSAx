@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  cetsax:
+    image: ghcr.io/bibymaths/cetsax:latest
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - PYTHONUNBUFFERED=1

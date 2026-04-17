@@ -1,0 +1,12 @@
+# Default owner for everything in this repository
+*                    @bibymaths
+
+# Snakemake workflow
+Snakefile            @bibymaths
+config.yaml          @bibymaths
+
+# Documentation
+docs/                @bibymaths
+
+# CI/CD
+.github/             @bibymaths

@@ -31,6 +31,11 @@ Both are corrected using Benjamini–Hochberg FDR.
 
 Using both provides a more complete view.
 
+![Pathway Enrichment](assets/figures/pathway_enrichment.png)
+/// caption
+Figure 1: Pathway enrichment results showing –log₁₀(FDR) for each enriched pathway, coloured by mean NSS.
+///
+
 ## Interpretation
 
 - Enriched pathways indicate coordinated NADPH sensitivity

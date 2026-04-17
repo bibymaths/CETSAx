@@ -1,0 +1,15 @@
+executor: cluster-generic
+cluster-generic-submit-cmd: >
+  sbatch
+  --job-name={rule}
+  --output=logs/slurm/{rule}_{wildcards}.out
+  --error=logs/slurm/{rule}_{wildcards}.err
+  --time={resources.runtime}
+  --mem={resources.mem_mb}M
+  --cpus-per-task={threads}
+  --partition={resources.partition}
+cluster-generic-cancel-cmd: scancel
+cluster-generic-status-cmd: squeue --job {jobid} --noheader --format=%T
+jobs: 100
+latency-wait: 60
+retries: 2

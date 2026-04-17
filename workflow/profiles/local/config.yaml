@@ -1,0 +1,4 @@
+cores: all
+jobs: 1
+latency-wait: 5
+use-conda: false
