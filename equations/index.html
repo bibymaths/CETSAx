@@ -1,0 +1,2281 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="CETSA-MS modelling toolkit for dose–response analysis, binder classification, Bayesian inference, ML curve typing, and proteome-wide stability networks.">
+      
+      
+        <meta name="author" content="Abhinav Mishra">
+      
+      
+      
+        <link rel="prev" href="../sensitivity_scoring/">
+      
+      
+        <link rel="next" href="../pathway_enrichment/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Equations - CETSAx</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Ubuntu";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scientific-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CETSAx" class="md-header__button md-logo" aria-label="CETSAx" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CETSAx
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Equations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bibymaths/CETSAx" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bibymaths/CETSAx
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CETSAx" class="md-nav__button md-logo" aria-label="CETSAx" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CETSAx
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bibymaths/CETSAx" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bibymaths/CETSAx
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design_principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design Principles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scientific Model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scientific Model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../curve_fitting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Curve Fitting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sensitivity_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sensitivity Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Equations
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Equations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-doseresponse-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dose–Response Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Dose–Response Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-logistic-itdr-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Logistic ITDR Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-log-dose-parameterization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Log-Dose Parameterization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-parameter-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Parameter Estimation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Parameter Estimation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-weighted-nonlinear-least-squares" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Weighted Nonlinear Least Squares
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-regularization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Regularization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-monotonicity-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Monotonicity Constraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-fit-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Fit Diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Fit Diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-coefficient-of-determination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Coefficient of Determination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-effect-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Effect Size
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-sensitivity-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Sensitivity Scoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Sensitivity Scoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-feature-vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Feature Vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-robust-scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Robust Scaling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-directional-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Directional Transformations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-composite-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Composite Score
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-pathway-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Pathway Enrichment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Pathway Enrichment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-continuous-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Continuous Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-over-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Over-Representation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-network-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Network Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Network Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-co-stabilization-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Co-Stabilization Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-graph-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Graph Construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-community-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Community Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-latent-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Latent Representation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Latent Representation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-feature-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Feature Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-principal-component-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Principal Component Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-factor-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Factor Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-sequence-based-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Sequence-Based Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Sequence-Based Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Embedding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-attention-pooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Attention Pooling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-prediction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 Prediction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-explainability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Explainability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Explainability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-saliency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 Saliency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-integrated-gradients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 Integrated Gradients
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems Analysis
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Systems Analysis
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pathway_enrichment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pathway Enrichment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../network_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../latent_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Latent Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence Modeling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sequence Modeling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sequence_modeling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../explainability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Explainability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limitations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Limitations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../citation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Citation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-doseresponse-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dose–Response Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Dose–Response Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-logistic-itdr-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Logistic ITDR Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-log-dose-parameterization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Log-Dose Parameterization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-parameter-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Parameter Estimation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Parameter Estimation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-weighted-nonlinear-least-squares" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Weighted Nonlinear Least Squares
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-regularization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Regularization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-monotonicity-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Monotonicity Constraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-fit-diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Fit Diagnostics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Fit Diagnostics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-coefficient-of-determination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Coefficient of Determination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-effect-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Effect Size
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-sensitivity-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Sensitivity Scoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Sensitivity Scoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-feature-vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Feature Vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-robust-scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Robust Scaling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-directional-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Directional Transformations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-composite-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Composite Score
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-pathway-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Pathway Enrichment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Pathway Enrichment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-continuous-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Continuous Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-over-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Over-Representation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-network-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Network Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Network Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-co-stabilization-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Co-Stabilization Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-graph-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Graph Construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-community-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Community Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-latent-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Latent Representation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Latent Representation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-feature-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Feature Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-principal-component-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Principal Component Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-factor-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Factor Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-sequence-based-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Sequence-Based Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Sequence-Based Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Embedding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-attention-pooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Attention Pooling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-prediction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 Prediction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-explainability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Explainability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Explainability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-saliency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 Saliency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-integrated-gradients" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 Integrated Gradients
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="scientific-model">Scientific Model<a class="headerlink" href="#scientific-model" title="Permanent link">&para;</a></h1>
+<p>This section formalizes the mathematical framework underlying CETSAx–NADPH. The model integrates dose–response fitting,
+sensitivity scoring, and systems-level inference into a unified quantitative pipeline.</p>
+<hr />
+<h2 id="1-doseresponse-model">1. Dose–Response Model<a class="headerlink" href="#1-doseresponse-model" title="Permanent link">&para;</a></h2>
+<p>Each protein <span class="arithmatex">\( i \)</span> is observed across a set of concentrations <span class="arithmatex">\( c \in \mathbb{R}_{&gt;0} \)</span>. The observed CETSA signal
+is denoted:</p>
+<div class="arithmatex">\[
+y_i(c)
+\]</div>
+<h3 id="11-logistic-itdr-model">1.1 Logistic ITDR Model<a class="headerlink" href="#11-logistic-itdr-model" title="Permanent link">&para;</a></h3>
+<p>The response is modeled using a 4-parameter logistic function:</p>
+<p>:contentReference[oaicite:0]{index=0}</p>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\( E_0 \)</span>: baseline stability</li>
+<li><span class="arithmatex">\( E_{\max} \)</span>: maximal stability shift</li>
+<li><span class="arithmatex">\( EC_{50} \)</span>: half-maximal effective concentration</li>
+<li><span class="arithmatex">\( h \)</span>: Hill coefficient (cooperativity)</li>
+</ul>
+<h3 id="12-log-dose-parameterization">1.2 Log-Dose Parameterization<a class="headerlink" href="#12-log-dose-parameterization" title="Permanent link">&para;</a></h3>
+<p>Define:</p>
+<div class="arithmatex">\[
+x = \log_{10}(c)
+\]</div>
+<p>Then the model becomes:</p>
+<div class="arithmatex">\[
+y(x) = E_0 + \frac{E_{\max} - E_0}{1 + 10^{(\log_{10}(EC_{50}) - x)\cdot h}}
+\]</div>
+<p>This parameterization improves numerical stability over wide concentration ranges.</p>
+<hr />
+<h2 id="2-parameter-estimation">2. Parameter Estimation<a class="headerlink" href="#2-parameter-estimation" title="Permanent link">&para;</a></h2>
+<p>Let <span class="arithmatex">\( \{(c_j, y_j)\}_{j=1}^n \)</span> denote observed data for a protein.</p>
+<h3 id="21-weighted-nonlinear-least-squares">2.1 Weighted Nonlinear Least Squares<a class="headerlink" href="#21-weighted-nonlinear-least-squares" title="Permanent link">&para;</a></h3>
+<p>Parameters <span class="arithmatex">\( \theta = (E_0, E_{\max}, \log EC_{50}, h) \)</span> are estimated by minimizing:</p>
+<div class="arithmatex">\[
+\min_{\theta} \sum_{j=1}^{n} \frac{(y_j - \hat{y}(c_j; \theta))^2}{\sigma_j^2}
+\]</div>
+<p>where weights are defined as:</p>
+<div class="arithmatex">\[
+\sigma_j = c_j^{\alpha}, \quad \alpha &gt; 0
+\]</div>
+<p>This emphasizes low-concentration behavior.</p>
+<hr />
+<h3 id="22-regularization">2.2 Regularization<a class="headerlink" href="#22-regularization" title="Permanent link">&para;</a></h3>
+<p>To avoid unrealistic cooperativity:</p>
+<div class="arithmatex">\[
+\mathcal{L}_{\text{reg}} = \lambda (h - h_0)^2
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\( h_0 = 1 \)</span> (target Hill slope)</li>
+<li><span class="arithmatex">\( \lambda &gt; 0 \)</span> controls regularization strength</li>
+</ul>
+<p>Total loss:</p>
+<div class="arithmatex">\[
+\mathcal{L} = \sum_{j=1}^{n} \frac{(y_j - \hat{y}(c_j))^2}{\sigma_j^2} + \lambda (h - h_0)^2
+\]</div>
+<hr />
+<h3 id="23-monotonicity-constraint">2.3 Monotonicity Constraint<a class="headerlink" href="#23-monotonicity-constraint" title="Permanent link">&para;</a></h3>
+<p>Let <span class="arithmatex">\( \tilde{y}_j \)</span> be the isotonic regression estimate of <span class="arithmatex">\( y_j \)</span>. Then fitting is performed on:</p>
+<div class="arithmatex">\[
+\tilde{y}_j = \text{IsoReg}(y_j)
+\]</div>
+<p>ensuring monotonicity consistent with stabilization or destabilization.</p>
+<hr />
+<h2 id="3-fit-diagnostics">3. Fit Diagnostics<a class="headerlink" href="#3-fit-diagnostics" title="Permanent link">&para;</a></h2>
+<h3 id="31-coefficient-of-determination">3.1 Coefficient of Determination<a class="headerlink" href="#31-coefficient-of-determination" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+R^2 = 1 - \frac{\sum_j (y_j - \hat{y}_j)^2}{\sum_j (y_j - \bar{y})^2}
+\]</div>
+<h3 id="32-effect-size">3.2 Effect Size<a class="headerlink" href="#32-effect-size" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+\Delta_{\max} = \max_j y_j - \min_j y_j
+\]</div>
+<p>Only fits satisfying:</p>
+<ul>
+<li><span class="arithmatex">\( R^2 &gt; \tau_R \)</span></li>
+<li><span class="arithmatex">\( \Delta_{\max} &gt; \tau_\Delta \)</span></li>
+</ul>
+<p>are retained.</p>
+<hr />
+<h2 id="4-sensitivity-scoring">4. Sensitivity Scoring<a class="headerlink" href="#4-sensitivity-scoring" title="Permanent link">&para;</a></h2>
+<p>Each protein is mapped to a scalar <strong>NADPH Sensitivity Score (NSS)</strong>.</p>
+<h3 id="41-feature-vector">4.1 Feature Vector<a class="headerlink" href="#41-feature-vector" title="Permanent link">&para;</a></h3>
+<p>Define:</p>
+<div class="arithmatex">\[
+\mathbf{f}_i = \left( EC_{50,i}, \Delta_{\max,i}, h_i, R^2_i \right)
+\]</div>
+<h3 id="42-robust-scaling">4.2 Robust Scaling<a class="headerlink" href="#42-robust-scaling" title="Permanent link">&para;</a></h3>
+<p>Each feature <span class="arithmatex">\( f \)</span> is transformed:</p>
+<div class="arithmatex">\[
+f' = \frac{f - \text{median}(f)}{\text{IQR}(f) + \epsilon}
+\]</div>
+<h3 id="43-directional-transformations">4.3 Directional Transformations<a class="headerlink" href="#43-directional-transformations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>EC50 is inverted:</li>
+</ul>
+<div class="arithmatex">\[
+EC50^* = -\log_{10}(EC_{50})
+\]</div>
+<ul>
+<li>Other features remain monotonic with effect strength.</li>
+</ul>
+<hr />
+<h3 id="44-composite-score">4.4 Composite Score<a class="headerlink" href="#44-composite-score" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+\text{NSS}_i = \sum_{k} w_k \cdot \phi(f'_{i,k})
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\( w_k \)</span>: feature weights</li>
+<li><span class="arithmatex">\( \phi(\cdot) \)</span>: bounded transformation (e.g. sigmoid)</li>
+</ul>
+<p>Typical weighting:</p>
+<div class="arithmatex">\[
+(w_{EC50}, w_{\Delta}, w_h, w_{R^2}) \approx (0.45, 0.30, 0.15, 0.10)
+\]</div>
+<hr />
+<h2 id="5-pathway-enrichment">5. Pathway Enrichment<a class="headerlink" href="#5-pathway-enrichment" title="Permanent link">&para;</a></h2>
+<p>Let <span class="arithmatex">\( S_i \)</span> denote NSS for protein <span class="arithmatex">\( i \)</span>, and <span class="arithmatex">\( \mathcal{P} \subseteq \mathcal{V} \)</span> a pathway.</p>
+<h3 id="51-continuous-enrichment">5.1 Continuous Enrichment<a class="headerlink" href="#51-continuous-enrichment" title="Permanent link">&para;</a></h3>
+<p>Test:</p>
+<div class="arithmatex">\[
+H_0: S_i \sim S_j \quad \forall i \in \mathcal{P}, j \notin \mathcal{P}
+\]</div>
+<p>using Mann–Whitney U:</p>
+<div class="arithmatex">\[
+U = \sum_{i \in \mathcal{P}} \sum_{j \notin \mathcal{P}} \mathbb{I}(S_i &gt; S_j)
+\]</div>
+<hr />
+<h3 id="52-over-representation">5.2 Over-Representation<a class="headerlink" href="#52-over-representation" title="Permanent link">&para;</a></h3>
+<p>Define hit set:</p>
+<div class="arithmatex">\[
+\mathcal{H} = \{i \mid \text{NSS}_i &gt; \tau\}
+\]</div>
+<p>Test enrichment via Fisher’s exact test on contingency table:</p>
+<div class="arithmatex">\[
+\begin{pmatrix}
+|\mathcal{H} \cap \mathcal{P}| &amp; |\mathcal{H} \setminus \mathcal{P}| \\
+|\mathcal{P} \setminus \mathcal{H}| &amp; |\mathcal{V} \setminus (\mathcal{H} \cup \mathcal{P})|
+\end{pmatrix}
+\]</div>
+<hr />
+<h2 id="6-network-model">6. Network Model<a class="headerlink" href="#6-network-model" title="Permanent link">&para;</a></h2>
+<h3 id="61-co-stabilization-matrix">6.1 Co-Stabilization Matrix<a class="headerlink" href="#61-co-stabilization-matrix" title="Permanent link">&para;</a></h3>
+<p>Let <span class="arithmatex">\( \mathbf{x}_i \in \mathbb{R}^d \)</span> be the dose-response vector for protein <span class="arithmatex">\( i \)</span>.</p>
+<div class="arithmatex">\[
+C_{ij} = \text{corr}(\mathbf{x}_i, \mathbf{x}_j)
+\]</div>
+<hr />
+<h3 id="62-graph-construction">6.2 Graph Construction<a class="headerlink" href="#62-graph-construction" title="Permanent link">&para;</a></h3>
+<p>Define graph <span class="arithmatex">\( G = (V, E) \)</span>:</p>
+<div class="arithmatex">\[
+E = \{(i,j) \mid |C_{ij}| \geq \tau\}
+\]</div>
+<p>with edge weight:</p>
+<div class="arithmatex">\[
+w_{ij} = C_{ij}
+\]</div>
+<hr />
+<h3 id="63-community-detection">6.3 Community Detection<a class="headerlink" href="#63-community-detection" title="Permanent link">&para;</a></h3>
+<p>Modules are identified by maximizing modularity:</p>
+<div class="arithmatex">\[
+Q = \frac{1}{2m} \sum_{i,j} \left( w_{ij} - \frac{k_i k_j}{2m} \right)\delta(c_i, c_j)
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\( k_i \)</span>: node degree</li>
+<li><span class="arithmatex">\( m \)</span>: total edge weight</li>
+<li><span class="arithmatex">\( c_i \)</span>: community assignment</li>
+</ul>
+<hr />
+<h2 id="7-latent-representation">7. Latent Representation<a class="headerlink" href="#7-latent-representation" title="Permanent link">&para;</a></h2>
+<h3 id="71-feature-matrix">7.1 Feature Matrix<a class="headerlink" href="#71-feature-matrix" title="Permanent link">&para;</a></h3>
+<p>Let:</p>
+<div class="arithmatex">\[
+X \in \mathbb{R}^{n \times p}
+\]</div>
+<p>be the standardized feature matrix.</p>
+<hr />
+<h3 id="72-principal-component-analysis">7.2 Principal Component Analysis<a class="headerlink" href="#72-principal-component-analysis" title="Permanent link">&para;</a></h3>
+<p>Compute:</p>
+<div class="arithmatex">\[
+X = U \Sigma V^T
+\]</div>
+<p>Latent coordinates:</p>
+<div class="arithmatex">\[
+Z = X V
+\]</div>
+<hr />
+<h3 id="73-factor-analysis">7.3 Factor Analysis<a class="headerlink" href="#73-factor-analysis" title="Permanent link">&para;</a></h3>
+<p>Assume:</p>
+<div class="arithmatex">\[
+X = Z \Lambda^T + \epsilon
+\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\( Z \)</span>: latent factors</li>
+<li><span class="arithmatex">\( \Lambda \)</span>: loadings</li>
+<li><span class="arithmatex">\( \epsilon \sim \mathcal{N}(0, \Psi)\)</span></li>
+</ul>
+<hr />
+<h2 id="8-sequence-based-model">8. Sequence-Based Model<a class="headerlink" href="#8-sequence-based-model" title="Permanent link">&para;</a></h2>
+<p>Let protein sequence be:</p>
+<div class="arithmatex">\[
+s = (a_1, a_2, \dots, a_L)
+\]</div>
+<h3 id="81-embedding">8.1 Embedding<a class="headerlink" href="#81-embedding" title="Permanent link">&para;</a></h3>
+<p>Using a pretrained model:</p>
+<div class="arithmatex">\[
+\mathbf{H} = (h_1, \dots, h_L), \quad h_i \in \mathbb{R}^d
+\]</div>
+<hr />
+<h3 id="82-attention-pooling">8.2 Attention Pooling<a class="headerlink" href="#82-attention-pooling" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+\alpha_i = \frac{\exp(w^T h_i)}{\sum_j \exp(w^T h_j)}, \quad
+z = \sum_{i=1}^{L} \alpha_i h_i
+\]</div>
+<hr />
+<h3 id="83-prediction">8.3 Prediction<a class="headerlink" href="#83-prediction" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+\hat{y} = f_{\theta}(z)
+\]</div>
+<p>where <span class="arithmatex">\( f_{\theta} \)</span> is a neural network.</p>
+<hr />
+<h2 id="9-explainability">9. Explainability<a class="headerlink" href="#9-explainability" title="Permanent link">&para;</a></h2>
+<h3 id="91-saliency">9.1 Saliency<a class="headerlink" href="#91-saliency" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+S_i = \left\| \frac{\partial \hat{y}}{\partial h_i} \right\|
+\]</div>
+<hr />
+<h3 id="92-integrated-gradients">9.2 Integrated Gradients<a class="headerlink" href="#92-integrated-gradients" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+IG_i = (h_i - h_i^{(0)}) \cdot \int_{0}^{1} \frac{\partial \hat{y}(\alpha h_i)}{\partial h_i} d\alpha
+\]</div>
+<hr />
+<h2 id="10-summary">10. Summary<a class="headerlink" href="#10-summary" title="Permanent link">&para;</a></h2>
+<p>The CETSAx–NADPH framework defines a mapping:</p>
+<div class="arithmatex">\[
+\text{Dose–response} \rightarrow \text{Parameters} \rightarrow \text{Sensitivity} \rightarrow \text{Systems structure}
+\rightarrow \text{Sequence determinants}
+\]</div>
+<p>Each transformation is explicitly defined and interpretable, allowing both statistical inference and mechanistic
+insight.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../sensitivity_scoring/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Sensitivity Scoring">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Sensitivity Scoring
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../pathway_enrichment/" class="md-footer__link md-footer__link--next" aria-label="Next: Pathway Enrichment">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Pathway Enrichment
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 <a href="https://bibymaths.github.io">Abhinav Mishra</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/bibymaths" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.indexes", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>
