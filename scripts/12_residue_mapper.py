@@ -15,15 +15,17 @@ def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig
     df_seqs = pd.read_csv(supervised_csv)
 
     # Create a quick dictionary lookup for ID -> Sequence
-    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq'], strict=False))
+    seq_dict = dict(zip(df_seqs["id"], df_seqs["seq"], strict=False))
 
     results = []
 
     for _, row in df_preds.iterrows():
-        prot_id = row['id']
+        prot_id = row["id"]
 
         if prot_id not in seq_dict:
-            print(f"Warning: Sequence for {prot_id} not found in supervised CSV. Skipping.")
+            print(
+                f"Warning: Sequence for {prot_id} not found in supervised CSV. Skipping."
+            )
             continue
 
         full_seq = str(seq_dict[prot_id])
@@ -38,16 +40,18 @@ def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig
 
         # Guardrail: Truncate the sequence string to match the length of the scores array
         # (Handles your model's max_len=1022 truncation perfectly)
-        actual_seq = full_seq[:len(scores)]
+        actual_seq = full_seq[: len(scores)]
 
         # Zip the amino acid, 1-based position index, and the score together
         residue_data = []
         for i, (aa, score) in enumerate(zip(actual_seq, scores, strict=False)):
-            residue_data.append({
-                "position": i + 1,  # Biologists use 1-based indexing
-                "amino_acid": aa,
-                "score": score
-            })
+            residue_data.append(
+                {
+                    "position": i + 1,  # Biologists use 1-based indexing
+                    "amino_acid": aa,
+                    "score": score,
+                }
+            )
 
         # Sort residues by score in descending order (highest importance first)
         residue_data.sort(key=lambda x: x["score"], reverse=True)
@@ -56,15 +60,19 @@ def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig
         top_residues = residue_data[:top_n]
 
         # Format them into a readable string (e.g., "K142 (0.0123)")
-        hotspot_strings = [f"{r['amino_acid']}{r['position']} ({r['score']:.4f})" for r in top_residues]
+        hotspot_strings = [
+            f"{r['amino_acid']}{r['position']} ({r['score']:.4f})" for r in top_residues
+        ]
 
         # Append to our final results
-        results.append({
-            "id": prot_id,
-            "predicted_class": row['pred_class'],
-            "prob_strong": row.get('p_class1', np.nan),
-            f"top_{top_n}_{score_col}_drivers": " | ".join(hotspot_strings)
-        })
+        results.append(
+            {
+                "id": prot_id,
+                "predicted_class": row["pred_class"],
+                "prob_strong": row.get("p_class1", np.nan),
+                f"top_{top_n}_{score_col}_drivers": " | ".join(hotspot_strings),
+            }
+        )
 
     # Convert to a clean DataFrame
     df_results = pd.DataFrame(results)
@@ -82,7 +90,7 @@ if __name__ == "__main__":
         predictions_csv=preds_path,
         supervised_csv=supervised_path,
         top_n=10,
-        score_col="ig"
+        score_col="ig",
     )
 
     # Save the human-readable table

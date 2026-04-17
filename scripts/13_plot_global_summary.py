@@ -13,14 +13,14 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
     df_seqs = pd.read_csv(supervised_csv)
 
     # Quick lookup for ID -> Sequence
-    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq'], strict=False))
+    seq_dict = dict(zip(df_seqs["id"], df_seqs["seq"], strict=False))
 
     print("Aggregating residue scores across the entire dataset...")
     all_aas = []
     all_scores = []
 
     for _, row in tqdm(df_preds.iterrows(), total=len(df_preds)):
-        prot_id = row['id']
+        prot_id = row["id"]
         if prot_id not in seq_dict:
             continue
 
@@ -43,17 +43,18 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
         all_scores.extend(actual_scores)
 
     # Create a massive dataframe of every single residue evaluated by the model
-    df_global = pd.DataFrame({
-        "Amino_Acid": all_aas,
-        "IG_Score": all_scores
-    })
+    df_global = pd.DataFrame({"Amino_Acid": all_aas, "IG_Score": all_scores})
 
     # Filter out rare non-standard amino acids (like X, U, O) if they exist
     standard_aas = list("ACDEFGHIKLMNPQRSTVWY")
     df_global = df_global[df_global["Amino_Acid"].isin(standard_aas)]
 
     # Calculate median importance to sort the plots
-    aa_medians = df_global.groupby("Amino_Acid")["IG_Score"].median().sort_values(ascending=False)
+    aa_medians = (
+        df_global.groupby("Amino_Acid")["IG_Score"]
+        .median()
+        .sort_values(ascending=False)
+    )
     sorted_aas = aa_medians.index.tolist()
 
     # ---------------------------------------------------------
@@ -66,14 +67,18 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
         y="IG_Score",
         order=sorted_aas,
         estimator=np.median,  # Using median as IG distributions have heavy right tails
-        errorbar=('ci', 95),
-        color="#3498db"
+        errorbar=("ci", 95),
+        color="#3498db",
     )
-    plt.title("Global Feature Importance (Median IG Score per Amino Acid)", fontsize=14, pad=15)
+    plt.title(
+        "Global Feature Importance (Median IG Score per Amino Acid)",
+        fontsize=14,
+        pad=15,
+    )
     plt.xlabel("Amino Acid Type", fontsize=12)
     plt.ylabel("Median Attribution Magnitude", fontsize=12)
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines["top"].set_visible(False)
+    plt.gca().spines["right"].set_visible(False)
     plt.tight_layout()
     plt.savefig("results/global_importance_bar.png", dpi=300)
     plt.show()
@@ -89,9 +94,11 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
         order=sorted_aas,
         palette="coolwarm",
         inner="quartile",
-        linewidth=1
+        linewidth=1,
     )
-    plt.title("Global Distribution of Attribution Scores by Amino Acid", fontsize=14, pad=15)
+    plt.title(
+        "Global Distribution of Attribution Scores by Amino Acid", fontsize=14, pad=15
+    )
     plt.xlabel("Amino Acid Type (Sorted by Median Importance)", fontsize=12)
     plt.ylabel("Attribution Magnitude (IG Score)", fontsize=12)
 
@@ -99,8 +106,8 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
     y_max = df_global["IG_Score"].quantile(0.995)
     plt.ylim(0, y_max)
 
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines["top"].set_visible(False)
+    plt.gca().spines["right"].set_visible(False)
     plt.tight_layout()
     plt.savefig("results/global_importance_distribution.png", dpi=300)
     plt.show()
