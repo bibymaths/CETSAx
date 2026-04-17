@@ -22,7 +22,7 @@ mkdocs.yml
 *.md
 *.html
 *.cff
-*.json
+.zenodo.json
 tests/
 # local helper scripts (not needed at runtime)
 docker_*.sh
