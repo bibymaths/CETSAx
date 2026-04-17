@@ -1,8 +1,7 @@
-import numpy as np
 import pandas as pd
 import pytest
 
-from cetsax.config import COND_COL, DOSE_COLS, ID_COL
+from cetsax.config import DOSE_COLS, ID_COL
 from cetsax.dataio import apply_basic_qc, load_cetsa_csv
 from cetsax.fit import fit_all_proteins
 from cetsax.hits import call_hits, summarize_hits

@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Script to build sequence-supervised table and train NADPH sequence model.
 UPDATED: Compatible with cetsax.deeplearn.seq_nadph (Transformers backend).
@@ -9,15 +11,15 @@ UPDATED: Compatible with cetsax.deeplearn.seq_nadph (Transformers backend).
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import json
+from pathlib import Path
 
 import pandas as pd
 import torch
 
 from cetsax import (
-    build_sequence_supervised_table,
     NADPHSeqConfig,
+    build_sequence_supervised_table,
     train_seq_model,
 )
 

@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Script to perform machine learning analyses on CETSA melting curves.
 """
@@ -35,8 +37,14 @@ Script to perform machine learning analyses on CETSA melting curves.
 
 import argparse
 from pathlib import Path
-from cetsax import load_cetsa_csv, apply_basic_qc
-from cetsax import extract_curve_features, classify_curves_kmeans, detect_outliers
+
+from cetsax import (
+    apply_basic_qc,
+    classify_curves_kmeans,
+    detect_outliers,
+    extract_curve_features,
+    load_cetsa_csv,
+)
 
 
 def main():

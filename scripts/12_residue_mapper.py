@@ -1,5 +1,7 @@
-import pandas as pd
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 import numpy as np
+import pandas as pd
 
 
 def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig"):
@@ -13,7 +15,7 @@ def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig
     df_seqs = pd.read_csv(supervised_csv)
 
     # Create a quick dictionary lookup for ID -> Sequence
-    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq']))
+    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq'], strict=False))
 
     results = []
 
@@ -40,7 +42,7 @@ def extract_top_drivers(predictions_csv, supervised_csv, top_n=10, score_col="ig
 
         # Zip the amino acid, 1-based position index, and the score together
         residue_data = []
-        for i, (aa, score) in enumerate(zip(actual_seq, scores)):
+        for i, (aa, score) in enumerate(zip(actual_seq, scores, strict=False)):
             residue_data.append({
                 "position": i + 1,  # Biologists use 1-based indexing
                 "amino_acid": aa,

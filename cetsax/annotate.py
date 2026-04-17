@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 annotate.py
 --------------------------------
@@ -44,16 +46,15 @@ FASTA retrieval.
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Any
+
+import mygene
 import pandas as pd
 import requests
 from tqdm.auto import tqdm
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-import mygene
-
 
 # ---------------------------------------------------------------------
 # 1. Get unique IDs from fits table
@@ -63,7 +64,7 @@ import mygene
 def get_unique_ids(
     fits_csv: str | Path,
     id_col: str = "id",
-) -> List[str]:
+) -> list[str]:
     df = pd.read_csv(fits_csv)
     if id_col not in df.columns:
         raise ValueError(f"Column '{id_col}' not found in {fits_csv}")
@@ -93,7 +94,7 @@ def strip_isoform_suffix(acc: str) -> str:
 
 
 def fetch_annotations_with_mygene(
-    ids: List[str],
+    ids: list[str],
     species: str = "human",
     chunk_size: int = 1000,
 ) -> pd.DataFrame:
@@ -106,7 +107,7 @@ def fetch_annotations_with_mygene(
     """
     mg = mygene.MyGeneInfo()
 
-    all_records: List[Dict[str, Any]] = []
+    all_records: list[dict[str, Any]] = []
 
     # mygene is already "batch-parallelized" internally, so we just chunk
     for i in tqdm(range(0, len(ids), chunk_size), desc="mygene annotations"):
@@ -171,7 +172,7 @@ def fetch_annotations_with_mygene(
 
             # Pathway info (varies by source)
             pwy = r.get("pathway", {})
-            p_terms: List[str] = []
+            p_terms: list[str] = []
             if isinstance(pwy, dict):
                 # KEGG, Reactome, BioCarta etc.
                 for src, val in pwy.items():
@@ -219,7 +220,7 @@ def fetch_annotations_with_mygene(
 # ---------------------------------------------------------------------
 
 
-def fetch_uniprot_fasta(acc: str, timeout: float = 10.0) -> Optional[str]:
+def fetch_uniprot_fasta(acc: str, timeout: float = 10.0) -> str | None:
     """
     Fetch a single UniProt FASTA entry by accession.
 
@@ -239,9 +240,9 @@ def fetch_uniprot_fasta(acc: str, timeout: float = 10.0) -> Optional[str]:
 
 
 def fetch_fastas_parallel(
-    accessions: List[str],
+    accessions: list[str],
     max_workers: int = 8,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Parallel UniProt FASTA retrieval for a list of accessions.
 
@@ -249,7 +250,7 @@ def fetch_fastas_parallel(
     """
     accs = [a for a in sorted(set(accessions)) if isinstance(a, str) and a]
 
-    results: Dict[str, str] = {}
+    results: dict[str, str] = {}
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(fetch_uniprot_fasta, a): a for a in accs}
         for fut in tqdm(
@@ -265,7 +266,7 @@ def fetch_fastas_parallel(
 
 def write_fastas_with_ids(
     annot_df: pd.DataFrame,
-    acc_to_fasta: Dict[str, str],
+    acc_to_fasta: dict[str, str],
     out_fasta: str | Path,
     id_col: str = "id",
     uniprot_col: str = "uniprot",
@@ -385,12 +386,12 @@ def main() -> None:
     # accession; in such cases we still include the id with missing data.
 
     # Build exact lookup
-    exact_lookup: Dict[str, Dict[str, Any]] = {
+    exact_lookup: dict[str, dict[str, Any]] = {
         str(row["id"]): row for _, row in annot_df.iterrows()
     }
 
     # Build isoform lookup keyed by stripped accession
-    iso_lookup: Dict[str, Dict[str, Any]] = {}
+    iso_lookup: dict[str, dict[str, Any]] = {}
     for _, row in annot_df.iterrows():
         uni = row.get("uniprot")
         if isinstance(uni, str):
@@ -400,10 +401,10 @@ def main() -> None:
     # Determine union of annotation columns
     annot_cols = list(annot_df.columns)
 
-    aligned_records: List[Dict[str, Any]] = []
+    aligned_records: list[dict[str, Any]] = []
     for orig_id in ids:
         # Initialize base record with None/empty
-        record: Dict[str, Any] = {col: None for col in annot_cols}
+        record: dict[str, Any] = dict.fromkeys(annot_cols)
         record["id"] = orig_id
         # Try exact match
         match = exact_lookup.get(orig_id)

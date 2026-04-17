@@ -1,0 +1,39 @@
+{
+  "title": "CETSAx\u2013NADPH: Explainable Protein\u2013Metabolite Interaction Analysis",
+  "description": "CETSAx\u2013NADPH is a computational framework for analyzing protein stability responses to NADPH using CETSA data. It combines biophysical dose\u2013response modeling (EC50, Hill, \u0394max), composite sensitivity scoring, systems-level analysis (PCA, clustering, pathway enrichment, network modules), and sequence-based deep learning (ESM-2 protein language model) into a single Snakemake-orchestrated pipeline. The framework also provides explainable AI outputs (saliency maps, Integrated Gradients) for residue-level interpretation of model predictions.",
+  "upload_type": "software",
+  "license": "BSD-3-Clause",
+  "creators": [
+    {
+      "name": "Mishra, Abhinav",
+      "affiliation": ""
+    }
+  ],
+  "keywords": [
+    "bioinformatics",
+    "snakemake",
+    "CETSA",
+    "proteomics",
+    "dose-response",
+    "EC50",
+    "protein",
+    "ESM2",
+    "deep-learning",
+    "protein-language-models",
+    "systems-biology",
+    "explainable-AI"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.1038/s41596-020-0310-z",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1126/science.ade2574",
+      "relation": "references",
+      "scheme": "doi"
+    }
+  ],
+  "access_right": "open"
+}

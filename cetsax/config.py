@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Configuration and constants for CETSA EC50/KD modelling.
 Dynamically loaded from config.yaml.
@@ -33,8 +35,9 @@ Dynamically loaded from config.yaml.
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 # 1. Locate config.yaml
 # Assumes config.yaml is in the project root (parents[1] relative to cetsax/)
@@ -53,7 +56,7 @@ def load_yaml_config(path: Path):
                 f"Could not find 'config.yaml' at {CONFIG_PATH} or current directory."
             )
 
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 

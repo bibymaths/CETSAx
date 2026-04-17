@@ -27,7 +27,6 @@ import math
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -35,7 +34,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.model_selection import StratifiedShuffleSplit
-from torch.utils.data import Dataset, DataLoader, Subset
+from torch.utils.data import DataLoader, Dataset, Subset
 from tqdm.auto import tqdm
 from transformers import (
     AutoModel,
@@ -98,11 +97,11 @@ class NADPHSeqConfig:
 # -----------------------------------------------------------------------------
 # 1) FASTA & Tokenizer Utils
 # -----------------------------------------------------------------------------
-def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
+def read_fasta_to_dict(fasta_path: str | Path) -> dict[str, str]:
     """Read FASTA into dict: {id: sequence}."""
     fasta_path = Path(fasta_path)
-    seqs: Dict[str, List[str]] = {}
-    current_id: Optional[str] = None
+    seqs: dict[str, list[str]] = {}
+    current_id: str | None = None
 
     with fasta_path.open() as fh:
         for line in fh:
@@ -124,7 +123,7 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
 
 def load_model_and_tokenizer(
     model_name: str,
-) -> Tuple[PreTrainedModel, PreTrainedTokenizer]:
+) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
     """Load HF model and tokenizer."""
     print(f"[Transformers] Loading {model_name}...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -300,7 +299,7 @@ class AttentionPooling(nn.Module):
 
 class NADPHSeqModel(nn.Module):
     def __init__(
-        self, hf_model: Optional[PreTrainedModel], embed_dim: int, cfg: NADPHSeqConfig
+        self, hf_model: PreTrainedModel | None, embed_dim: int, cfg: NADPHSeqConfig
     ):
         super().__init__()
         self.backbone = hf_model
@@ -452,10 +451,10 @@ def _get_head_module(model: nn.Module) -> nn.Module:
     """
     base = model.module if hasattr(model, "module") else model
 
-    if hasattr(base, "head") and isinstance(getattr(base, "head"), nn.Module):
+    if hasattr(base, "head") and isinstance(base.head, nn.Module):
         return base.head
 
-    if hasattr(base, "net") and isinstance(getattr(base, "net"), nn.Module):
+    if hasattr(base, "net") and isinstance(base.net, nn.Module):
         return base.net
 
     raise AttributeError(
@@ -479,7 +478,7 @@ def train_seq_model(
     csv_path: str | Path,
     cfg: NADPHSeqConfig,
     patience: bool = True,
-) -> Tuple[nn.Module, Dict, Dict, pd.DataFrame]:
+) -> tuple[nn.Module, dict, dict, pd.DataFrame]:
     Path(cfg.cache_dir).mkdir(exist_ok=True)
     device = torch.device(cfg.device)
 

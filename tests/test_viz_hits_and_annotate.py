@@ -4,11 +4,10 @@ import types
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use('Agg')
 import pandas as pd
-import pytest
 
-from cetsax.config import COND_COL, ID_COL
 from cetsax.dataio import apply_basic_qc
 from cetsax.fit import fit_all_proteins
 from cetsax.viz_hits import (

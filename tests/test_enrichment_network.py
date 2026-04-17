@@ -8,13 +8,17 @@ from cetsax.enrichment import (
     enrich_overrepresentation,
     summarize_pathway_effects,
 )
-from cetsax.network import compute_costab_matrix, detect_modules, make_network_from_matrix
+from cetsax.network import (
+    compute_costab_matrix,
+    detect_modules,
+    make_network_from_matrix,
+)
 
 
 def test_benjamini_hochberg_is_bounded_and_monotone():
     pvals = pd.Series([0.01, 0.04, 0.03, 0.2])
     qvals = _benjamini_hochberg(pvals)
-    assert ((0 <= qvals) & (qvals <= 1)).all()
+    assert ((qvals >= 0) & (qvals <= 1)).all()
     # smallest p-value should not get larger q than the largest p-value ordering implies
     assert qvals.iloc[pvals.idxmin()] <= qvals.max()
 

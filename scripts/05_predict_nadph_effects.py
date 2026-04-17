@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Predict NADPH responsiveness from protein sequences using a trained head.
 
@@ -13,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -21,19 +23,19 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm
 
 from cetsax.deeplearn.esm_seq_nadph import (
-    read_fasta_to_dict,
-    load_esm_model_and_alphabet,
     AttentionPooling,
     NADPHSeqModel,
-    compute_residue_saliency_from_reps,
     compute_residue_integrated_gradients_from_reps,
+    compute_residue_saliency_from_reps,
+    load_esm_model_and_alphabet,
+    read_fasta_to_dict,
 )
 
 
 # -----------------------------
 # Helpers
 # -----------------------------
-def chunk_list(xs: List, size: int) -> List[List]:
+def chunk_list(xs: list, size: int) -> list[list]:
     return [xs[i : i + size] for i in range(0, len(xs), size)]
 
 
@@ -50,7 +52,7 @@ def _safe_esm_batch_size(device: torch.device, requested: int) -> int:
     return max(1, requested)
 
 
-def _infer_int_to_class(num_classes: int) -> Dict[int, str]:
+def _infer_int_to_class(num_classes: int) -> dict[int, str]:
     if num_classes == 2:
         return {0: "weak", 1: "strong"}
     return {i: f"class_{i}" for i in range(num_classes)}
@@ -61,9 +63,9 @@ def _get_head_module(model: nn.Module) -> nn.Module:
     Mirror the helper you already wrote in the module.
     """
     base = model.module if hasattr(model, "module") else model
-    if hasattr(base, "head") and isinstance(getattr(base, "head"), nn.Module):
+    if hasattr(base, "head") and isinstance(base.head, nn.Module):
         return base.head
-    if hasattr(base, "net") and isinstance(getattr(base, "net"), nn.Module):
+    if hasattr(base, "net") and isinstance(base.net, nn.Module):
         return base.net
     raise AttributeError(f"Could not find head on model type={type(base)}")
 
@@ -135,7 +137,7 @@ class RepsHeadModel(nn.Module):
 # -----------------------------
 
 
-def _load_pooled_cache(pooled_pt: str | Path) -> Tuple[List[str], torch.Tensor]:
+def _load_pooled_cache(pooled_pt: str | Path) -> tuple[list[str], torch.Tensor]:
     obj = torch.load(pooled_pt, map_location="cpu", weights_only=False)
     if "ids" not in obj or "pooled" not in obj:
         raise ValueError(
@@ -146,7 +148,7 @@ def _load_pooled_cache(pooled_pt: str | Path) -> Tuple[List[str], torch.Tensor]:
 
 def _load_reps_cache(
     reps_pt: str | Path,
-) -> Tuple[List[str], List[torch.Tensor], List[torch.Tensor]]:
+) -> tuple[list[str], list[torch.Tensor], list[torch.Tensor]]:
     obj = torch.load(reps_pt, map_location="cpu", weights_only=False)
     for k in ("ids", "reps", "mask"):
         if k not in obj:
@@ -199,13 +201,13 @@ def predict_nadph_from_fasta(
     batch_size: int = 256,  # for head-only (pooled/reps)
     esm_batch_size: int = 8,  # tokens-mode (auto-clamped on cuda)
     # caches + alignment
-    pooled_cache_pt: Optional[str | Path] = None,
-    reps_cache_pt: Optional[str | Path] = None,
-    supervised_csv_for_alignment: Optional[str | Path] = None,
+    pooled_cache_pt: str | Path | None = None,
+    reps_cache_pt: str | Path | None = None,
+    supervised_csv_for_alignment: str | Path | None = None,
     # interpretability
     compute_saliency: bool = False,
     compute_ig: bool = False,
-    target_class: Optional[int] = None,
+    target_class: int | None = None,
     ig_steps: int = 50,
 ) -> pd.DataFrame:
     fasta_path = Path(fasta_path)
@@ -221,7 +223,7 @@ def predict_nadph_from_fasta(
         )
 
     # 1) Load sequences
-    seq_dict: Dict[str, str] = read_fasta_to_dict(fasta_path)
+    seq_dict: dict[str, str] = read_fasta_to_dict(fasta_path)
     fasta_ids = list(seq_dict.keys())
     if not fasta_ids:
         raise ValueError(f"No sequences found in FASTA: {fasta_path}")
@@ -512,7 +514,7 @@ def predict_nadph_from_fasta(
 
                 reps_pad = torch.zeros((B, Lmax, D), dtype=torch.float32)
                 mask_pad = torch.zeros((B, Lmax), dtype=torch.bool)
-                for i, (r, m) in enumerate(zip(reps_batch, mask_batch)):
+                for i, (r, m) in enumerate(zip(reps_batch, mask_batch, strict=False)):
                     L = int(r.shape[0])
                     reps_pad[i, :L] = r
                     mask_pad[i, :L] = m
@@ -596,7 +598,7 @@ def predict_nadph_from_fasta(
 
     with ctx():
         for id_chunk in tqdm(id_chunks, desc="Predict (tokens)"):
-            seq_chunk: List[Tuple[str, str]] = []
+            seq_chunk: list[tuple[str, str]] = []
             for pid in id_chunk:
                 s = seq_dict[pid]
                 if len(s) > max_len:

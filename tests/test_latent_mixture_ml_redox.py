@@ -1,11 +1,21 @@
 import pandas as pd
 
 from cetsax.config import ID_COL
-from cetsax.fit import fit_all_proteins
 from cetsax.dataio import apply_basic_qc
-from cetsax.hits import summarize_hits, call_hits
-from cetsax.latent import attach_latent_to_metadata, build_feature_matrix, fit_factor_analysis, fit_pca
-from cetsax.mixture import assign_mixture_clusters, build_mixture_features, fit_gmm_bic_grid, label_clusters_by_sensitivity
+from cetsax.fit import fit_all_proteins
+from cetsax.hits import call_hits, summarize_hits
+from cetsax.latent import (
+    attach_latent_to_metadata,
+    build_feature_matrix,
+    fit_factor_analysis,
+    fit_pca,
+)
+from cetsax.mixture import (
+    assign_mixture_clusters,
+    build_mixture_features,
+    fit_gmm_bic_grid,
+    label_clusters_by_sensitivity,
+)
 from cetsax.ml import classify_curves_kmeans, detect_outliers, extract_curve_features
 from cetsax.redox import build_redox_axes, summarize_redox_by_pathway
 from cetsax.sensitivity import compute_sensitivity_scores

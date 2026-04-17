@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 # ================================================================================
 
 """
@@ -8,10 +10,10 @@ Hit calling and summary for CETSA ITDR binding models.
 
 from __future__ import annotations
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from .config import ID_COL, COND_COL, DOSE_COLS
+from .config import COND_COL, DOSE_COLS, ID_COL
 
 
 def call_hits(

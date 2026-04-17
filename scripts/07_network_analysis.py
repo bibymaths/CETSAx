@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Script to build CETSA co-stabilization network from processed data.
 """
@@ -34,13 +36,20 @@ Script to build CETSA co-stabilization network from processed data.
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-import pandas as pd
-import networkx as nx
-import seaborn as sns
-import matplotlib.pyplot as plt
 from pathlib import Path
-from cetsax import load_cetsa_csv, apply_basic_qc
-from cetsax import compute_costab_matrix, make_network_from_matrix, detect_modules
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import pandas as pd
+import seaborn as sns
+
+from cetsax import (
+    apply_basic_qc,
+    compute_costab_matrix,
+    detect_modules,
+    load_cetsa_csv,
+    make_network_from_matrix,
+)
 
 
 def main():

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 enrichment.py
 -------------
@@ -13,12 +15,12 @@ enrichment tests using:
 
 from __future__ import annotations
 
-from typing import Dict, Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from scipy.stats import fisher_exact, mannwhitneyu
-
 
 # ------------------------------------------------------------
 # 0. BASIC HELPERS
@@ -88,7 +90,7 @@ def summarize_pathway_effects(
     # Merge metrics with annotations
     m = pd.merge(metric_df, annot_df[[id_col, path_col]], on=id_col, how="inner")
 
-    agg_dict: Dict[str, Any] = {"N_proteins": (id_col, "nunique")}
+    agg_dict: dict[str, Any] = {"N_proteins": (id_col, "nunique")}
     for mname in metrics:
         agg_dict[f"{mname}_mean"] = (mname, "mean")
         agg_dict[f"{mname}_median"] = (mname, "median")

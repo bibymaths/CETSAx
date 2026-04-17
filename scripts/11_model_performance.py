@@ -1,6 +1,9 @@
-import pandas as pd
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 from pathlib import Path
+
+import pandas as pd
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 base_dir = Path(__file__).resolve().parent.parent / "results"
 

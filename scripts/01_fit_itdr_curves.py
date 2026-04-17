@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Script to fit ITDR EC50 curves for all proteins in a CETSA dataset.
 """
@@ -37,8 +39,15 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from cetsax import ID_COL, COND_COL, DOSE_COLS, load_cetsa_csv, apply_basic_qc
-from cetsax import fit_all_proteins
+
+from cetsax import (
+    COND_COL,
+    DOSE_COLS,
+    ID_COL,
+    apply_basic_qc,
+    fit_all_proteins,
+    load_cetsa_csv,
+)
 
 
 def main() -> None:

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 # ================================================================================
 
 """
@@ -43,13 +45,12 @@ responsibilities, and optionally label clusters by sensitivity levels.
 
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
-
 
 # ------------------------------------------------------------
 # 1. FEATURE MATRIX FOR MIXTURE MODELLING
@@ -58,9 +59,9 @@ from sklearn.preprocessing import StandardScaler
 
 def build_mixture_features(
     sens_df: pd.DataFrame,
-    redox_df: Optional[pd.DataFrame] = None,
+    redox_df: pd.DataFrame | None = None,
     id_col: str = "id",
-    feature_cols: Optional[List[str]] = None,
+    feature_cols: list[str] | None = None,
     include_redox_axes: bool = True,
     log_transform_ec50: bool = True,
 ) -> pd.DataFrame:
@@ -137,10 +138,10 @@ def build_mixture_features(
 
 def fit_gmm_bic_grid(
     feat_df: pd.DataFrame,
-    n_components_grid: List[int] = None,
+    n_components_grid: list[int] = None,
     covariance_type: str = "full",
     random_state: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Fit Gaussian Mixture Models for a grid of component numbers
     and select the best model via lowest BIC.
@@ -169,7 +170,7 @@ def fit_gmm_bic_grid(
 
     X = feat_df.values
     bics = []
-    models: Dict[int, GaussianMixture] = {}
+    models: dict[int, GaussianMixture] = {}
 
     for k in n_components_grid:
         gmm = GaussianMixture(
