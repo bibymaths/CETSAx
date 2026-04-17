@@ -1,10 +1,16 @@
 window.MathJax = {
-  tex: {
-    inlineMath: [['\\(', '\\)']],
-    displayMath: [['\\[', '\\]']]
-  },
-  options: {
-    ignoreHtmlClass: '.*|',
-    processHtmlClass: 'arithmatex'
-  }
+    tex: {
+        // Defines inline math delimiters
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+
+        // Defines block math delimiters (This covers your $$ and \[ requirements)
+        displayMath: [["\\[", "\\]"], ["$$", "$$"]],
+
+        processEscapes: true,
+        processEnvironments: true
+    },
+    options: {
+        ignoreHtmlClass: ".*|",
+        processHtmlClass: "arithmatex"
+    }
 };

@@ -80,7 +80,6 @@ These should integrate cleanly into the existing pipeline.
 Clone the repository and install in editable mode:
 
 ```bash
-```bash
 git clone https://github.com/bibymaths/cetsax.git
 cd cetsax-nadph
 
@@ -88,7 +87,7 @@ uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 pip install -e .
-````
+```
 
 ---
 

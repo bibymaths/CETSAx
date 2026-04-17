@@ -15,7 +15,8 @@ If you use this pipeline or build upon it, cite the repository:
   year = {2025},
   url = {https://github.com/yourusername/cetsax-nadph}
 }
-````
+```
+
 ---
 
 If you prepare a manuscript based on this work, include a brief description of the framework:
@@ -69,7 +70,7 @@ Sequence modeling and embeddings are based on:
 
 ### Logistic Dose–Response Modeling
 
-The curve fitting approach is based on standard pharmacological dose–response models:
+The curve-fitting approach is based on standard pharmacological dose–response models:
 
 ```bibtex
 @book{motulsky2018pharmacology,
