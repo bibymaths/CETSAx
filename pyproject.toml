@@ -76,7 +76,8 @@ dev = [
 docs = [
     "mkdocs",
     "mkdocs-shadcn",
-    "mkdocstrings[python]"
+    "mkdocstrings[python]",
+    "pymdown-extensions>=10.12",
 ]
 
 [project.urls]
