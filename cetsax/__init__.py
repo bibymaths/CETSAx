@@ -43,22 +43,22 @@ and sequence-based deep learning models of NADPH responsiveness.
 
 # --- Core (Always Available) ---
 from .config import (
-    DOSE_COLS,
-    QC_MIN_UNIQUE_PEPTIDES,
-    QC_MIN_PSMS,
-    QC_MIN_COUNTNUM,
-    ID_COL,
     COND_COL,
+    DOSE_COLS,
+    ID_COL,
+    QC_MIN_COUNTNUM,
+    QC_MIN_PSMS,
+    QC_MIN_UNIQUE_PEPTIDES,
 )
-from .dataio import load_cetsa_csv, apply_basic_qc
+from .dataio import apply_basic_qc, load_cetsa_csv
 
 # --- Optional Imports ---
 
 try:
     from .deeplearn import (
-        train_seq_model,
         NADPHSeqConfig,
         build_sequence_supervised_table,
+        train_seq_model,
     )
 except ImportError:
     train_seq_model = NADPHSeqConfig = build_sequence_supervised_table = None
@@ -79,7 +79,7 @@ except ImportError:
     call_hits = summarize_hits = None
 
 try:
-    from .plotting import plot_protein_curve, plot_goodness_of_fit
+    from .plotting import plot_goodness_of_fit, plot_protein_curve
 except ImportError:
     plot_protein_curve = plot_goodness_of_fit = None
 
@@ -90,9 +90,9 @@ except ImportError:
 
 try:
     from .enrichment import (
-        summarize_pathway_effects,
-        enrich_overrepresentation,
         enrich_continuous_mannwhitney,
+        enrich_overrepresentation,
+        summarize_pathway_effects,
     )
 except ImportError:
     summarize_pathway_effects = enrich_overrepresentation = (
@@ -101,10 +101,10 @@ except ImportError:
 
 try:
     from .latent import (
-        build_feature_matrix,
-        fit_pca,
-        fit_factor_analysis,
         attach_latent_to_metadata,
+        build_feature_matrix,
+        fit_factor_analysis,
+        fit_pca,
     )
 except ImportError:
     build_feature_matrix = fit_pca = fit_factor_analysis = attach_latent_to_metadata = (
@@ -113,9 +113,9 @@ except ImportError:
 
 try:
     from .mixture import (
+        assign_mixture_clusters,
         build_mixture_features,
         fit_gmm_bic_grid,
-        assign_mixture_clusters,
         label_clusters_by_sensitivity,
     )
 except ImportError:
@@ -124,12 +124,12 @@ except ImportError:
     ) = None
 
 try:
-    from .ml import extract_curve_features, classify_curves_kmeans, detect_outliers
+    from .ml import classify_curves_kmeans, detect_outliers, extract_curve_features
 except ImportError:
     extract_curve_features = classify_curves_kmeans = detect_outliers = None
 
 try:
-    from .network import compute_costab_matrix, make_network_from_matrix, detect_modules
+    from .network import compute_costab_matrix, detect_modules, make_network_from_matrix
 except ImportError:
     compute_costab_matrix = make_network_from_matrix = detect_modules = None
 
@@ -140,9 +140,9 @@ except ImportError:
 
 try:
     from .sensitivity import (
+        compute_sensitivity_heterogeneity,
         compute_sensitivity_scores,
         summarize_sensitivity_by_pathway,
-        compute_sensitivity_heterogeneity,
     )
 except ImportError:
     compute_sensitivity_scores = summarize_sensitivity_by_pathway = (
@@ -156,14 +156,14 @@ except ImportError:
 
 try:
     from .viz import (
-        plot_pathway_effects_bar,
-        plot_pathway_enrichment_volcano,
-        plot_redox_axes_scatter,
-        plot_redox_role_composition,
-        plot_pca_scores,
+        plot_cluster_size_bar,
         plot_factor_scores,
         plot_mixture_clusters_in_pca,
-        plot_cluster_size_bar,
+        plot_pathway_effects_bar,
+        plot_pathway_enrichment_volcano,
+        plot_pca_scores,
+        plot_redox_axes_scatter,
+        plot_redox_role_composition,
     )
 except ImportError:
     plot_pathway_effects_bar = plot_pathway_enrichment_volcano = (
@@ -174,10 +174,10 @@ except ImportError:
 
 try:
     from .viz_predict import (
-        visualize_predictions,
         analyze_fitting_data,
         generate_bio_insight,
         plot_training_loop,
+        visualize_predictions,
     )
 except ImportError:
     visualize_predictions = analyze_fitting_data = generate_bio_insight = (

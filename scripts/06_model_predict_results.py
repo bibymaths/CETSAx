@@ -36,11 +36,12 @@ Script to visualize model predictions, analyze fitting data, and generate biolog
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+
 from cetsax import (
-    visualize_predictions,
     analyze_fitting_data,
     generate_bio_insight,
     plot_training_loop,
+    visualize_predictions,
 )
 
 if __name__ == "__main__":

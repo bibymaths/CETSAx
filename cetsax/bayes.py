@@ -40,10 +40,11 @@ Purpose:
 
 from __future__ import annotations
 
-import pandas as pd
-from typing import Dict, Any
-import pymc as pm
+from typing import Any
+
 import arviz as az
+import pandas as pd
+import pymc as pm
 
 
 def bayesian_fit_ec50(
@@ -54,7 +55,7 @@ def bayesian_fit_ec50(
     chains: int = 4,
     cores: int = 1,
     progressbar: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Fit a hierarchical Bayesian EC50 model for a single protein
     across replicates.

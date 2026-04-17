@@ -40,13 +40,11 @@ Plotting functions for ITDR data and model fits.
 
 from __future__ import annotations
 
-from typing import Optional
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-from .config import DOSE_COLS, ID_COL, COND_COL
+from .config import COND_COL, DOSE_COLS, ID_COL
 from .models import itdr_model
 
 
@@ -54,8 +52,8 @@ def plot_protein_curve(
     df: pd.DataFrame,
     fit_df: pd.DataFrame,
     protein_id: str,
-    condition: Optional[str] = None,
-    ax: Optional[plt.Axes] = None,
+    condition: str | None = None,
+    ax: plt.Axes | None = None,
 ) -> plt.Axes:
     """
     Plot raw ITDR data and fitted curve for a given protein (and condition).
@@ -106,7 +104,7 @@ def plot_protein_curve(
 def plot_goodness_of_fit(
     df: pd.DataFrame,
     fit_df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
 ):
     """
     Global goodness-of-fit plot: observed vs predicted values for all proteins,

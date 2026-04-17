@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from cetsax.config import COND_COL, DOSE_COLS, ID_COL
 from cetsax.fit import _fit_single_curve, _itdr_model_log, fit_all_proteins
@@ -16,7 +15,7 @@ def test_itdr_model_handles_zero_concentration():
 
 def test_itdr_model_log_matches_linear_model():
     doses = np.array(DOSE_COLS, dtype=float)
-    params = dict(E0=0.95, Emax=1.25, logEC50=-3.5, h=1.4)
+    params = {"E0": 0.95, "Emax": 1.25, "logEC50": -3.5, "h": 1.4}
     y_linear = itdr_model(doses, **params)
     y_log = _itdr_model_log(np.log10(doses), **params)
     np.testing.assert_allclose(y_linear, y_log, rtol=1e-10, atol=1e-10)

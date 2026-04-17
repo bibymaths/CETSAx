@@ -38,14 +38,14 @@ Visualization and Analysis of Model Predictions for Protein-Ligand Binding
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import pandas as pd
-import numpy as np
 from collections import Counter
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import confusion_matrix, roc_curve, auc
-
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from sklearn.metrics import auc, confusion_matrix, roc_curve
 
 
 def _savefig(out_dir, name):
@@ -289,7 +289,7 @@ def visualize_predictions(pred_file, truth_file, out_dir) -> None:
         df[df["hit_class"] == "strong"].sort_values("R2", ascending=False).head(10)
     )
 
-    for i, row in top_hits.iterrows():
+    for _i, row in top_hits.iterrows():
         # Add text label
         plt.text(
             row["delta_max"] + 0.002,  # Slight offset X
@@ -485,7 +485,7 @@ def analyze_fitting_data(fits_file, pred_file, out_dir) -> None:
         plt.figure(figsize=(10, 6))
         x_conc = np.logspace(-9, -3, 100)  # Simulated concentration range
 
-        for idx, row in top_hits.iterrows():
+        for _, row in top_hits.iterrows():
             prot_id = row["id"]
             prot_fits = fits[fits["id"] == prot_id]
 

@@ -45,10 +45,9 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 
 def extract_curve_features(df: pd.DataFrame, n_components: int = 3) -> pd.DataFrame:

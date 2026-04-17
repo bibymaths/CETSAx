@@ -14,12 +14,12 @@ from typing import Any
 import pandas as pd
 
 from .config import (
+    COND_COL,
+    COUNTNUM_COL,
     DOSE_COLS,
     ID_COL,
-    COND_COL,
-    SUM_UNIPEPS_COL,
     SUM_PSMS_COL,
-    COUNTNUM_COL,
+    SUM_UNIPEPS_COL,
 )
 
 
@@ -63,6 +63,13 @@ def apply_basic_qc(df: pd.DataFrame) -> type[NoneType[Any]]:
     pd.DataFrame
         Filtered dataset passing QC criteria.
     """
+    # Import into local scope so pandas query @-references resolve correctly
+    from .config import (  # noqa: F401
+        QC_MIN_COUNTNUM,
+        QC_MIN_PSMS,
+        QC_MIN_UNIQUE_PEPTIDES,
+    )
+
     qc_df = df.query(
         f"{SUM_UNIPEPS_COL} >= @QC_MIN_UNIQUE_PEPTIDES and "
         f"{SUM_PSMS_COL} >= @QC_MIN_PSMS and "

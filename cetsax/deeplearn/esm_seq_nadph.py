@@ -29,24 +29,24 @@ Email: mishraabhinav36@gmail.com
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, Optional, Tuple, List, Any
-
 import copy
 import math
 import os
 import warnings
+from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import esm
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.model_selection import StratifiedShuffleSplit
-from torch.utils.data import WeightedRandomSampler, Dataset, DataLoader, Subset
+from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 from tqdm.auto import tqdm
-import esm
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 
@@ -67,7 +67,7 @@ def configure_cpu_threads(num_threads: int = 64, interop_threads: int = 4):
 # -----------------------------------------------------------------------------
 # 1) FASTA util
 # -----------------------------------------------------------------------------
-def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
+def read_fasta_to_dict(fasta_path: str | Path) -> dict[str, str]:
     """
     Read FASTA into dict: {id: sequence}.
     Supports:
@@ -75,8 +75,8 @@ def read_fasta_to_dict(fasta_path: str | Path) -> Dict[str, str]:
       >sp|P12345|...
     """
     fasta_path = Path(fasta_path)
-    seqs: Dict[str, List[str]] = {}
-    current_id: Optional[str] = None
+    seqs: dict[str, list[str]] = {}
+    current_id: str | None = None
 
     with fasta_path.open() as fh:
         for line in fh:
@@ -208,9 +208,9 @@ class NADPHSeqConfig:
 # 4) Dataset helpers
 # -----------------------------------------------------------------------------
 def collate_fn_esm(
-    batch: List[Tuple[torch.Tensor, int | float]],
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    toks, labels = zip(*batch)
+    batch: list[tuple[torch.Tensor, int | float]],
+) -> tuple[torch.Tensor, torch.Tensor]:
+    toks, labels = zip(*batch, strict=False)
     lengths = [len(t) for t in toks]
     max_len = max(lengths)
     batch_toks = torch.full(
@@ -225,7 +225,7 @@ def collate_fn_esm(
 
 
 def collate_fn_reps(batch):
-    reps_list, mask_list, labels = zip(*batch)
+    reps_list, mask_list, labels = zip(*batch, strict=False)
     B = len(reps_list)
     D = reps_list[0].shape[1]
     Lmax = max(r.shape[0] for r in reps_list)
@@ -233,7 +233,7 @@ def collate_fn_reps(batch):
     reps = torch.zeros((B, Lmax, D), dtype=torch.float32)
     mask = torch.zeros((B, Lmax), dtype=torch.bool)
 
-    for i, (r, m) in enumerate(zip(reps_list, mask_list)):
+    for i, (r, m) in enumerate(zip(reps_list, mask_list, strict=False)):
         L = r.shape[0]
         reps[i, :L] = r
         mask[i, :L] = m
@@ -622,7 +622,7 @@ def build_token_cache(csv_path: str | Path, cfg: NADPHSeqConfig) -> Path:
     ids = df["id"].tolist()
 
     tokens: list[torch.Tensor] = []
-    for rid, seq in zip(df["id"].astype(str), df["seq"].astype(str)):
+    for rid, seq in zip(df["id"].astype(str), df["seq"].astype(str), strict=False):
         seq = seq[: cfg.max_len]
         _, _, toks = batch_converter([(rid, seq)])
         tokens.append(toks[0].cpu())
@@ -844,10 +844,10 @@ def _get_head_module(model: nn.Module) -> nn.Module:
     """
     base = model.module if hasattr(model, "module") else model
 
-    if hasattr(base, "head") and isinstance(getattr(base, "head"), nn.Module):
+    if hasattr(base, "head") and isinstance(base.head, nn.Module):
         return base.head
 
-    if hasattr(base, "net") and isinstance(getattr(base, "net"), nn.Module):
+    if hasattr(base, "net") and isinstance(base.net, nn.Module):
         return base.net
 
     raise AttributeError(
@@ -887,7 +887,7 @@ def _split_train_val(
     return Subset(ds, train_idx.tolist()), Subset(ds, val_idx.tolist())
 
 
-def _get_labels_for_split(split_ds) -> List[int] | List[float]:
+def _get_labels_for_split(split_ds) -> list[int] | list[float]:
     """
     Efficiently extract labels from a random_split subset when possible.
     Falls back to indexing.
@@ -917,7 +917,7 @@ def train_seq_model(
     csv_path: str | Path,
     cfg: NADPHSeqConfig,
     patience: bool = True,
-) -> Tuple[nn.Module, Dict[str, float], Dict[str, Path], pd.DataFrame]:
+) -> tuple[nn.Module, dict[str, float], dict[str, Path], pd.DataFrame]:
     """
     Returns:
       model, metrics, paths(dict of caches)
@@ -925,7 +925,7 @@ def train_seq_model(
     configure_cpu_threads(num_threads=64, interop_threads=4)
     device = torch.device(cfg.device)
 
-    cache_paths: Dict[str, Path] = {}
+    cache_paths: dict[str, Path] = {}
 
     # ---- build caches ----
     token_cache_pt = None
@@ -1029,13 +1029,13 @@ def train_seq_model(
     )
 
     pin_memory = device.type == "cuda"
-    persistent_workers = True if n_workers > 0 else False
+    persistent_workers = n_workers > 0
 
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
         sampler=sampler_train,
-        shuffle=False if sampler_train is not None else True,
+        shuffle=sampler_train is None,
         collate_fn=collate,
         num_workers=n_workers,
         pin_memory=pin_memory,
@@ -1081,7 +1081,7 @@ def train_seq_model(
     best_val_acc = -math.inf
     trigger_times = 0
 
-    metrics: Dict[str, float] = {}
+    metrics: dict[str, float] = {}
 
     for epoch in range(1, cfg.epochs + 1):
         # TRAIN

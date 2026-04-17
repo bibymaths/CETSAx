@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from cetsax.config import DOSE_COLS, ID_COL, COND_COL
-from cetsax.models import itdr_model
+from cetsax.config import COND_COL, DOSE_COLS, ID_COL  # noqa: E402
+from cetsax.models import itdr_model  # noqa: E402
 
 
 @pytest.fixture(scope='session')
@@ -41,7 +41,7 @@ def synthetic_raw_df(doses):
                 'sumPSMs': 30,
                 'countNum': 12,
             }
-            row.update({col: float(val) for col, val in zip(DOSE_COLS, y)})
+            row.update({col: float(val) for col, val in zip(DOSE_COLS, y, strict=False)})
             rows.append(row)
 
     # Add one low-QC row for filtering tests.

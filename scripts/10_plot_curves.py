@@ -36,11 +36,17 @@ Script to plot individual protein CETSA curves and global goodness-of-fit.
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
 from pathlib import Path
-from cetsax import load_cetsa_csv, apply_basic_qc
-from cetsax import plot_protein_curve, plot_goodness_of_fit
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from cetsax import (
+    apply_basic_qc,
+    load_cetsa_csv,
+    plot_goodness_of_fit,
+    plot_protein_curve,
+)
 
 
 def main():

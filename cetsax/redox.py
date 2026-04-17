@@ -45,12 +45,9 @@ as well as to summarize redox roles at the pathway level.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
-
 
 # ------------------------------------------------------------
 # 0. HELPER: robust scaling to [0, 1]
@@ -110,7 +107,7 @@ def build_redox_axes(
     fits_df: pd.DataFrame,
     sens_df: pd.DataFrame,
     hits_df: pd.DataFrame,
-    net_df: Optional[pd.DataFrame] = None,
+    net_df: pd.DataFrame | None = None,
     id_col: str = "id",
     hit_col: str = "dominant_class",
     degree_col: str = "degree",

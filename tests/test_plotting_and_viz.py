@@ -1,14 +1,13 @@
 import matplotlib
+
 matplotlib.use('Agg')
 
 import pandas as pd
 import pytest
 
-from cetsax.config import COND_COL, ID_COL
 from cetsax.dataio import apply_basic_qc
 from cetsax.fit import fit_all_proteins
 from cetsax.plotting import plot_goodness_of_fit, plot_protein_curve
-from cetsax.sensitivity import compute_sensitivity_scores
 from cetsax.viz import (
     plot_cluster_size_bar,
     plot_factor_scores,

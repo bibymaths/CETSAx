@@ -36,19 +36,19 @@ Script to run Bayesian EC50 inference in parallel using joblib.
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-import pandas as pd
 from pathlib import Path
-from typing import Optional
+
+import pandas as pd
 
 # Parallelization imports
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
 # Import core logic from the package
-from cetsax import load_cetsa_csv, apply_basic_qc, bayesian_fit_ec50
+from cetsax import apply_basic_qc, bayesian_fit_ec50, load_cetsa_csv
 
 
-def _fit_single_protein(df: pd.DataFrame, prot_id: str) -> Optional[pd.DataFrame]:
+def _fit_single_protein(df: pd.DataFrame, prot_id: str) -> pd.DataFrame | None:
     """
     Worker function to fit a single protein.
 

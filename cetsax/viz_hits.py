@@ -45,10 +45,9 @@ to visualize hit characteristics and replicate consistency.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Tuple, Optional
-import pandas as pd
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import pandas as pd
 
 # ---------------------------------------------------------------------
 # Hit classification logic
@@ -143,8 +142,8 @@ def plot_ec50_vs_delta(
     df: pd.DataFrame,
     ec50_cut: float = 0.01,
     delta_cut: float = 0.10,
-    ax: Optional[plt.Axes] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
     """
     EC50 vs delta_max scatter with quadrant lines.
     """
@@ -171,8 +170,8 @@ def plot_ec50_replicates(
     cond_col: str = "condition",
     cond_r1: str = "NADPH.r1",
     cond_r2: str = "NADPH.r2",
-    ax: Optional[plt.Axes] = None,
-) -> Optional[Tuple[plt.Figure, plt.Axes]]:
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes] | None:
     """
     EC50 replicate consistency plot: EC50_r1 vs EC50_r2 (log-log).
 
@@ -206,8 +205,8 @@ def plot_ec50_replicates(
 
 def plot_r2_vs_delta(
     df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
     """
     R2 vs delta_max scatter.
     """
@@ -226,8 +225,8 @@ def plot_r2_vs_delta(
 
 def plot_ec50_vs_r2(
     df: pd.DataFrame,
-    ax: Optional[plt.Axes] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
     """
     EC50 vs R2 scatter (log-scale EC50).
     """
@@ -258,7 +257,7 @@ def run_hit_calling_and_plots(
     ec50_strong: float = 0.01,
     delta_strong: float = 0.10,
     r2_strong: float = 0.70,
-) -> Dict[str, str | pd.DataFrame]:
+) -> dict[str, str | pd.DataFrame]:
     """
     Full hit-calling + plotting pipeline.
 
@@ -295,7 +294,7 @@ def run_hit_calling_and_plots(
     hits_path = out_dir / "cetsa_hits_ranked.csv"
     hits_df.to_csv(hits_path, index=False)
 
-    paths: Dict[str, str | pd.DataFrame] = {}
+    paths: dict[str, str | pd.DataFrame] = {}
     paths["hits_table"] = hits_df
 
     # 2) EC50 vs delta_max

@@ -13,11 +13,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
-import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import torch
@@ -36,11 +35,11 @@ def _auto_device(device: str) -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def read_fasta_robust(fasta_path: str | Path) -> Dict[str, str]:
+def read_fasta_robust(fasta_path: str | Path) -> dict[str, str]:
     """Reads FASTA, storing the full first token as the key."""
     fasta_path = Path(fasta_path)
-    seqs: Dict[str, List[str]] = {}
-    current_id: Optional[str] = None
+    seqs: dict[str, list[str]] = {}
+    current_id: str | None = None
     with fasta_path.open() as fh:
         for line in fh:
             line = line.strip()
@@ -75,8 +74,8 @@ def clean_id(pid: str, method: str) -> str:
 
 
 def align_ids(
-    source_ids: List[str], target_ids: List[str], source_name="FASTA", target_name="CSV"
-) -> Tuple[Dict[str, str], List[str]]:
+    source_ids: list[str], target_ids: list[str], source_name="FASTA", target_name="CSV"
+) -> tuple[dict[str, str], list[str]]:
     """
     Finds mapping from Target (CSV) -> Source (FASTA/Cache).
     Returns:

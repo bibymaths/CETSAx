@@ -45,11 +45,11 @@ at the pathway/module level, and quantify sensitivity heterogeneity across the p
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Dict, Any
 from sklearn.preprocessing import RobustScaler
-
 
 # ------------------------------------------------------------
 # 1. NORMALIZATION HELPERS
@@ -86,7 +86,7 @@ def compute_sensitivity_scores(
     id_col: str = "id",
     cond_col: str = "condition",
     agg: str = "median",
-    weights: Dict[str, float] = None,
+    weights: dict[str, float] = None,
 ) -> pd.DataFrame:
     """
     Compute a unified NADPH Sensitivity Score (NSS) per protein.
@@ -195,7 +195,7 @@ def summarize_sensitivity_by_pathway(
 def compute_sensitivity_heterogeneity(
     sens_df: pd.DataFrame,
     bins: int = 50,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Quantify how spread-out sensitivity is across the proteome.
 

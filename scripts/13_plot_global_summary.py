@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2024 Abhinav Mishra
 # SPDX-License-Identifier: BSD-3-Clause
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from tqdm.auto import tqdm
 
@@ -13,7 +13,7 @@ def generate_global_shap_summary(predictions_csv, supervised_csv):
     df_seqs = pd.read_csv(supervised_csv)
 
     # Quick lookup for ID -> Sequence
-    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq']))
+    seq_dict = dict(zip(df_seqs['id'], df_seqs['seq'], strict=False))
 
     print("Aggregating residue scores across the entire dataset...")
     all_aas = []

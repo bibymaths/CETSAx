@@ -12,16 +12,18 @@ with monotonic smoothing and Hill slope regularization.
 """
 
 from __future__ import annotations
-from typing import Dict, Any, List, Tuple, Hashable
+
+from collections.abc import Hashable
+from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import least_squares
 from joblib import Parallel, delayed
-from tqdm.auto import tqdm
+from scipy.optimize import least_squares
 from sklearn.isotonic import IsotonicRegression
+from tqdm.auto import tqdm
 
-from .config import DOSE_COLS, ID_COL, COND_COL
+from .config import COND_COL, DOSE_COLS, ID_COL
 
 
 def _itdr_model_log(
@@ -53,7 +55,7 @@ def _itdr_model_log(
     return E0 + (Emax - E0) / denom
 
 
-def _fit_single_curve(doses: np.ndarray, y: np.ndarray) -> Dict[str, Any] | None:
+def _fit_single_curve(doses: np.ndarray, y: np.ndarray) -> dict[str, Any] | None:
     """
     Fit ITDR logistic model (in log-dose space) to a single dose-response vector.
 
@@ -222,11 +224,11 @@ def fit_all_proteins(df: pd.DataFrame) -> pd.DataFrame:
     doses = np.array(DOSE_COLS, dtype=float)
 
     # Materialize groups so we can iterate in parallel and know length for tqdm
-    grouped_items: List[Tuple[Hashable, pd.DataFrame]] = list(
+    grouped_items: list[tuple[Hashable, pd.DataFrame]] = list(
         df.groupby([ID_COL, COND_COL], dropna=False)
     )
 
-    def _process_group(item: Tuple[Hashable, pd.DataFrame]) -> Dict[str, Any] | None:
+    def _process_group(item: tuple[Hashable, pd.DataFrame]) -> dict[str, Any] | None:
         """
         Process a single (protein, condition) group and fit the curve.
         Parameters:

@@ -47,12 +47,11 @@ back to protein metadata tables.
 
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 import pandas as pd
 from sklearn.decomposition import PCA, FactorAnalysis
 from sklearn.preprocessing import StandardScaler
-
 
 # ------------------------------------------------------------
 # 1. FEATURE MATRIX CONSTRUCTION
@@ -61,9 +60,9 @@ from sklearn.preprocessing import StandardScaler
 
 def build_feature_matrix(
     sens_df: pd.DataFrame,
-    redox_df: Optional[pd.DataFrame] = None,
+    redox_df: pd.DataFrame | None = None,
     id_col: str = "id",
-    base_features: Optional[List[str]] = None,
+    base_features: list[str] | None = None,
     include_redox_axes: bool = True,
 ) -> pd.DataFrame:
     """
@@ -148,7 +147,7 @@ def build_feature_matrix(
 def fit_pca(
     feat_df: pd.DataFrame,
     n_components: int = 3,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Fit PCA on the standardized feature matrix.
 
@@ -197,7 +196,7 @@ def fit_pca(
 def fit_factor_analysis(
     feat_df: pd.DataFrame,
     n_components: int = 3,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Fit Factor Analysis (FA) on the standardized feature matrix.
 

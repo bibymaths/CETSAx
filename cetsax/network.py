@@ -44,11 +44,11 @@ using community detection algorithms.
 
 from __future__ import annotations
 
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
-from typing import Dict
 from networkx.algorithms.community import greedy_modularity_communities
+
 from .config import DOSE_COLS, ID_COL
 
 
@@ -86,7 +86,7 @@ def make_network_from_matrix(
     return G
 
 
-def detect_modules(G: nx.Graph) -> Dict[str, int]:
+def detect_modules(G: nx.Graph) -> dict[str, int]:
     """
     Apply a community detection algorithm (Louvain or greedy modularity)
     to identify co-stabilization modules.
