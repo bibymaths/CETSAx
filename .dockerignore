@@ -16,3 +16,14 @@ dist/
 build/
 .venv/
 .mypy_cache/
+# docs / dev artefacts
+docs/
+mkdocs.yml
+*.md
+*.html
+*.cff
+*.json
+tests/
+# local helper scripts (not needed at runtime)
+docker_*.sh
+docker-compose*.yml
