@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Configuration and constants for CETSA EC50/KD modelling.
 Dynamically loaded from config.yaml.

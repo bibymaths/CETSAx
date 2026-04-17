@@ -1,4 +1,6 @@
 # !/usr/bin/env python
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 Script to build CETSA co-stabilization network from processed data.
 """

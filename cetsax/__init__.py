@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 """
 CETSAx – CETSA-MS modelling toolkit.
 

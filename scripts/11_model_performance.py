@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Abhinav Mishra
+# SPDX-License-Identifier: BSD-3-Clause
 import pandas as pd
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from pathlib import Path
