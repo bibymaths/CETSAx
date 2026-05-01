@@ -23,7 +23,7 @@ babel==2.18.0
     # via mkdocs-material
 backrefs==7.0
     # via mkdocs-material
-biothings-client==0.4.1
+biothings-client==0.5.0
     # via mygene
 cachetools==6.2.2
     # via pymc
