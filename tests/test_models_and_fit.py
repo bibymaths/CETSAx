@@ -25,9 +25,9 @@ def test_fit_single_curve_returns_reasonable_parameters(doses):
     y = itdr_model(doses, 0.95, 1.30, -3.8, 1.2)
     fit = _fit_single_curve(doses, y)
     assert fit is not None
-    assert 0.0 < fit['EC50'] < 1.0
-    assert fit['delta_max'] > 0.05
-    assert fit['R2'] > 0.95
+    assert 0.0 < fit["EC50"] < 1.0
+    assert fit["delta_max"] > 0.05
+    assert fit["R2"] > 0.95
 
 
 def test_fit_single_curve_rejects_flat_signal(doses):
@@ -36,9 +36,19 @@ def test_fit_single_curve_rejects_flat_signal(doses):
 
 
 def test_fit_all_proteins_returns_expected_schema(synthetic_raw_df):
-    fit_df = fit_all_proteins(synthetic_raw_df[synthetic_raw_df[ID_COL] != 'LOWQC'])
-    expected = [ID_COL, COND_COL, 'E0', 'Emax', 'EC50', 'log10_EC50', 'Hill', 'R2', 'delta_max']
+    fit_df = fit_all_proteins(synthetic_raw_df[synthetic_raw_df[ID_COL] != "LOWQC"])
+    expected = [
+        ID_COL,
+        COND_COL,
+        "E0",
+        "Emax",
+        "EC50",
+        "log10_EC50",
+        "Hill",
+        "R2",
+        "delta_max",
+    ]
     assert list(fit_df.columns) == expected
-    assert set(fit_df[ID_COL]) == {'P001', 'P002'}
+    assert set(fit_df[ID_COL]) == {"P001", "P002"}
     assert fit_df.shape[0] == 4
-    assert (fit_df['R2'] > 0.9).all()
+    assert (fit_df["R2"] > 0.9).all()

@@ -13,7 +13,7 @@ from cetsax.config import COND_COL, DOSE_COLS, ID_COL  # noqa: E402
 from cetsax.models import itdr_model  # noqa: E402
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def doses():
     return np.array(DOSE_COLS, dtype=float)
 
@@ -22,13 +22,13 @@ def doses():
 def synthetic_raw_df(doses):
     rows = []
     proteins = {
-        'P001': {
-            'NADPH.r1': (0.95, 1.30, -3.8, 1.2),
-            'NADPH.r2': (0.97, 1.28, -3.7, 1.1),
+        "P001": {
+            "NADPH.r1": (0.95, 1.30, -3.8, 1.2),
+            "NADPH.r2": (0.97, 1.28, -3.7, 1.1),
         },
-        'P002': {
-            'NADPH.r1': (1.20, 0.82, -3.4, 1.3),
-            'NADPH.r2': (1.18, 0.85, -3.5, 1.2),
+        "P002": {
+            "NADPH.r1": (1.20, 0.82, -3.4, 1.3),
+            "NADPH.r2": (1.18, 0.85, -3.5, 1.2),
         },
     }
     for pid, conds in proteins.items():
@@ -37,20 +37,22 @@ def synthetic_raw_df(doses):
             row = {
                 ID_COL: pid,
                 COND_COL: cond,
-                'sumUniPeps': 5,
-                'sumPSMs': 30,
-                'countNum': 12,
+                "sumUniPeps": 5,
+                "sumPSMs": 30,
+                "countNum": 12,
             }
-            row.update({col: float(val) for col, val in zip(DOSE_COLS, y, strict=False)})
+            row.update(
+                {col: float(val) for col, val in zip(DOSE_COLS, y, strict=False)}
+            )
             rows.append(row)
 
     # Add one low-QC row for filtering tests.
     low_qc = rows[0].copy()
-    low_qc[ID_COL] = 'LOWQC'
-    low_qc[COND_COL] = 'NADPH.r1'
-    low_qc['sumUniPeps'] = 1
-    low_qc['sumPSMs'] = 2
-    low_qc['countNum'] = 1
+    low_qc[ID_COL] = "LOWQC"
+    low_qc[COND_COL] = "NADPH.r1"
+    low_qc["sumUniPeps"] = 1
+    low_qc["sumPSMs"] = 2
+    low_qc["countNum"] = 1
     rows.append(low_qc)
     return pd.DataFrame(rows)
 
@@ -72,8 +74,9 @@ def _patch_joblib_parallel(monkeypatch):
     def _sequential_delayed(func):
         def wrapper(*args, **kwargs):
             return lambda: func(*args, **kwargs)
+
         return wrapper
 
-    monkeypatch.setattr(fit_mod, 'Parallel', _SequentialParallel)
-    monkeypatch.setattr(fit_mod, 'delayed', _sequential_delayed)
-    monkeypatch.setattr(fit_mod, 'tqdm', lambda iterable, **kwargs: iterable)
+    monkeypatch.setattr(fit_mod, "Parallel", _SequentialParallel)
+    monkeypatch.setattr(fit_mod, "delayed", _sequential_delayed)
+    monkeypatch.setattr(fit_mod, "tqdm", lambda iterable, **kwargs: iterable)

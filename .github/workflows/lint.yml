@@ -2,9 +2,8 @@ name: Code Quality
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - "v*"
 
 jobs:
   lint:
@@ -12,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Install uv (super fast!)
+      # 1. Install uv
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -31,6 +30,3 @@ jobs:
         run: |
           uv run ruff check cetsax/ scripts/
           uv run ruff format --check cetsax/ scripts/
-
-#      - name: Run MyPy (Type Checker)
-#        run: uv run mypy cetsax/ --ignore-missing-imports
