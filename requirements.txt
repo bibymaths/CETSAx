@@ -170,7 +170,7 @@ markupsafe==3.0.3
     #   mkdocs
     #   mkdocs-autorefs
     #   mkdocstrings
-matplotlib==3.10.7
+matplotlib==3.10.9
     # via
     #   cetsax (pyproject.toml)
     #   arviz
